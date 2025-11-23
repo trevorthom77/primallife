@@ -6,13 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D5B395242ECE5C26003E48E9 /* MapboxSearch in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395232ECE5C26003E48E9 /* MapboxSearch */; };
+		D5B395262ECE5C26003E48E9 /* MapboxSearchUI in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395252ECE5C26003E48E9 /* MapboxSearchUI */; };
+		D5B395292ECE5C6B003E48E9 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395282ECE5C6B003E48E9 /* MapboxMaps */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		D5730CEA2ECA941A00BF989C /* primallife.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = primallife.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D5730D062ECA95C800BF989C /* Exceptions for "primallife" folder in "primallife" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D5730CE92ECA941A00BF989C /* primallife */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D5730CEC2ECA941A00BF989C /* primallife */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D5730D062ECA95C800BF989C /* Exceptions for "primallife" folder in "primallife" target */,
+			);
 			path = primallife;
 			sourceTree = "<group>";
 		};
@@ -23,6 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5B395292ECE5C6B003E48E9 /* MapboxMaps in Frameworks */,
+				D5B395242ECE5C26003E48E9 /* MapboxSearch in Frameworks */,
+				D5B395262ECE5C26003E48E9 /* MapboxSearchUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +87,9 @@
 			);
 			name = primallife;
 			packageProductDependencies = (
+				D5B395232ECE5C26003E48E9 /* MapboxSearch */,
+				D5B395252ECE5C26003E48E9 /* MapboxSearchUI */,
+				D5B395282ECE5C6B003E48E9 /* MapboxMaps */,
 			);
 			productName = primallife;
 			productReference = D5730CEA2ECA941A00BF989C /* primallife.app */;
@@ -94,6 +119,10 @@
 			);
 			mainGroup = D5730CE12ECA941A00BF989C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */,
+				D5B395272ECE5C6B003E48E9 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5730CEB2ECA941A00BF989C /* Products */;
 			projectDirPath = "";
@@ -254,6 +283,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = primallife/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -274,13 +305,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
@@ -298,6 +330,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = primallife/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -318,13 +352,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
@@ -351,6 +386,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-search-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.16.1;
+			};
+		};
+		D5B395272ECE5C6B003E48E9 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-maps-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.16.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D5B395232ECE5C26003E48E9 /* MapboxSearch */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */;
+			productName = MapboxSearch;
+		};
+		D5B395252ECE5C26003E48E9 /* MapboxSearchUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */;
+			productName = MapboxSearchUI;
+		};
+		D5B395282ECE5C6B003E48E9 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5B395272ECE5C6B003E48E9 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */;
+			productName = MapboxMaps;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D5730CE22ECA941A00BF989C /* Project object */;
 }

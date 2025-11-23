@@ -1,0 +1,114 @@
+//
+//  TravelCard.swift
+//  primallife
+//
+//  Created by Trevor Thompson on 11/16/25.
+//
+
+import SwiftUI
+
+struct TravelCard: View {
+    @State private var imageURL: URL?
+    
+    var body: some View {
+        ZStack {
+            if let imageURL {
+                AsyncImage(url: imageURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Colors.card
+                }
+            } else {
+                Colors.card
+            }
+        }
+        .frame(width: 344, height: 180)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(alignment: .topLeading) {
+            HStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    Text("🇨🇷")
+                    Text("Costa Rica")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.card)
+                }
+                
+                Spacer()
+                
+                Text("Jan 12–20")
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.card)
+            }
+            .padding(.top, 20)
+            .padding(.horizontal, 16)
+        }
+        .overlay(alignment: .bottomLeading) {
+            HStack(spacing: -8) {
+                Image("profile4")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Colors.card, lineWidth: 3)
+                    }
+                
+                Image("profile5")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Colors.card, lineWidth: 3)
+                    }
+                
+                Image("profile6")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Colors.card, lineWidth: 3)
+                    }
+                
+                Image("profile9")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Colors.card, lineWidth: 3)
+                    }
+                
+                ZStack {
+                    Circle()
+                        .fill(Colors.background)
+                        .frame(width: 36, height: 36)
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+                    
+                    Text("67+")
+                        .font(.custom(Fonts.semibold, size: 12))
+                        .foregroundStyle(Colors.primaryText)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+        .task {
+            imageURL = await UnsplashService.fetchImage(for: "Costa Rica")
+        }
+    }
+}
+
+#Preview {
+    TravelCard()
+}

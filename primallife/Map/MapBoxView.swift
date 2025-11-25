@@ -14,6 +14,7 @@ import MapboxMaps
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @State private var isShowingSearch = false
+    @State private var isShowingProfile = false
     @State private var viewport: Viewport = .styleDefault
     @State private var selectedPlace: MapboxPlace?
     @State private var placeImageURL: URL?
@@ -23,304 +24,331 @@ struct MapBoxView: View {
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     
+    private let profileTribes = [
+        ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
+        ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
+    ]
+    
+    private let profileFriends = [
+        ProfileFriend(imageName: "profile1", name: "Ava", status: "Online"),
+        ProfileFriend(imageName: "profile2", name: "Maya", status: "Planning"),
+        ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
+    ]
+    
     var body: some View {
-        MapReader { proxy in
-            Map(viewport: $viewport)
-                .ornamentOptions(
-                    OrnamentOptions(
-                        scaleBar: ScaleBarViewOptions(
-                            position: .topLeading,
-                            margins: .zero,
-                            visibility: .hidden,
-                            useMetricUnits: true
-                        )
-                    )
-                )
-                .mapStyle(
-                    MapStyle(
-                        uri: StyleURI(
-                            rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
-                        )!
-                    )
-                )
-                .cameraBounds(
-                    CameraBoundsOptions(
-                        minZoom: 3.0
-                    )
-                )
-                .overlay(alignment: .top) {
-                    if !hideChrome {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 12) {
-                                Button(action: { }) {
-                                    Image("profile1")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 44, height: 44)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-                                }
-                                
-                                Button(action: {
-                                    isShowingSearch = true
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "magnifyingglass")
-                                            .foregroundStyle(Colors.secondaryText)
-                                        
-                                        Text("Search")
-                                            .font(.travelBody)
-                                            .foregroundStyle(Colors.primaryText)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 16)
-                                    .padding(.horizontal, 16)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                }
-                            }
-                            
-                            Button(action: { }) {
-                                Text("Filter")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 12)
-                                    .background(Colors.accent)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 58)
-                    }
-                }
-                .overlay(alignment: .topTrailing) {
-                    if !hideChrome {
-                        VStack(spacing: 12) {
-                            Button(action: {
-                                airplaneFeedbackToggle.toggle()
-                                guard let coordinate = userCoordinate, let camera = proxy.camera else { return }
-                                camera.fly(
-                                    to: CameraOptions(
-                                        center: coordinate,
-                                        zoom: 10,
-                                        pitch: 0
-                                    ),
-                                    duration: 2
-                                )
-                            }) {
-                                Circle()
-                                    .fill(Colors.card)
-                                    .frame(width: 44, height: 44)
-                                    .overlay {
-                                        Image("location")
-                                            .renderingMode(.template)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 20, height: 20)
-                                            .foregroundStyle(Colors.primaryText)
-                                    }
-                            }
-                            .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
-                            .buttonStyle(.plain)
-                            
-                            Button(action: { }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Colors.accent)
-                                        .frame(width: 44, height: 44)
-                                    
-                                    Image(systemName: "plus")
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .font(.system(size: 18, weight: .bold))
-                                }
-                            }
-                        }
-                        .padding(.trailing)
-                        .padding(.top, 122)
-                    }
-                }
-                .overlay(alignment: .topLeading) {
-                    if selectedPlace != nil {
-                        BackButton {
-                            selectedPlace = nil
-                            placeImageURL = nil
-                            photoTask?.cancel()
-                            hideChrome = false
-                        }
-                        .padding(.leading)
-                        .padding(.top, 58)
-                    }
-                }
-                .overlay(alignment: .bottom) {
-                    if let place = selectedPlace {
-                        UnevenRoundedRectangle(
-                            cornerRadii: RectangleCornerRadii(
-                                topLeading: 32,
-                                topTrailing: 32
+        NavigationStack {
+            MapReader { proxy in
+                Map(viewport: $viewport)
+                    .ornamentOptions(
+                        OrnamentOptions(
+                            scaleBar: ScaleBarViewOptions(
+                                position: .topLeading,
+                                margins: .zero,
+                                visibility: .hidden,
+                                useMetricUnits: true
                             )
                         )
-                        .fill(Colors.card)
-                        .frame(height: 440)
-                        .frame(maxWidth: .infinity)
-                        .overlay(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack(alignment: .center) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(place.primaryName)
-                                            .font(.travelTitle)
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        if !place.countryDisplay.isEmpty {
-                                            Text(place.countryDisplay)
-                                                .font(.travelBody)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
+                    )
+                    .mapStyle(
+                        MapStyle(
+                            uri: StyleURI(
+                                rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
+                            )!
+                        )
+                    )
+                    .cameraBounds(
+                        CameraBoundsOptions(
+                            minZoom: 3.0
+                        )
+                    )
+                    .overlay(alignment: .top) {
+                        if !hideChrome {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        isShowingProfile = true
+                                    }) {
+                                        Image("profile1")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 44, height: 44)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
                                     }
                                     
-                                    Spacer()
-                                    
-                                    HStack(spacing: -8) {
-                                        Image("profile4")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 36, height: 36)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
+                                    Button(action: {
+                                        isShowingSearch = true
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "magnifyingglass")
+                                                .foregroundStyle(Colors.secondaryText)
+                                            
+                                            Text("Search")
+                                                .font(.travelBody)
+                                                .foregroundStyle(Colors.primaryText)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 16)
+                                        .padding(.horizontal, 16)
+                                        .background(Colors.card)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    }
+                                }
+                                
+                                Button(action: { }) {
+                                    Text("Filter")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 58)
+                        }
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if !hideChrome {
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    airplaneFeedbackToggle.toggle()
+                                    guard let coordinate = userCoordinate, let camera = proxy.camera else { return }
+                                    camera.fly(
+                                        to: CameraOptions(
+                                            center: coordinate,
+                                            zoom: 10,
+                                            pitch: 0
+                                        ),
+                                        duration: 2
+                                    )
+                                }) {
+                                    Circle()
+                                        .fill(Colors.card)
+                                        .frame(width: 44, height: 44)
+                                        .overlay {
+                                            Image("location")
+                                                .renderingMode(.template)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 20, height: 20)
+                                                .foregroundStyle(Colors.primaryText)
+                                        }
+                                }
+                                .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
+                                .buttonStyle(.plain)
+                                
+                                Button(action: { }) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Colors.accent)
+                                            .frame(width: 44, height: 44)
                                         
-                                        Image("profile5")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 36, height: 36)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
+                                        Image(systemName: "plus")
+                                            .foregroundStyle(Colors.tertiaryText)
+                                            .font(.system(size: 18, weight: .bold))
+                                    }
+                                }
+                            }
+                            .padding(.trailing)
+                            .padding(.top, 122)
+                        }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        if selectedPlace != nil {
+                            BackButton {
+                                selectedPlace = nil
+                                placeImageURL = nil
+                                photoTask?.cancel()
+                                hideChrome = false
+                            }
+                            .padding(.leading)
+                            .padding(.top, 58)
+                        }
+                    }
+                    .overlay(alignment: .bottom) {
+                        if let place = selectedPlace {
+                            UnevenRoundedRectangle(
+                                cornerRadii: RectangleCornerRadii(
+                                    topLeading: 32,
+                                    topTrailing: 32
+                                )
+                            )
+                            .fill(Colors.card)
+                            .frame(height: 440)
+                            .frame(maxWidth: .infinity)
+                            .overlay(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    HStack(alignment: .center) {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(place.primaryName)
+                                                .font(.travelTitle)
+                                                .foregroundStyle(Colors.primaryText)
+                                            
+                                            if !place.countryDisplay.isEmpty {
+                                                Text(place.countryDisplay)
+                                                    .font(.travelBody)
+                                                    .foregroundStyle(Colors.secondaryText)
                                             }
+                                        }
                                         
-                                        Image("profile6")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 36, height: 36)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
+                                        Spacer()
                                         
-                                        Image("profile9")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 36, height: 36)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
-                                        
-                                        ZStack {
-                                            Circle()
-                                                .fill(Colors.background)
+                                        HStack(spacing: -8) {
+                                            Image("profile4")
+                                                .resizable()
+                                                .scaledToFill()
                                                 .frame(width: 36, height: 36)
+                                                .clipShape(Circle())
                                                 .overlay {
                                                     Circle()
                                                         .stroke(Colors.card, lineWidth: 3)
                                                 }
                                             
-                                            Text("67+")
-                                                .font(.custom(Fonts.semibold, size: 12))
-                                                .foregroundStyle(Colors.primaryText)
-                                        }
-                                    }
-                                }
-                                
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Colors.secondaryText.opacity(0.12))
-                                    
-                                    if let imageURL = placeImageURL {
-                                        AsyncImage(url: imageURL) { phase in
-                                            if let image = phase.image {
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
+                                            Image("profile5")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 36, height: 36)
+                                                .clipShape(Circle())
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
+                                            
+                                            Image("profile6")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 36, height: 36)
+                                                .clipShape(Circle())
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
+                                            
+                                            Image("profile9")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 36, height: 36)
+                                                .clipShape(Circle())
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
+                                            
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Colors.background)
+                                                    .frame(width: 36, height: 36)
+                                                    .overlay {
+                                                        Circle()
+                                                            .stroke(Colors.card, lineWidth: 3)
+                                                    }
+                                                
+                                                Text("67+")
+                                                    .font(.custom(Fonts.semibold, size: 12))
+                                                    .foregroundStyle(Colors.primaryText)
                                             }
                                         }
                                     }
+                                    
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(Colors.secondaryText.opacity(0.12))
+                                        
+                                        if let imageURL = placeImageURL {
+                                            AsyncImage(url: imageURL) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .frame(height: 170)
+                                    .frame(maxWidth: .infinity)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    
+                                    Text("5,343 miles away")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                    
+                                    Button(action: {}) {
+                                        Text("Fly")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.tertiaryText)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 18)
+                                    }
+                                    .background(Colors.accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 }
-                                .frame(height: 170)
-                                .frame(maxWidth: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                
-                                Text("5,343 miles away")
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
-                                
-                                Button(action: {}) {
-                                    Text("Fly")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 18)
-                                }
-                                .background(Colors.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .padding(.horizontal, 24)
+                                .padding(.top, 28)
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 28)
+                            .ignoresSafeArea(edges: .bottom)
+                            .onTapGesture {
+                                selectedPlace = nil
+                                placeImageURL = nil
+                                photoTask?.cancel()
+                                hideChrome = false
+                            }
                         }
-                        .ignoresSafeArea(edges: .bottom)
-                        .onTapGesture {
-                            selectedPlace = nil
+                    }
+                    .ignoresSafeArea()
+                    .onAppear {
+                        locationManager.requestPermission()
+                    }
+                    .onReceive(locationManager.$coordinate) { coordinate in
+                        userCoordinate = coordinate
+                        
+                        guard !hasCenteredOnUser, let coordinate else { return }
+                        viewport = .camera(
+                            center: coordinate,
+                            zoom: 10,
+                            bearing: 0,
+                            pitch: 0
+                        )
+                        hasCenteredOnUser = true
+                    }
+                    .sheet(isPresented: $isShowingSearch) {
+                        MapSearchSheet { place in
+                            selectedPlace = place
                             placeImageURL = nil
                             photoTask?.cancel()
-                            hideChrome = false
+                            loadImage(for: place)
+                            hideChrome = true
+                            isShowingSearch = false
+                            guard let coordinate = place.coordinate, let camera = proxy.camera else { return }
+                            let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
+                            let adjustedCoordinate = CLLocationCoordinate2D(latitude: offsetLatitude, longitude: coordinate.longitude)
+                            camera.fly(
+                                to: CameraOptions(
+                                    center: adjustedCoordinate,
+                                    zoom: 7,
+                                    pitch: 0
+                                ),
+                                duration: 5
+                            )
                         }
                     }
-                }
-                .ignoresSafeArea()
-                .onAppear {
-                    locationManager.requestPermission()
-                }
-                .onReceive(locationManager.$coordinate) { coordinate in
-                    userCoordinate = coordinate
-                    
-                    guard !hasCenteredOnUser, let coordinate else { return }
-                    viewport = .camera(
-                        center: coordinate,
-                        zoom: 10,
-                        bearing: 0,
-                        pitch: 0
-                    )
-                    hasCenteredOnUser = true
-                }
-                .sheet(isPresented: $isShowingSearch) {
-                    MapSearchSheet { place in
-                        selectedPlace = place
-                        placeImageURL = nil
-                        photoTask?.cancel()
-                        loadImage(for: place)
-                        hideChrome = true
-                        isShowingSearch = false
-                        guard let coordinate = place.coordinate, let camera = proxy.camera else { return }
-                        let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
-                        let adjustedCoordinate = CLLocationCoordinate2D(latitude: offsetLatitude, longitude: coordinate.longitude)
-                        camera.fly(
-                            to: CameraOptions(
-                                center: adjustedCoordinate,
-                                zoom: 7,
-                                pitch: 0
-                            ),
-                            duration: 5
-                        )
-                    }
-                }
+            }
+            .navigationDestination(isPresented: $isShowingProfile) {
+                ProfileView(
+                    name: "Mia",
+                    homeCountry: "Australia",
+                    countryFlag: "🇦🇺",
+                    totalTribesJoined: 5,
+                    totalTrips: 12,
+                    countriesVisited: 8,
+                    tribes: profileTribes,
+                    friends: profileFriends
+                )
+            }
         }
     }
     
@@ -384,7 +412,7 @@ private struct MapSearchSheet: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Colors.secondaryText)
+                    .foregroundStyle(Colors.primaryText)
                 
                 ZStack(alignment: .leading) {
                     if searchText.isEmpty {
@@ -403,7 +431,7 @@ private struct MapSearchSheet: View {
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 16)
-            .background(Colors.card)
+            .background(Colors.secondaryText)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             
             Text("Results")

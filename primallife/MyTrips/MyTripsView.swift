@@ -63,23 +63,9 @@ struct MyTripsView: View {
                             
                             Spacer()
                             
-                            HStack(spacing: 12) {
-                                Button("See All") { }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                                
-                                Button(action: { }) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Colors.accent)
-                                            .frame(width: 36, height: 36)
-                                        
-                                        Image(systemName: "plus")
-                                            .foregroundStyle(Colors.tertiaryText)
-                                            .font(.system(size: 16, weight: .bold))
-                                    }
-                                }
-                            }
+                            Button("See All") { }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
                         }
                         .padding(.top, 16)
                         
@@ -162,6 +148,14 @@ struct MyTripsView: View {
                         .task {
                             tribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica beach")
                         }
+                        
+                        Button("Add Tribe") { }
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         
                         HStack {
                             Text("Adventures")

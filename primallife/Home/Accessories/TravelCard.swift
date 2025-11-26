@@ -9,6 +9,10 @@ import SwiftUI
 
 struct TravelCard: View {
     @State private var imageURL: URL?
+    var flag: String = "🇨🇷"
+    var location: String = "Costa Rica"
+    var dates: String = "Jan 12–20"
+    var imageQuery: String = "Hawaii"
     
     var body: some View {
         ZStack {
@@ -29,15 +33,15 @@ struct TravelCard: View {
         .overlay(alignment: .topLeading) {
             HStack(spacing: 12) {
                 HStack(spacing: 8) {
-                    Text("🇨🇷")
-                    Text("Costa Rica")
+                    Text(flag)
+                    Text(location)
                         .font(.travelTitle)
                         .foregroundStyle(Colors.card)
                 }
                 
                 Spacer()
                 
-                Text("Jan 12–20")
+                Text(dates)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.card)
             }
@@ -104,7 +108,7 @@ struct TravelCard: View {
             .padding(.bottom, 16)
         }
         .task {
-            imageURL = await UnsplashService.fetchImage(for: "Costa Rica")
+            imageURL = await UnsplashService.fetchImage(for: imageQuery)
         }
     }
 }

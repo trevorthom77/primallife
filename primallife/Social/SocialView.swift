@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MessagesView: View {
+    @State private var isShowingBell = false
+    
     private let chats: [ChatPreview] = [
         ChatPreview(name: "Aurora Tribe", message: "Marina meetup tonight?", time: "7:45 PM", unreadCount: 2),
         ChatPreview(name: "Coastal Crew", message: "Waves look perfect tomorrow.", time: "6:30 PM", unreadCount: 0),
@@ -28,59 +30,65 @@ struct MessagesView: View {
     ]
     
     var body: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                header
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Chats")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
+                VStack(spacing: 0) {
+                    header
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Chats")
+                                    .font(.travelTitle)
+                                    .foregroundStyle(Colors.primaryText)
+                                
+                                VStack(spacing: 12) {
+                                    ForEach(chats) { chat in
+                                        chatRow(chat)
+                                    }
+                                }
+                            }
                             
-                            VStack(spacing: 12) {
-                                ForEach(chats) { chat in
-                                    chatRow(chat)
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Plans")
+                                    .font(.travelTitle)
+                                    .foregroundStyle(Colors.primaryText)
+                                
+                                VStack(spacing: 12) {
+                                    ForEach(plans) { plan in
+                                        planRow(plan)
+                                    }
+                                }
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Friends")
+                                    .font(.travelTitle)
+                                    .foregroundStyle(Colors.primaryText)
+                                
+                                VStack(spacing: 12) {
+                                    ForEach(friends) { friend in
+                                        friendRow(friend)
+                                    }
                                 }
                             }
                         }
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Plans")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
-                            
-                            VStack(spacing: 12) {
-                                ForEach(plans) { plan in
-                                    planRow(plan)
-                                }
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Friends")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
-                            
-                            VStack(spacing: 12) {
-                                ForEach(friends) { friend in
-                                    friendRow(friend)
-                                }
-                            }
-                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
+                    .scrollIndicators(.hidden)
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear
+                            .frame(height: 96)
+                    }
                 }
-                .safeAreaInset(edge: .bottom) {
-                    Color.clear
-                        .frame(height: 96)
-                }
-        }
+            }
+            .navigationDestination(isPresented: $isShowingBell) {
+                BellView()
+            }
         }
     }
     
@@ -92,7 +100,9 @@ struct MessagesView: View {
             
             Spacer()
             
-            Button(action: { }) {
+            Button(action: {
+                isShowingBell = true
+            }) {
                 ZStack {
                     Circle()
                         .fill(Colors.card)

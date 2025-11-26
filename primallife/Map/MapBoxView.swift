@@ -15,6 +15,8 @@ struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
+    @State private var isShowingFilters = false
+    @State private var isShowingTribes = false
     @State private var viewport: Viewport = .styleDefault
     @State private var selectedPlace: MapboxPlace?
     @State private var placeImageURL: URL?
@@ -23,6 +25,7 @@ struct MapBoxView: View {
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
+    @State private var communityTab: CommunityTab = .tribes
     
     private let profileTribes = [
         ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
@@ -98,7 +101,9 @@ struct MapBoxView: View {
                                     }
                                 }
                                 
-                                Button(action: { }) {
+                                Button(action: {
+                                    isShowingFilters = true
+                                }) {
                                     Text("Filter")
                                         .font(.travelTitle)
                                         .foregroundStyle(Colors.tertiaryText)
@@ -142,7 +147,9 @@ struct MapBoxView: View {
                                 .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
                                 .buttonStyle(.plain)
                                 
-                                Button(action: { }) {
+                                Button(action: {
+                                    isShowingTribes = true
+                                }) {
                                     ZStack {
                                         Circle()
                                             .fill(Colors.accent)
@@ -298,6 +305,15 @@ struct MapBoxView: View {
                                 hideChrome = false
                             }
                         }
+                        if selectedPlace == nil {
+                            MapCommunityPanel(
+                                tab: $communityTab,
+                                tribes: profileTribes,
+                                friends: profileFriends
+                            )
+                            .padding(.horizontal)
+                            .padding(.bottom, 120)
+                        }
                     }
                     .ignoresSafeArea()
                     .onAppear {
@@ -349,6 +365,12 @@ struct MapBoxView: View {
                     friends: profileFriends
                 )
             }
+            .navigationDestination(isPresented: $isShowingFilters) {
+                FiltersView()
+            }
+            .navigationDestination(isPresented: $isShowingTribes) {
+                TribesView()
+            }
         }
     }
     
@@ -367,6 +389,112 @@ struct MapBoxView: View {
             }
         }
     }
+}
+
+private struct MapCommunityPanel: View {
+    @Binding var tab: CommunityTab
+    let tribes: [ProfileTribe]
+    let friends: [ProfileFriend]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                HStack(spacing: 8) {
+                    ForEach(CommunityTab.allCases, id: \.self) { item in
+                        Button {
+                            tab = item
+                        } label: {
+                            Text(item.rawValue)
+                                .font(.travelDetail)
+                                .foregroundStyle(tab == item ? Colors.tertiaryText : Colors.primaryText)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 14)
+                                .frame(maxWidth: .infinity)
+                                .background(tab == item ? Colors.accent : Colors.secondaryText.opacity(0.18))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: 240)
+                
+                Spacer()
+            }
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    if tab == .tribes {
+                        ForEach(tribes) { tribe in
+                            tribeCard(tribe)
+                        }
+                    } else {
+                        ForEach(friends) { friend in
+                            explorerCard(friend)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .frame(height: 92)
+        }
+        .padding(16)
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .animation(.none, value: tab)
+    }
+    
+    private func tribeCard(_ tribe: ProfileTribe) -> some View {
+        HStack(spacing: 12) {
+            Image(tribe.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text(tribe.name)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                
+                Text(tribe.status)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+            }
+        }
+        .frame(width: 220, alignment: .leading)
+        .padding(16)
+        .background(Colors.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+    
+    private func explorerCard(_ friend: ProfileFriend) -> some View {
+        HStack(spacing: 12) {
+            Image(friend.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 52, height: 52)
+                .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text(friend.name)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                
+                Text(friend.status)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+            }
+        }
+        .frame(width: 220, alignment: .leading)
+        .padding(16)
+        .background(Colors.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private enum CommunityTab: String, CaseIterable {
+    case tribes = "Tribes"
+    case explorers = "Explorers"
 }
 
 private final class UserLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {

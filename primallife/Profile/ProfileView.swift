@@ -38,17 +38,7 @@ struct ProfileView: View {
     }
     
     private enum ProfileAction {
-        case editGlobe
         case addCountry
-        
-        var title: String {
-            switch self {
-            case .editGlobe:
-                return "Edit Globe"
-            case .addCountry:
-                return "Add Country"
-            }
-        }
     }
     
     var body: some View {
@@ -91,7 +81,7 @@ struct ProfileView: View {
                             }
                         }
                     }
-            }
+                }
             
             ZStack(alignment: .bottom) {
                 Map(viewport: $viewport)
@@ -126,19 +116,6 @@ struct ProfileView: View {
                         Spacer()
                         
                         HStack(spacing: 16) {
-                            Button(action: {
-                                activeAction = .editGlobe
-                                actionIsFull = false
-                            }) {
-                                Text("Edit Globe")
-                                    .font(.custom(Fonts.semibold, size: 18))
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .padding(.horizontal, 22)
-                                    .padding(.vertical, 14)
-                                    .background(Colors.primaryText)
-                                    .clipShape(Capsule())
-                            }
-                            
                             Button(action: {
                                 activeAction = .addCountry
                                 actionIsFull = false
@@ -198,7 +175,7 @@ struct ProfileView: View {
                                 
                                 Button(action: {}) {
                                     Text("Edit")
-                                        .font(.custom(Fonts.semibold, size: 14))
+                                        .font(.travelDetail)
                                         .foregroundStyle(Colors.accent)
                                 }
                             }
@@ -249,14 +226,14 @@ struct ProfileView: View {
                                     }
                                 }
                                 .padding(.top, 8)
-                            }
-                            .padding(24)
                         }
-                        .scrollDisabled(cardState != .full)
-                        .safeAreaInset(edge: .bottom) {
-                            Color.clear
-                                .frame(height: 96)
-                        }
+                        .padding(24)
+                    }
+                    .scrollDisabled(cardState != .full)
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear
+                            .frame(height: 96)
+                    }
                 }
                 .clipShape(
                     UnevenRoundedRectangle(
@@ -395,12 +372,6 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 16) {
-                if action != .addCountry {
-                    Text(action.title)
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
-                }
-                
                 if action == .addCountry {
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
@@ -470,7 +441,6 @@ struct ProfileView: View {
                 }
         )
     }
-    
 }
 
 struct ProfileFriend: Identifiable {

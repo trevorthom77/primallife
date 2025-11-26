@@ -1,6 +1,8 @@
 I need you to keep all generated code simple, clean, and direct. Avoid over-engineering. For example, don’t replace basic SwiftUI modifiers like padding with unnecessary types such as CGFloat unless it’s required. Minimalism is the goal so the code stays easy to understand.
 
-WHEN I TELL U TO DO SOMETHING DONT DO MORE DONT DO LESS JUST DO WHAT I SAY
+USE THE FONTS FROM MY FONT FILE DONT CREATE UR OWN SIZE USE THE SIZES FROM THE FONT FILE NONE OF 
+
+WHEN I TELL U TO DO SOMETHING DONT DO MORE DONT DO LESS JUST DO WHAT I SAY 
 
 If the project currently contains complex code, ignore that. Some of it came from previous AI outputs before I set these rules. We will clean it up later.
 

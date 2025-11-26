@@ -9,9 +9,12 @@ import SwiftUI
 
 struct MyTripsView: View {
     @State private var tribeImageURL: URL?
+    @State private var secondTribeImageURL: URL?
     @State private var sunImageURL: URL?
+    @State private var groundingImageURL: URL?
     @State private var isShowingTrips = false
     @State private var isShowingTribeTrips = false
+    @State private var selectedTripIndex = 0
     
     var body: some View {
         NavigationStack {
@@ -59,16 +62,38 @@ struct MyTripsView: View {
                                     .foregroundStyle(Colors.accent)
                             }
                             
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
+                            TabView(selection: $selectedTripIndex) {
+                                HStack(spacing: 0) {
                                     TravelCard()
+                                    Spacer()
+                                }
+                                .tag(0)
+                                
+                                HStack(spacing: 0) {
                                     TravelCard(
                                         flag: "🇧🇸",
                                         location: "Bahamas",
                                         dates: "Mar 2–9",
                                         imageQuery: "Bahamas beach")
+                                    Spacer()
                                 }
+                                .tag(1)
                             }
+                            .frame(height: 180)
+                            .tabViewStyle(.page(indexDisplayMode: .never))
+                            .sensoryFeedback(.impact(weight: .medium), trigger: selectedTripIndex)
+                            
+                            HStack(spacing: 18) {
+                                Image("airplane")
+                                    .renderingMode(.template)
+                                    .foregroundStyle(selectedTripIndex == 0 ? Colors.accent : Colors.secondaryText)
+                                    
+                                Image("airplane")
+                                    .renderingMode(.template)
+                                    .foregroundStyle(selectedTripIndex == 1 ? Colors.accent : Colors.secondaryText)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 8)
                             
                             HStack {
                                 Text("Costa Rica Tribes")
@@ -162,7 +187,87 @@ struct MyTripsView: View {
                             .task {
                                 tribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica beach")
                             }
-                            
+
+                            HStack(spacing: 12) {
+                                AsyncImage(url: secondTribeImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 88, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Rainforest Tribe Costa Rica")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    HStack(spacing: 6) {
+                                        Text("🇨🇷")
+                                        Text("Costa Rica")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+                                }
+
+                                Spacer()
+
+                                HStack(spacing: -8) {
+                                    Image("profile1")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    Image("profile2")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    Image("profile3")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    ZStack {
+                                        Circle()
+                                            .fill(Colors.background)
+                                            .frame(width: 32, height: 32)
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+
+                                        Text("54+")
+                                            .font(.custom(Fonts.semibold, size: 12))
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+                                }
+                            }
+                            .padding(12)
+                            .frame(height: 96)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                secondTribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica jungle")
+                            }
+
                             Button(action: {
                                 isShowingTribeTrips = true
                             }) {
@@ -230,7 +335,49 @@ struct MyTripsView: View {
                             .task {
                                 sunImageURL = await UnsplashService.fetchImage(for: "sunset beach")
                             }
-                            
+
+                            HStack(spacing: 12) {
+                                AsyncImage(url: groundingImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 88, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Grounding")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    Text("Legendary")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Colors.legendary)
+                                        )
+                                }
+
+                                Spacer()
+
+                                Image("boat")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 32, height: 32)
+                            }
+                            .padding(12)
+                            .frame(height: 96)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                groundingImageURL = await UnsplashService.fetchImage(for: "forest trail")
+                            }
+
                             HStack {
                                 Text("Explorers going")
                                     .font(.travelTitle)
@@ -267,13 +414,85 @@ struct MyTripsView: View {
                                     }
                                     
                                     HStack(spacing: 8) {
+                                        Text("🇲🇽")
+                                        Text("Mexico")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                            HStack(spacing: 12) {
+                                Image("profile8")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 48, height: 48)
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("Leo")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+
+                                        Text("25")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+
+                                    HStack(spacing: 8) {
+                                        Text("🇧🇷")
+                                        Text("Brazil")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+                                }
+
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                            HStack(spacing: 12) {
+                                Image("profile9")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 48, height: 48)
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("Maya")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+
+                                        Text("31")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+
+                                    HStack(spacing: 8) {
                                         Text("🇨🇷")
                                         Text("Costa Rica")
                                             .font(.travelDetail)
                                             .foregroundStyle(Colors.secondaryText)
                                     }
                                 }
-                                
+
                                 Spacer()
                             }
                             .padding()

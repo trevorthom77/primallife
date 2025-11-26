@@ -15,6 +15,7 @@ enum Colors {
     static let primaryText = Color(hex: "#232323")
     static let secondaryText = Color(hex: "#C1d8d9")
     static let tertiaryText = Color.white
+    static let legendary = Color(hex: "#F6C243").opacity(0.6)
 }
 
 extension Color {

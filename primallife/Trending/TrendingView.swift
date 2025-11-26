@@ -9,17 +9,30 @@ import SwiftUI
 
 struct TrendingView: View {
     private let trendingSpot: (String, String) = ("Costa Rica", "🇨🇷")
+    private let alternateTrendingSpot: (String, String) = ("Bali, Indonesia", "🇮🇩")
     @State private var highUVImageURL: URL?
+    @State private var highUVSecondImageURL: URL?
     @State private var sharkImageURL: URL?
+    @State private var sharkSecondImageURL: URL?
     @State private var beachImageURL: URL?
+    @State private var beachSecondImageURL: URL?
     @State private var healthiestImageURL: URL?
+    @State private var healthiestSecondImageURL: URL?
     @State private var rareAdventureImageURL: URL?
+    @State private var rareAdventureSecondImageURL: URL?
     @State private var peopleImageURL: URL?
+    @State private var peopleSecondImageURL: URL?
     @State private var moreFemalesImageURL: URL?
+    @State private var moreFemalesSecondImageURL: URL?
     @State private var moreBoysImageURL: URL?
+    @State private var moreBoysSecondImageURL: URL?
     @State private var foodImageURL: URL?
+    @State private var foodSecondImageURL: URL?
     @State private var budgetImageURL: URL?
+    @State private var budgetSecondImageURL: URL?
     @State private var lowCrowdsImageURL: URL?
+    @State private var lowCrowdsSecondImageURL: URL?
+    @State private var selectedTrendingIndex = 0
     @State private var isShowingFilters = false
     
     var body: some View {
@@ -65,7 +78,34 @@ struct TrendingView: View {
                                     .foregroundStyle(Colors.accent)
                             }
                             
-                            TrendingCard(place: trendingSpot.0, flag: trendingSpot.1)
+                            TabView(selection: $selectedTrendingIndex) {
+                                HStack(spacing: 0) {
+                                    TrendingCard(place: trendingSpot.0, flag: trendingSpot.1)
+                                    Spacer()
+                                }
+                                .tag(0)
+                                
+                                HStack(spacing: 0) {
+                                    TrendingCard(place: alternateTrendingSpot.0, flag: alternateTrendingSpot.1)
+                                    Spacer()
+                                }
+                                .tag(1)
+                            }
+                            .frame(height: 180)
+                            .tabViewStyle(.page(indexDisplayMode: .never))
+                            .sensoryFeedback(.impact(weight: .medium), trigger: selectedTrendingIndex)
+                            
+                            HStack(spacing: 18) {
+                                Image("airplane")
+                                    .renderingMode(.template)
+                                    .foregroundStyle(selectedTrendingIndex == 0 ? Colors.accent : Colors.secondaryText)
+                                
+                                Image("airplane")
+                                    .renderingMode(.template)
+                                    .foregroundStyle(selectedTrendingIndex == 1 ? Colors.accent : Colors.secondaryText)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 8)
                             
                             HStack {
                                 Text("High UV Places")
@@ -112,6 +152,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 highUVImageURL = await UnsplashService.fetchImage(for: "Darwin Australia beach sun")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: highUVSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇴🇲")
+                                        Text("Muscat, Oman")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Strong midday sun")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                highUVSecondImageURL = await UnsplashService.fetchImage(for: "Muscat Oman beach sun")
                             }
                             
                             HStack {
@@ -160,6 +234,40 @@ struct TrendingView: View {
                             .task {
                                 sharkImageURL = await UnsplashService.fetchImage(for: "Reunion Island ocean shark")
                             }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: sharkSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇿🇦")
+                                        Text("Cape Town, South Africa")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Recent shark sightings")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                sharkSecondImageURL = await UnsplashService.fetchImage(for: "Cape Town shark beach")
+                            }
                             
                             HStack {
                                 Text("Beach Escapes")
@@ -206,6 +314,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 beachImageURL = await UnsplashService.fetchImage(for: "Tulum beach")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: beachSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇺🇸")
+                                        Text("Maui, Hawaii")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Warm Pacific water")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                beachSecondImageURL = await UnsplashService.fetchImage(for: "Maui Hawaii beach")
                             }
                             
                             HStack {
@@ -254,6 +396,40 @@ struct TrendingView: View {
                             .task {
                                 healthiestImageURL = await UnsplashService.fetchImage(for: "Okinawa Japan beach")
                             }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: healthiestSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇮🇹")
+                                        Text("Sardinia, Italy")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Blue zone villages")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                healthiestSecondImageURL = await UnsplashService.fetchImage(for: "Sardinia Italy coast")
+                            }
                             
                             HStack {
                                 Text("Highest Rarity Adventures")
@@ -300,6 +476,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 rareAdventureImageURL = await UnsplashService.fetchImage(for: "Patagonia Chile mountains")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: rareAdventureSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇳🇿")
+                                        Text("Queenstown, New Zealand")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("High alpine routes")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                rareAdventureSecondImageURL = await UnsplashService.fetchImage(for: "Queenstown New Zealand mountains")
                             }
                             
                             HStack {
@@ -348,6 +558,40 @@ struct TrendingView: View {
                             .task {
                                 peopleImageURL = await UnsplashService.fetchImage(for: "Barcelona Spain city beach")
                             }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: peopleSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇩🇪")
+                                        Text("Berlin, Germany")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Busy nightlife crowd")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                peopleSecondImageURL = await UnsplashService.fetchImage(for: "Berlin nightlife streets")
+                            }
                             
                             HStack {
                                 Text("More Females")
@@ -394,6 +638,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 moreFemalesImageURL = await UnsplashService.fetchImage(for: "Riga Latvia city")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: moreFemalesSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇱🇹")
+                                        Text("Vilnius, Lithuania")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("More female travelers")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                moreFemalesSecondImageURL = await UnsplashService.fetchImage(for: "Vilnius Lithuania old town")
                             }
                             
                             HStack {
@@ -442,6 +720,40 @@ struct TrendingView: View {
                             .task {
                                 moreBoysImageURL = await UnsplashService.fetchImage(for: "Doha Qatar skyline")
                             }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: moreBoysSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇸🇦")
+                                        Text("Riyadh, Saudi Arabia")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("More male travelers")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                moreBoysSecondImageURL = await UnsplashService.fetchImage(for: "Riyadh skyline")
+                            }
                             
                             HStack {
                                 Text("Best Food Spots")
@@ -488,6 +800,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 foodImageURL = await UnsplashService.fetchImage(for: "Bologna Italy food market")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: foodSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇯🇵")
+                                        Text("Osaka, Japan")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Street food hubs")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                foodSecondImageURL = await UnsplashService.fetchImage(for: "Osaka Japan street food")
                             }
                             
                             HStack {
@@ -536,6 +882,40 @@ struct TrendingView: View {
                             .task {
                                 budgetImageURL = await UnsplashService.fetchImage(for: "Da Nang Vietnam beach")
                             }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: budgetSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇵🇭")
+                                        Text("Cebu, Philippines")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Budget island stays")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                budgetSecondImageURL = await UnsplashService.fetchImage(for: "Cebu Philippines beach")
+                            }
                             
                             HStack {
                                 Text("Low Crowds")
@@ -582,6 +962,40 @@ struct TrendingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .task {
                                 lowCrowdsImageURL = await UnsplashService.fetchImage(for: "Faroe Islands cliffs")
+                            }
+
+                            HStack(spacing: 14) {
+                                AsyncImage(url: lowCrowdsSecondImageURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    Colors.card
+                                }
+                                .frame(width: 104, height: 84)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 8) {
+                                        Text("🇳🇴")
+                                        Text("Svalbard, Norway")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
+
+                                    Text("Quiet Arctic views")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(14)
+                            .frame(height: 112)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .task {
+                                lowCrowdsSecondImageURL = await UnsplashService.fetchImage(for: "Svalbard Arctic landscape")
                             }
                         }
                         .padding(.top, 16)

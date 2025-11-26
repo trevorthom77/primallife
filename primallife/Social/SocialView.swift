@@ -11,16 +11,81 @@ struct MessagesView: View {
     @State private var isShowingBell = false
     
     private let chats: [ChatPreview] = [
-        ChatPreview(name: "Aurora Tribe", message: "Marina meetup tonight?", time: "7:45 PM", unreadCount: 2),
-        ChatPreview(name: "Coastal Crew", message: "Waves look perfect tomorrow.", time: "6:30 PM", unreadCount: 0),
-        ChatPreview(name: "Sierra Pack", message: "Sunrise hike confirmed.", time: "5:10 PM", unreadCount: 1)
+        ChatPreview(
+            name: "Aurora Tribe",
+            unreadCount: 2,
+            messages: [
+                ChatMessage(text: "Marina meetup tonight?", time: "7:40 PM", isUser: false),
+                ChatMessage(text: "I can be there by 8.", time: "7:42 PM", isUser: true),
+                ChatMessage(text: "Perfect—bring boards?", time: "7:44 PM", isUser: false),
+                ChatMessage(text: "Already packed.", time: "7:45 PM", isUser: true)
+            ]
+        ),
+        ChatPreview(
+            name: "Coastal Crew",
+            unreadCount: 0,
+            messages: [
+                ChatMessage(text: "Waves look perfect tomorrow.", time: "6:18 PM", isUser: false),
+                ChatMessage(text: "Let’s roll at sunrise.", time: "6:21 PM", isUser: true),
+                ChatMessage(text: "Meet at the north lot?", time: "6:26 PM", isUser: false),
+                ChatMessage(text: "North lot works. I’ll bring extra wax.", time: "6:30 PM", isUser: true)
+            ]
+        ),
+        ChatPreview(
+            name: "Sierra Pack",
+            unreadCount: 1,
+            messages: [
+                ChatMessage(text: "Sunrise hike confirmed.", time: "5:02 PM", isUser: false),
+                ChatMessage(text: "Layer up—trail will be cold.", time: "5:05 PM", isUser: false),
+                ChatMessage(text: "Packing headlamps now.", time: "5:08 PM", isUser: true),
+                ChatMessage(text: "See you at the trailhead.", time: "5:10 PM", isUser: true)
+            ]
+        )
     ]
     
     private let friends: [Friend] = [
-        Friend(name: "Ava", status: "Online"),
-        Friend(name: "Maya", status: "In Costa Rica"),
-        Friend(name: "Liam", status: "Planning"),
-        Friend(name: "Noah", status: "Offline")
+        Friend(
+            name: "Ava",
+            countryFlag: "🇦🇺",
+            country: "Australia",
+            imageName: "profile1",
+            about: "Surf trips, sunrise runs, and finding hidden beaches.",
+            tripPlans: [
+                TripPlan(title: "Bali Surf", location: "Bali", flag: "🇮🇩", dates: "May 12–18", imageQuery: "Bali beach"),
+                TripPlan(title: "Noosa Run", location: "Noosa", flag: "🇦🇺", dates: "Jun 4–6", imageQuery: "Noosa beach")
+            ]
+        ),
+        Friend(
+            name: "Maya",
+            countryFlag: "🇨🇷",
+            country: "Costa Rica",
+            imageName: "profile2",
+            about: "Living between jungle trails and ocean breaks.",
+            tripPlans: [
+                TripPlan(title: "Santa Teresa", location: "Santa Teresa", flag: "🇨🇷", dates: "Apr 22–25", imageQuery: "Santa Teresa beach")
+            ]
+        ),
+        Friend(
+            name: "Liam",
+            countryFlag: "🇮🇪",
+            country: "Ireland",
+            imageName: "profile3",
+            about: "Climbing, cold plunges, and slow travel.",
+            tripPlans: [
+                TripPlan(title: "Swiss Alps", location: "Swiss Alps", flag: "🇨🇭", dates: "Jul 8–15", imageQuery: "Swiss Alps mountains")
+            ]
+        ),
+        Friend(
+            name: "Noah",
+            countryFlag: "🇺🇸",
+            country: "United States",
+            imageName: "profile4",
+            about: "Road trips, camp coffee, and desert nights.",
+            tripPlans: [
+                TripPlan(title: "Zion", location: "Zion", flag: "🇺🇸", dates: "May 1–3", imageQuery: "Zion cliffs"),
+                TripPlan(title: "Big Sur", location: "Big Sur", flag: "🇺🇸", dates: "Jun 18–20", imageQuery: "Big Sur coast")
+            ]
+        )
     ]
 
     private let plans: [Plan] = [
@@ -47,7 +112,12 @@ struct MessagesView: View {
                                 
                                 VStack(spacing: 12) {
                                     ForEach(chats) { chat in
-                                        chatRow(chat)
+                                        NavigationLink {
+                                            ChatDetailView(chat: chat)
+                                        } label: {
+                                            chatRow(chat)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
@@ -71,7 +141,12 @@ struct MessagesView: View {
                                 
                                 VStack(spacing: 12) {
                                     ForEach(friends) { friend in
-                                        friendRow(friend)
+                                        NavigationLink {
+                                            OthersProfileView(friend: friend)
+                                        } label: {
+                                            friendRow(friend)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
@@ -114,6 +189,15 @@ struct MessagesView: View {
                         .scaledToFit()
                         .frame(width: 24, height: 24)
                         .foregroundStyle(Colors.primaryText)
+                }
+                .overlay(alignment: .topTrailing) {
+                    Text("3")
+                        .font(.custom(Fonts.semibold, size: 12))
+                        .foregroundStyle(Colors.tertiaryText)
+                        .frame(width: 20, height: 20)
+                        .background(Colors.accent)
+                        .clipShape(Circle())
+                        .padding(2)
                 }
             }
             .buttonStyle(.plain)
@@ -196,9 +280,9 @@ struct MessagesView: View {
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
                 
-                Text(friend.status)
-                    .font(.custom(Fonts.regular, size: 14))
-                    .foregroundStyle(Colors.secondaryText)
+            Text("\(friend.countryFlag) \(friend.country)")
+                .font(.custom(Fonts.regular, size: 14))
+                .foregroundStyle(Colors.secondaryText)
             }
             
             Spacer()
@@ -209,24 +293,122 @@ struct MessagesView: View {
     }
 }
 
-private struct ChatPreview: Identifiable {
-    let id = UUID()
-    let name: String
-    let message: String
-    let time: String
-    let unreadCount: Int
+struct ChatDetailView: View {
+    let chat: ChatPreview
+    @State private var draft = ""
+    
+    var body: some View {
+        ZStack {
+            Colors.background.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    ForEach(chat.messages) { message in
+                        messageBubble(message)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+            }
+            .scrollIndicators(.hidden)
+            .safeAreaInset(edge: .bottom) {
+                typeBar
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .padding(.bottom, 70)
+                    .background(Colors.background)
+            }
+        }
+        .navigationTitle(chat.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private var typeBar: some View {
+        HStack(spacing: 12) {
+            TextField("Message", text: $draft, axis: .vertical)
+                .font(.custom(Fonts.regular, size: 16))
+                .padding(16)
+                .background(Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            Button(action: {}) {
+                Text("Send")
+                    .font(.custom(Fonts.semibold, size: 16))
+                    .foregroundStyle(Colors.tertiaryText)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .background(Colors.accent)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
+    private func messageBubble(_ message: ChatMessage) -> some View {
+        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 6) {
+            Text(message.text)
+                .font(.custom(Fonts.regular, size: 16))
+                .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
+                .padding(12)
+                .background(message.isUser ? Colors.accent : Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            
+            Text(message.time)
+                .font(.custom(Fonts.regular, size: 12))
+                .foregroundStyle(Colors.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+    }
 }
 
-private struct Friend: Identifiable {
+struct ChatPreview: Identifiable {
     let id = UUID()
     let name: String
-    let status: String
+    let unreadCount: Int
+    let messages: [ChatMessage]
+    let message: String
+    let time: String
+    
+    init(name: String, unreadCount: Int, messages: [ChatMessage]) {
+        self.name = name
+        self.unreadCount = unreadCount
+        self.messages = messages
+        let last = messages.last
+        self.message = last?.text ?? ""
+        self.time = last?.time ?? ""
+    }
+}
+
+struct Friend: Identifiable {
+    let id = UUID()
+    let name: String
+    let countryFlag: String
+    let country: String
+    let imageName: String
+    let about: String
+    let tripPlans: [TripPlan]
+}
+
+struct TripPlan: Identifiable {
+    let id = UUID()
+    let title: String
+    let location: String
+    let flag: String
+    let dates: String
+    let imageQuery: String
 }
 
 private struct Plan: Identifiable {
     let id = UUID()
     let title: String
     let detail: String
+}
+
+struct ChatMessage: Identifiable {
+    let id = UUID()
+    let text: String
+    let time: String
+    let isUser: Bool
 }
 
 #Preview {

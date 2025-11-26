@@ -13,16 +13,13 @@ struct ProfileView: View {
     let name: String
     let homeCountry: String
     let countryFlag: String
-    let totalTribesJoined: Int
-    let totalTrips: Int
-    let countriesVisited: Int
     let tribes: [ProfileTribe]
     let friends: [ProfileFriend]
     
     @Environment(\.dismiss) private var dismiss
     @State private var viewport: Viewport = .camera(
         center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-        zoom: 1,
+        zoom: 0,
         bearing: 0,
         pitch: 0
     )
@@ -102,13 +99,6 @@ struct ProfileView: View {
                             )!
                         )
                     )
-                    .overlay(alignment: .topTrailing) {
-                        Text("8%")
-                            .font(.custom(Fonts.semibold, size: 96))
-                            .foregroundStyle(Colors.tertiaryText)
-                            .padding(.trailing, 24)
-                            .padding(.top, 88)
-                    }
                     .ignoresSafeArea()
                 
                 if cardState == .peek {
@@ -180,52 +170,43 @@ struct ProfileView: View {
                                 }
                             }
                             
-                            HStack(spacing: 16) {
-                                statView(value: totalTribesJoined, label: "Tribes")
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                statView(value: totalTrips, label: "Trips")
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                statView(value: countriesVisited, label: "Countries")
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Tribes")
+                                        .font(.custom(Fonts.semibold, size: 18))
+                                        .foregroundStyle(Colors.primaryText)
+                                    
+                                    Spacer()
+                                    
+                                    Button("See All") { }
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
+                                }
+                                
+                                ForEach(tribes) { tribe in
+                                    tribeRow(tribe)
+                                }
                             }
-                                
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack {
-                                        Text("Tribes")
-                                            .font(.custom(Fonts.semibold, size: 18))
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        Spacer()
-                                        
-                                        Button("See All") { }
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.accent)
-                                    }
+                            .padding(.top, 8)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Friends")
+                                        .font(.custom(Fonts.semibold, size: 18))
+                                        .foregroundStyle(Colors.primaryText)
                                     
-                                    ForEach(tribes) { tribe in
-                                        tribeRow(tribe)
-                                    }
-                                }
-                                .padding(.top, 8)
-                                
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack {
-                                        Text("Friends")
-                                            .font(.custom(Fonts.semibold, size: 18))
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        Spacer()
-                                        
-                                        Button("See All") { }
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.accent)
-                                    }
+                                    Spacer()
                                     
-                                    ForEach(friends) { friend in
-                                        friendRow(friend)
-                                    }
+                                    Button("See All") { }
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
                                 }
-                                .padding(.top, 8)
+                                
+                                ForEach(friends) { friend in
+                                    friendRow(friend)
+                                }
+                            }
+                            .padding(.top, 8)
                         }
                         .padding(24)
                     }
@@ -276,17 +257,9 @@ struct ProfileView: View {
     }
     
     private var verifiedBadge: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 12, weight: .semibold))
-            Text("Verified")
-                .font(.custom(Fonts.semibold, size: 12))
-        }
-        .foregroundStyle(Colors.tertiaryText)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Colors.accent)
-        .clipShape(Capsule())
+        Image(systemName: "checkmark.seal.fill")
+            .font(.system(size: 22, weight: .semibold))
+            .foregroundStyle(Colors.accent)
     }
     
     private func tribeRow(_ tribe: ProfileTribe) -> some View {
@@ -347,18 +320,6 @@ struct ProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
     
-    private func statView(value: Int, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("\(value)")
-                .font(.custom(Fonts.semibold, size: 20))
-                .foregroundStyle(Colors.primaryText)
-            
-            Text(label)
-                .font(.custom(Fonts.regular, size: 14))
-                .foregroundStyle(Colors.secondaryText)
-        }
-    }
-    
     private func actionOverlay(_ action: ProfileAction, fullHeight: CGFloat) -> some View {
         let targetHeight = actionIsFull ? fullHeight : 320
         return UnevenRoundedRectangle(
@@ -391,7 +352,7 @@ struct ProfileView: View {
                     }
                     .padding(.vertical, 16)
                     .padding(.horizontal, 16)
-                    .background(Colors.secondaryText)
+                    .background(Colors.accent.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     
                     ScrollView(.vertical, showsIndicators: false) {
@@ -462,9 +423,6 @@ struct ProfileTribe: Identifiable {
         name: "Mia",
         homeCountry: "Australia",
         countryFlag: "🇦🇺",
-        totalTribesJoined: 5,
-        totalTrips: 12,
-        countriesVisited: 8,
         tribes: [
             ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
             ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")

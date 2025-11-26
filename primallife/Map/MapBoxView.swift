@@ -358,9 +358,6 @@ struct MapBoxView: View {
                     name: "Mia",
                     homeCountry: "Australia",
                     countryFlag: "🇦🇺",
-                    totalTribesJoined: 5,
-                    totalTrips: 12,
-                    countriesVisited: 8,
                     tribes: profileTribes,
                     friends: profileFriends
                 )
@@ -559,7 +556,7 @@ private struct MapSearchSheet: View {
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 16)
-            .background(Colors.secondaryText)
+            .background(Colors.accent.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             
             Text("Results")
@@ -573,14 +570,22 @@ private struct MapSearchSheet: View {
                         Button {
                             onPlaceSelected(result)
                         } label: {
-                            Text(result.displayName)
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 28)
-                                .padding(.horizontal, 24)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(result.title)
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                
+                                if !result.subtitle.isEmpty {
+                                    Text(result.subtitle)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 28)
+                            .padding(.horizontal, 24)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
@@ -666,6 +671,17 @@ private struct MapboxPlace: Identifiable, Decodable {
         flagEmoji.isEmpty ? placeName : "\(flagEmoji) \(placeName)"
     }
     
+    var title: String {
+        let city = placeComponents.first ?? placeName
+        return flagEmoji.isEmpty ? city : "\(flagEmoji) \(city)"
+    }
+    
+    var subtitle: String {
+        let remaining = placeComponents.dropFirst()
+        guard !remaining.isEmpty else { return "" }
+        return remaining.joined(separator: ", ")
+    }
+    
     var primaryName: String {
         placeName.split(separator: ",").first.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) } ?? placeName
     }
@@ -678,6 +694,12 @@ private struct MapboxPlace: Identifiable, Decodable {
     var countryDisplay: String {
         guard !countryName.isEmpty else { return flagEmoji }
         return flagEmoji.isEmpty ? countryName : "\(flagEmoji) \(countryName)"
+    }
+    
+    private var placeComponents: [String] {
+        placeName
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
     }
     
     enum CodingKeys: String, CodingKey {

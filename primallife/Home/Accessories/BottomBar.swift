@@ -50,6 +50,17 @@ struct BottomBar: View {
                 .scaledToFit()
                 .frame(width: size, height: size)
                 .foregroundColor(selectedTab == name ? Colors.accent : Colors.secondaryText)
+                .frame(width: 44, height: 44)
+                .overlay(alignment: .topTrailing) {
+                    if name == "message" {
+                        Text("3")
+                            .font(.custom(Fonts.semibold, size: 12))
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(width: 20, height: 20)
+                            .background(Colors.accent)
+                            .clipShape(Circle())
+                    }
+                }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: feedbackToggle)
         .buttonStyle(.plain)

@@ -6,402 +6,284 @@
 //
 
 import SwiftUI
-import CoreLocation
-import MapboxMaps
 
 struct ProfileView: View {
     let name: String
     let homeCountry: String
     let countryFlag: String
+    let tripsCount: Int
+    let countriesCount: Int
+    let worldPercent: Int
+    let trips: [ProfileTrip]
+    let countries: [ProfileCountry]
     let tribes: [ProfileTribe]
     let friends: [ProfileFriend]
     
     @Environment(\.dismiss) private var dismiss
-    @State private var viewport: Viewport = .camera(
-        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-        zoom: 0,
-        bearing: 0,
-        pitch: 0
-    )
-    @State private var cardState: CardState = .mid
-    @State private var activeAction: ProfileAction?
-    @State private var actionIsFull = false
-    @State private var countrySearchText = ""
     
-    private enum CardState {
-        case peek
-        case mid
-        case full
-    }
-    
-    private enum ProfileAction {
-        case addCountry
-    }
+    private let avatarSize: CGFloat = 140
     
     var body: some View {
-        GeometryReader { proxy in
-            let peekHeight = proxy.size.height * 0.2
-            let midHeight = proxy.size.height * 0.6
-            let fullHeight = proxy.size.height
-            let backButtonTopPadding = max(0, 58 - proxy.safeAreaInsets.top)
-            let currentHeight: CGFloat = {
-                switch cardState {
-                case .peek:
-                    return peekHeight
-                case .mid:
-                    return midHeight
-                case .full:
-                    return fullHeight
-                }
-            }()
-            let avatarSize: CGFloat = 120
-            let dragGesture = DragGesture()
-                .onEnded { value in
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                        if value.translation.height < -30 {
-                            switch cardState {
-                            case .peek:
-                                cardState = .mid
-                            case .mid:
-                                cardState = .full
-                            case .full:
-                                cardState = .full
-                            }
-                        } else if value.translation.height > 30 {
-                            switch cardState {
-                            case .full:
-                                cardState = .mid
-                            case .mid:
-                                cardState = .peek
-                            case .peek:
-                                cardState = .peek
-                            }
-                        }
-                    }
-                }
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
             
-            ZStack(alignment: .bottom) {
-                Map(viewport: $viewport)
-                    .ornamentOptions(
-                        OrnamentOptions(
-                            scaleBar: ScaleBarViewOptions(
-                                position: .topLeading,
-                                margins: .zero,
-                                visibility: .hidden,
-                                useMetricUnits: true
-                            )
-                        )
-                    )
-                    .mapStyle(
-                        MapStyle(
-                            uri: StyleURI(
-                                rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
-                            )!
-                        )
-                    )
-                    .ignoresSafeArea()
-                
-                if cardState == .peek {
-                    VStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    HStack {
+                        BackButton {
+                            dismiss()
+                        }
+                        
                         Spacer()
                         
-                        HStack(spacing: 16) {
-                            Button(action: {
-                                activeAction = .addCountry
-                                actionIsFull = false
-                            }) {
-                                Text("Add Country")
-                                    .font(.custom(Fonts.semibold, size: 18))
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .padding(.horizontal, 22)
-                                    .padding(.vertical, 14)
-                                    .background(Colors.accent)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, currentHeight + 32)
+                        Button("Edit") { }
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.accent)
                     }
-                }
-                
-                ZStack(alignment: .topLeading) {
-                    UnevenRoundedRectangle(
-                        cornerRadii: RectangleCornerRadii(
-                            topLeading: 32,
-                            topTrailing: 32
-                        )
-                    )
-                    .fill(Colors.card)
                     
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 24) {
-                            HStack(alignment: .center, spacing: 16) {
-                                Image("profile1")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: avatarSize, height: avatarSize)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 4)
-                                    }
-                                
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack(spacing: 8) {
-                                        Text(name)
-                                            .font(.custom(Fonts.semibold, size: 22))
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        verifiedBadge
-                                    }
-                                    
-                                    Text("\(countryFlag) \(homeCountry)")
-                                        .font(.custom(Fonts.regular, size: 16))
-                                        .foregroundStyle(Colors.secondaryText)
-                                }
-                                
-                                Spacer()
-                                
-                                Button(action: {}) {
-                                    Text("Edit")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
-                                }
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Text("Tribes")
-                                        .font(.custom(Fonts.semibold, size: 18))
-                                        .foregroundStyle(Colors.primaryText)
-                                    
-                                    Spacer()
-                                    
-                                    Button("See All") { }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
-                                }
-                                
-                                ForEach(tribes) { tribe in
-                                    tribeRow(tribe)
-                                }
-                            }
-                            .padding(.top, 8)
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Text("Friends")
-                                        .font(.custom(Fonts.semibold, size: 18))
-                                        .foregroundStyle(Colors.primaryText)
-                                    
-                                    Spacer()
-                                    
-                                    Button("See All") { }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
-                                }
-                                
-                                ForEach(friends) { friend in
-                                    friendRow(friend)
-                                }
-                            }
-                            .padding(.top, 8)
+                    Image("profile1")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: avatarSize, height: avatarSize)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 4)
                         }
-                        .padding(24)
-                    }
-                    .scrollDisabled(cardState != .full)
-                    .safeAreaInset(edge: .bottom) {
-                        Color.clear
-                            .frame(height: 96)
-                    }
-                }
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        cornerRadii: RectangleCornerRadii(
-                            topLeading: 32,
-                            topTrailing: 32
-                        )
-                    )
-                )
-                .frame(height: currentHeight)
-                .frame(maxWidth: .infinity, alignment: .bottom)
-                .ignoresSafeArea(edges: .bottom)
-                .contentShape(Rectangle())
-                .simultaneousGesture(dragGesture)
-            }
-            .overlay(alignment: .topLeading) {
-                BackButton {
-                    dismiss()
-                }
-                .padding(.leading)
-                .padding(.top, backButtonTopPadding)
-            }
-            .overlay(alignment: .bottom) {
-                if let action = activeAction {
-                    ZStack(alignment: .bottom) {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                activeAction = nil
-                            }
-                        
-                        actionOverlay(action, fullHeight: proxy.size.height)
-                    }
-                }
-            }
-        }
-        .navigationBarBackButtonHidden()
-    }
-    
-    private var verifiedBadge: some View {
-        Image(systemName: "checkmark.seal.fill")
-            .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(Colors.accent)
-    }
-    
-    private func tribeRow(_ tribe: ProfileTribe) -> some View {
-        HStack(spacing: 12) {
-            Image(tribe.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 44, height: 44)
-                .clipShape(Circle())
-                .overlay {
-                    Circle()
-                        .stroke(Colors.card, lineWidth: 3)
-                }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(tribe.name)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.primaryText)
-                
-                Text(tribe.status)
-                    .font(.custom(Fonts.regular, size: 14))
-                    .foregroundStyle(Colors.secondaryText)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(Colors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-    
-    private func friendRow(_ friend: ProfileFriend) -> some View {
-        HStack(spacing: 12) {
-            Image(friend.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 44, height: 44)
-                .clipShape(Circle())
-                .overlay {
-                    Circle()
-                        .stroke(Colors.card, lineWidth: 3)
-                }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(friend.name)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.primaryText)
-                
-                Text(friend.status)
-                    .font(.custom(Fonts.regular, size: 14))
-                    .foregroundStyle(Colors.secondaryText)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(Colors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-    
-    private func actionOverlay(_ action: ProfileAction, fullHeight: CGFloat) -> some View {
-        let targetHeight = actionIsFull ? fullHeight : 320
-        return UnevenRoundedRectangle(
-            cornerRadii: RectangleCornerRadii(
-                topLeading: 32,
-                topTrailing: 32
-            )
-        )
-        .fill(Colors.background)
-        .frame(height: targetHeight)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 16) {
-                if action == .addCountry {
+                    
                     HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
+                        Text(name)
+                            .font(.customTitle)
                             .foregroundStyle(Colors.primaryText)
                         
-                        ZStack(alignment: .leading) {
-                            if countrySearchText.isEmpty {
-                                Text("Search")
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
-                            }
-                            
-                            TextField("", text: $countrySearchText)
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
-                        }
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Colors.accent)
                     }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 16)
-                    .background(Colors.accent.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     
-                    ScrollView(.vertical, showsIndicators: false) {
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            ForEach(
-                                CountryDatabase.all.filter { country in
-                                    countrySearchText.isEmpty ? true : country.name.lowercased().contains(countrySearchText.lowercased())
+                    Text("\(countryFlag) \(homeCountry)")
+                        .font(.custom(Fonts.regular, size: 16))
+                        .foregroundStyle(Colors.secondaryText)
+                    
+                    HStack(spacing: 12) {
+                        counterCard(title: "Trips", value: "\(tripsCount)")
+                        counterCard(title: "Countries", value: "\(countriesCount)")
+                        counterCard(title: "World", value: "\(worldPercent)%")
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 12) {
+                            Text("Past Trips")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+
+                            Spacer()
+
+                            Button("See All") { }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
+
+                        VStack(spacing: 12) {
+                            let displayedTrips = Array(trips.prefix(2))
+
+                            ForEach(displayedTrips) { trip in
+                                TravelCard(
+                                    flag: trip.flag,
+                                    location: trip.location,
+                                    dates: trip.dates,
+                                    imageQuery: trip.imageQuery,
+                                    showsParticipants: false
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: 180)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 12) {
+                            Text("Countries")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+
+                            Spacer()
+
+                            NavigationLink {
+                                TravelStatsView()
+                            } label: {
+                                Text("See More")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
+                            }
+                        }
+
+                        VStack(spacing: 12) {
+                            let displayedCountries = Array(countries.prefix(2))
+
+                            ForEach(displayedCountries) { country in
+                                TravelCard(
+                                    flag: country.flag,
+                                    location: country.name,
+                                    dates: country.note,
+                                    imageQuery: country.imageQuery,
+                                    showsParticipants: false
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: 180)
+                            }
+
+                            Button(action: { }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    
+                                    Text("Add Country")
+                                        .font(.travelDetail)
                                 }
-                            ) { country in
-                                Text("\(country.flag) \(country.name)")
-                                    .font(.custom(Fonts.regular, size: 16))
-                                    .foregroundStyle(Colors.primaryText)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 16)
-                                    .padding(.horizontal, 16)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .foregroundStyle(Colors.tertiaryText)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Colors.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
                         }
-                        .padding(.bottom, 24)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Tribes")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+                            
+                            Spacer()
+                            
+                            Button("See All") { }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
+                        
+                        VStack(spacing: 10) {
+                            ForEach(tribes) { tribe in
+                                tribeRow(tribe)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Friends")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+                            
+                            Spacer()
+                            
+                            Button("See All") { }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
+                        
+                        VStack(spacing: 10) {
+                            ForEach(friends) { friend in
+                                friendRow(friend)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.horizontal, 24)
-            .padding(.top, 28)
+            .scrollIndicators(.hidden)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: 96)
+            }
         }
-        .ignoresSafeArea(edges: .bottom)
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    if value.translation.height > 60 {
-                        if actionIsFull {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                actionIsFull = false
-                            }
-                        } else {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                activeAction = nil
-                            }
-                        }
-                    } else if value.translation.height < -60 {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                            actionIsFull = true
-                        }
-                    }
-                }
-        )
+        .navigationBarBackButtonHidden(true)
     }
+}
+
+private func tribeRow(_ tribe: ProfileTribe) -> some View {
+    HStack(spacing: 12) {
+        Image(tribe.imageName)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: 3)
+            }
+        
+        VStack(alignment: .leading, spacing: 4) {
+            Text(tribe.name)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+            
+            Text(tribe.status)
+                .font(.custom(Fonts.regular, size: 14))
+                .foregroundStyle(Colors.secondaryText)
+        }
+        
+        Spacer()
+    }
+    .padding()
+    .background(Colors.card)
+    .clipShape(RoundedRectangle(cornerRadius: 16))
+}
+
+private func counterCard(title: String, value: String) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+        Text(value)
+            .font(.travelTitle)
+            .foregroundStyle(Colors.primaryText)
+        
+        Text(title)
+            .font(.custom(Fonts.regular, size: 14))
+            .foregroundStyle(Colors.secondaryText)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding()
+    .background(Colors.card)
+    .clipShape(RoundedRectangle(cornerRadius: 16))
+}
+
+private func friendRow(_ friend: ProfileFriend) -> some View {
+    HStack(spacing: 12) {
+        Image(friend.imageName)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: 3)
+            }
+        
+        VStack(alignment: .leading, spacing: 4) {
+            Text(friend.name)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+            
+            Text(friend.status)
+                .font(.custom(Fonts.regular, size: 14))
+                .foregroundStyle(Colors.secondaryText)
+        }
+        
+        Spacer()
+    }
+    .padding()
+    .background(Colors.card)
+    .clipShape(RoundedRectangle(cornerRadius: 16))
 }
 
 struct ProfileFriend: Identifiable {
@@ -418,11 +300,39 @@ struct ProfileTribe: Identifiable {
     let status: String
 }
 
+struct ProfileCountry: Identifiable {
+    let id = UUID()
+    let flag: String
+    let name: String
+    let note: String
+    let imageQuery: String
+}
+
+struct ProfileTrip: Identifiable {
+    let id = UUID()
+    let flag: String
+    let location: String
+    let dates: String
+    let imageQuery: String
+}
+
 #Preview {
     ProfileView(
         name: "Mia",
         homeCountry: "Australia",
         countryFlag: "🇦🇺",
+        tripsCount: 14,
+        countriesCount: 9,
+        worldPercent: 8,
+        trips: [
+            ProfileTrip(flag: "🇮🇩", location: "Bali", dates: "May 12–18", imageQuery: "Bali beach"),
+            ProfileTrip(flag: "🇺🇸", location: "Big Sur", dates: "Jun 18–20", imageQuery: "Big Sur coast"),
+            ProfileTrip(flag: "🇨🇭", location: "Swiss Alps", dates: "Jul 8–15", imageQuery: "Swiss Alps mountains")
+        ],
+        countries: [
+            ProfileCountry(flag: "🇯🇵", name: "Japan", note: "May 12–18", imageQuery: "Japan skyline"),
+            ProfileCountry(flag: "🇮🇹", name: "Italy", note: "Jun 18–20", imageQuery: "Italy coast")
+        ],
         tribes: [
             ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
             ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")

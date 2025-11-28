@@ -108,162 +108,184 @@ struct MyTripsView: View {
                             }
                             .padding(.top, 16)
                             
-                            HStack(spacing: 12) {
-                                AsyncImage(url: tribeImageURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    Colors.card
-                                }
-                                .frame(width: 88, height: 72)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Party Tonight Costa Rica")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-                                    
-                                    HStack(spacing: 6) {
-                                        Text("🇨🇷")
-                                        Text("Costa Rica")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
+                            NavigationLink {
+                                TribesSocialView(
+                                    imageURL: tribeImageURL,
+                                    title: "Party Tonight Costa Rica",
+                                    location: "Costa Rica",
+                                    flag: "🇨🇷",
+                                    date: "Dec 5–9, 2025"
+                                )
+                            } label: {
+                                HStack(spacing: 12) {
+                                    AsyncImage(url: tribeImageURL) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } placeholder: {
+                                        Colors.card
                                     }
-                                }
-                                
-                                Spacer()
-                                
-                                HStack(spacing: -8) {
-                                    Image("profile1")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
+                                    .frame(width: 88, height: 72)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                     
-                                    Image("profile2")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Party Tonight Costa Rica")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                        
+                                        HStack(spacing: 6) {
+                                            Text("🇨🇷")
+                                            Text("Costa Rica")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
                                         }
+                                    }
                                     
-                                    Image("profile3")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
+                                    Spacer()
                                     
-                                    ZStack {
-                                        Circle()
-                                            .fill(Colors.background)
+                                    HStack(spacing: -8) {
+                                        Image("profile1")
+                                            .resizable()
+                                            .scaledToFill()
                                             .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
                                             .overlay {
                                                 Circle()
                                                     .stroke(Colors.card, lineWidth: 3)
                                             }
                                         
-                                        Text("67+")
-                                            .font(.custom(Fonts.semibold, size: 12))
-                                            .foregroundStyle(Colors.primaryText)
+                                        Image("profile2")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+                                        
+                                        Image("profile3")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+                                        
+                                        ZStack {
+                                            Circle()
+                                                .fill(Colors.background)
+                                                .frame(width: 32, height: 32)
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
+                                            
+                                            Text("67+")
+                                                .font(.custom(Fonts.semibold, size: 12))
+                                                .foregroundStyle(Colors.primaryText)
+                                        }
                                     }
                                 }
+                                .padding(12)
+                                .frame(height: 96)
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .padding(12)
-                            .frame(height: 96)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                             .task {
                                 tribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica beach")
                             }
 
-                            HStack(spacing: 12) {
-                                AsyncImage(url: secondTribeImageURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    Colors.card
-                                }
-                                .frame(width: 88, height: 72)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Rainforest Tribe Costa Rica")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    HStack(spacing: 6) {
-                                        Text("🇨🇷")
-                                        Text("Costa Rica")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
+                            NavigationLink {
+                                TribesSocialView(
+                                    imageURL: secondTribeImageURL,
+                                    title: "Rainforest Tribe Costa Rica",
+                                    location: "Costa Rica",
+                                    flag: "🇨🇷",
+                                    date: "Dec 5–9, 2025"
+                                )
+                            } label: {
+                                HStack(spacing: 12) {
+                                    AsyncImage(url: secondTribeImageURL) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } placeholder: {
+                                        Colors.card
                                     }
-                                }
+                                    .frame(width: 88, height: 72)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                                Spacer()
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Rainforest Tribe Costa Rica")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
 
-                                HStack(spacing: -8) {
-                                    Image("profile1")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
+                                        HStack(spacing: 6) {
+                                            Text("🇨🇷")
+                                            Text("Costa Rica")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
                                         }
+                                    }
 
-                                    Image("profile2")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
+                                    Spacer()
 
-                                    Image("profile3")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 32, height: 32)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-
-                                    ZStack {
-                                        Circle()
-                                            .fill(Colors.background)
+                                    HStack(spacing: -8) {
+                                        Image("profile1")
+                                            .resizable()
+                                            .scaledToFill()
                                             .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
                                             .overlay {
                                                 Circle()
                                                     .stroke(Colors.card, lineWidth: 3)
                                             }
 
-                                        Text("54+")
-                                            .font(.custom(Fonts.semibold, size: 12))
-                                            .foregroundStyle(Colors.primaryText)
+                                        Image("profile2")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+
+                                        Image("profile3")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+
+                                        ZStack {
+                                            Circle()
+                                                .fill(Colors.background)
+                                                .frame(width: 32, height: 32)
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
+
+                                            Text("54+")
+                                                .font(.custom(Fonts.semibold, size: 12))
+                                                .foregroundStyle(Colors.primaryText)
+                                        }
                                     }
                                 }
+                                .padding(12)
+                                .frame(height: 96)
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .padding(12)
-                            .frame(height: 96)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                             .task {
                                 secondTribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica jungle")
                             }

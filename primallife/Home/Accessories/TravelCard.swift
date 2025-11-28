@@ -13,6 +13,7 @@ struct TravelCard: View {
     var location: String = "Costa Rica"
     var dates: String = "Jan 12–20"
     var imageQuery: String = "Hawaii"
+    var showsParticipants: Bool = true
     
     var body: some View {
         ZStack {
@@ -49,63 +50,65 @@ struct TravelCard: View {
             .padding(.horizontal, 16)
         }
         .overlay(alignment: .bottomLeading) {
-            HStack(spacing: -8) {
-                Image("profile4")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Colors.card, lineWidth: 3)
-                    }
-                
-                Image("profile5")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Colors.card, lineWidth: 3)
-                    }
-                
-                Image("profile6")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Colors.card, lineWidth: 3)
-                    }
-                
-                Image("profile9")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Colors.card, lineWidth: 3)
-                    }
-                
-                ZStack {
-                    Circle()
-                        .fill(Colors.background)
+            if showsParticipants {
+                HStack(spacing: -8) {
+                    Image("profile4")
+                        .resizable()
+                        .scaledToFill()
                         .frame(width: 36, height: 36)
+                        .clipShape(Circle())
                         .overlay {
                             Circle()
                                 .stroke(Colors.card, lineWidth: 3)
                         }
                     
-                    Text("67+")
-                        .font(.custom(Fonts.semibold, size: 12))
-                        .foregroundStyle(Colors.primaryText)
+                    Image("profile5")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+                    
+                    Image("profile6")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+                    
+                    Image("profile9")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+                    
+                    ZStack {
+                        Circle()
+                            .fill(Colors.background)
+                            .frame(width: 36, height: 36)
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+                        
+                        Text("67+")
+                            .font(.custom(Fonts.semibold, size: 12))
+                            .foregroundStyle(Colors.primaryText)
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
         }
         .task {
             imageURL = await UnsplashService.fetchImage(for: imageQuery)

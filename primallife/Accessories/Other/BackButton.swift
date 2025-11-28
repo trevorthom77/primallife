@@ -13,6 +13,7 @@ struct BackButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Colors.primaryText)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)

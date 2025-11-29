@@ -37,9 +37,26 @@ struct ProfileView: View {
                         
                         Spacer()
                         
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(Colors.primaryText)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        }
+                    }
+
+                    HStack {
+                        Spacer()
+
                         Button("Edit") { }
                             .font(.travelDetail)
                             .foregroundStyle(Colors.accent)
+                            .padding(.horizontal, 16)
                     }
                     
                     Image("profile1")
@@ -94,10 +111,10 @@ struct ProfileView: View {
                                     location: trip.location,
                                     dates: trip.dates,
                                     imageQuery: trip.imageQuery,
-                                    showsParticipants: false
+                                    showsParticipants: false,
+                                    height: 150
                                 )
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .frame(height: 180)
                             }
                         }
                     }
@@ -130,10 +147,10 @@ struct ProfileView: View {
                                     location: country.name,
                                     dates: country.note,
                                     imageQuery: country.imageQuery,
-                                    showsParticipants: false
+                                    showsParticipants: false,
+                                    height: 150
                                 )
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .frame(height: 180)
                             }
 
                             Button(action: { }) {

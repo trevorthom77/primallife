@@ -12,7 +12,7 @@ struct TripsView: View {
     @State private var searchResults: [MapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
-    private let searchColor = Colors.primaryText
+    private let searchColor = Colors.tertiaryText
     
     private var isAddTripEnabled: Bool {
         !destination.isEmpty && hasCheckInDate && hasReturnDate && returnDate >= checkInDate
@@ -52,7 +52,7 @@ struct TripsView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "magnifyingglass")
-                                        .foregroundStyle(Colors.primaryText)
+                                        .foregroundStyle(Colors.secondaryText)
                                     
                                     Text(destination.isEmpty ? "Search" : destination)
                                         .font(.travelBody)
@@ -63,7 +63,7 @@ struct TripsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, 16)
                                 .padding(.horizontal, 16)
-                                .background(Colors.accent.opacity(0.1))
+                                .background(Colors.secondaryText.opacity(0.3))
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
                             .buttonStyle(.plain)
@@ -85,13 +85,12 @@ struct TripsView: View {
                                     activeDatePicker = .checkIn
                                 } label: {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(Colors.accent.opacity(0.1))
+                                        .fill(Colors.accent)
                                         .frame(height: 48)
-                                        .overlay(alignment: .leading) {
+                                        .overlay(alignment: .center) {
                                             Text(hasCheckInDate ? formattedDate(checkInDate) : "Check in Date")
-                                                .font(.travelBody)
+                                                .font(.custom(Fonts.semibold, size: 20))
                                                 .foregroundStyle(searchColor)
-                                                .padding(.leading, 12)
                                         }
                                         .contentShape(RoundedRectangle(cornerRadius: 10))
                                 }
@@ -101,13 +100,12 @@ struct TripsView: View {
                                     activeDatePicker = .returnDate
                                 } label: {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(Colors.accent.opacity(0.1))
+                                        .fill(Colors.accent)
                                         .frame(height: 48)
-                                        .overlay(alignment: .leading) {
+                                        .overlay(alignment: .center) {
                                             Text(hasReturnDate ? formattedDate(returnDate) : "Return Date")
-                                                .font(.travelBody)
+                                                .font(.custom(Fonts.semibold, size: 20))
                                                 .foregroundStyle(searchColor)
-                                                .padding(.leading, 12)
                                         }
                                         .contentShape(RoundedRectangle(cornerRadius: 10))
                                 }
@@ -149,7 +147,7 @@ struct TripsView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundStyle(Colors.primaryText)
+                            .foregroundStyle(Colors.secondaryText)
                         
                         TextField("Search", text: $searchQuery)
                             .font(.travelBody)
@@ -160,7 +158,7 @@ struct TripsView: View {
                     }
                     .padding(.vertical, 16)
                     .padding(.horizontal, 16)
-                    .background(Colors.accent.opacity(0.1))
+                    .background(Colors.secondaryText.opacity(0.3))
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     
                     VStack(alignment: .leading, spacing: 12) {

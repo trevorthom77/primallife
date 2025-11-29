@@ -8,6 +8,12 @@ struct TribesSocialView: View {
     let date: String
     @State private var santaTeresaImageURL: URL?
     @Environment(\.dismiss) private var dismiss
+    private let tribeMessages: [ChatMessage] = [
+        ChatMessage(text: "Welcome to the Costa Rica crew.", time: "6:10 PM", isUser: false),
+        ChatMessage(text: "Landing on the 5th, can't wait.", time: "6:12 PM", isUser: true),
+        ChatMessage(text: "We're meeting at Playa Hermosa night one.", time: "6:14 PM", isUser: false),
+        ChatMessage(text: "Count me in for the bonfire.", time: "6:15 PM", isUser: true)
+    ]
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -34,6 +40,55 @@ struct TribesSocialView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 220)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(alignment: .bottomLeading) {
+                        HStack(spacing: -8) {
+                            Image("profile1")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 36, height: 36)
+                                .clipShape(Circle())
+                                .overlay {
+                                    Circle()
+                                        .stroke(Colors.card, lineWidth: 3)
+                                }
+
+                            Image("profile2")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 36, height: 36)
+                                .clipShape(Circle())
+                                .overlay {
+                                    Circle()
+                                        .stroke(Colors.card, lineWidth: 3)
+                                }
+
+                            Image("profile3")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 36, height: 36)
+                                .clipShape(Circle())
+                                .overlay {
+                                    Circle()
+                                        .stroke(Colors.card, lineWidth: 3)
+                                }
+
+                            ZStack {
+                                Circle()
+                                    .fill(Colors.background)
+                                    .frame(width: 36, height: 36)
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+
+                                Text("67+")
+                                    .font(.custom(Fonts.semibold, size: 12))
+                                    .foregroundStyle(Colors.primaryText)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(title)
@@ -50,56 +105,18 @@ struct TribesSocialView: View {
                         Text(date)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.secondaryText)
-
-                        HStack(spacing: -8) {
-                            Image("profile1")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 40, height: 40)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            Image("profile2")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 40, height: 40)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            Image("profile3")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 40, height: 40)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            ZStack {
-                                Circle()
-                                    .fill(Colors.background)
-                                    .frame(width: 40, height: 40)
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Text("67+")
-                                    .font(.custom(Fonts.semibold, size: 12))
-                                    .foregroundStyle(Colors.primaryText)
-                            }
-                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Button(action: { }) {
+                    NavigationLink {
+                        TribesChatView(
+                            title: title,
+                            location: location,
+                            imageURL: imageURL,
+                            totalExplorers: 67,
+                            messages: tribeMessages
+                        )
+                    } label: {
                         Text("Join")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.tertiaryText)
@@ -108,6 +125,7 @@ struct TribesSocialView: View {
                             .background(Colors.accent)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
+                    .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What?")

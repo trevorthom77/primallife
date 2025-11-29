@@ -117,32 +117,37 @@ struct MyTripsView: View {
                                     date: "Dec 5–9, 2025"
                                 )
                             } label: {
-                                HStack(spacing: 12) {
-                                    AsyncImage(url: tribeImageURL) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } placeholder: {
-                                        Colors.card
-                                    }
-                                    .frame(width: 88, height: 72)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("Party Tonight Costa Rica")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        HStack(spacing: 6) {
-                                            Text("🇨🇷")
-                                            Text("Costa Rica")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack(spacing: 12) {
+                                        AsyncImage(url: tribeImageURL) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            Colors.card
                                         }
+                                        .frame(width: 88, height: 72)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text("Party Tonight Costa Rica")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.primaryText)
+                                            
+                                            HStack(spacing: 6) {
+                                                Text("🇨🇷")
+                                                Text("Costa Rica")
+                                                    .font(.travelDetail)
+                                                    .foregroundStyle(Colors.secondaryText)
+                                            }
+                                        }
+                                        
+                                        Spacer()
                                     }
-                                    
-                                    Spacer()
-                                    
+                                    .padding(12)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
                                     HStack(spacing: -8) {
                                         Image("profile1")
                                             .resizable()
@@ -188,11 +193,8 @@ struct MyTripsView: View {
                                                 .foregroundStyle(Colors.primaryText)
                                         }
                                     }
+                                    .padding(.horizontal, 12)
                                 }
-                                .padding(12)
-                                .frame(height: 96)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
                             .buttonStyle(.plain)
                             .task {
@@ -208,31 +210,36 @@ struct MyTripsView: View {
                                     date: "Dec 5–9, 2025"
                                 )
                             } label: {
-                                HStack(spacing: 12) {
-                                    AsyncImage(url: secondTribeImageURL) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } placeholder: {
-                                        Colors.card
-                                    }
-                                    .frame(width: 88, height: 72)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("Rainforest Tribe Costa Rica")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
-
-                                        HStack(spacing: 6) {
-                                            Text("🇨🇷")
-                                            Text("Costa Rica")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack(spacing: 12) {
+                                        AsyncImage(url: secondTribeImageURL) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            Colors.card
                                         }
-                                    }
+                                        .frame(width: 88, height: 72)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                                    Spacer()
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text("Rainforest Tribe Costa Rica")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.primaryText)
+
+                                            HStack(spacing: 6) {
+                                                Text("🇨🇷")
+                                                Text("Costa Rica")
+                                                    .font(.travelDetail)
+                                                    .foregroundStyle(Colors.secondaryText)
+                                            }
+                                        }
+
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                                     HStack(spacing: -8) {
                                         Image("profile1")
@@ -279,11 +286,8 @@ struct MyTripsView: View {
                                                 .foregroundStyle(Colors.primaryText)
                                         }
                                     }
+                                    .padding(.horizontal, 12)
                                 }
-                                .padding(12)
-                                .frame(height: 96)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
                             .buttonStyle(.plain)
                             .task {

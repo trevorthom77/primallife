@@ -14,6 +14,7 @@ struct TravelCard: View {
     var dates: String = "Jan 12–20"
     var imageQuery: String = "Hawaii"
     var showsParticipants: Bool = true
+    var height: CGFloat = 180
     
     var body: some View {
         ZStack {
@@ -29,7 +30,7 @@ struct TravelCard: View {
                 Colors.card
             }
         }
-        .frame(width: 344, height: 180)
+        .frame(width: 344, height: height)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(alignment: .topLeading) {
             HStack(spacing: 12) {

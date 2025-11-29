@@ -185,8 +185,99 @@ struct FiltersView: View {
 }
 
 struct TrendingFilters: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedTopics: Set<String> = []
+    
+    private let topics: [String] = [
+        "Trending Locations",
+        "High UV Places",
+        "Shark Activity",
+        "Beach Escapes",
+        "Healthiest Places",
+        "Highest Rarity Adventures",
+        "People Your Age",
+        "More Females",
+        "More Boys",
+        "Best Food Spots",
+        "Budget Friendly",
+        "Low Crowds"
+    ]
+    
     var body: some View {
-        Colors.background
-            .ignoresSafeArea()
+        ZStack(alignment: .topLeading) {
+            Colors.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Colors.background)
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Topics")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+                            
+                            Text("Select up to 4 topics")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                            
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(topics, id: \.self) { topic in
+                                    topicButton(for: topic)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
+                }
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+    
+    private func topicButton(for topic: String) -> some View {
+        let isSelected = selectedTopics.contains(topic)
+        let reachedLimit = selectedTopics.count >= 4 && !isSelected
+        
+        return Button {
+            toggleTopic(topic)
+        } label: {
+            Text(topic)
+                .font(.travelDetail)
+                .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .background(isSelected ? Colors.accent : Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(reachedLimit)
+        .opacity(reachedLimit ? 0.6 : 1)
+    }
+    
+    private func toggleTopic(_ topic: String) {
+        if selectedTopics.contains(topic) {
+            selectedTopics.remove(topic)
+        } else if selectedTopics.count < 4 {
+            selectedTopics.insert(topic)
+        }
     }
 }

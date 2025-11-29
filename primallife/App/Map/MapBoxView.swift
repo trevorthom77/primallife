@@ -553,13 +553,13 @@ private struct MapSearchSheet: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Colors.primaryText)
+                    .foregroundStyle(Colors.secondaryText)
                 
                 ZStack(alignment: .leading) {
                     if searchText.isEmpty {
                         Text("Search")
                             .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
+                            .foregroundStyle(Colors.secondaryText)
                     }
                     
                     TextField("", text: $searchText)
@@ -572,7 +572,7 @@ private struct MapSearchSheet: View {
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 16)
-            .background(Colors.accent.opacity(0.1))
+            .background(Colors.secondaryText.opacity(0.3))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             
             Text("Results")

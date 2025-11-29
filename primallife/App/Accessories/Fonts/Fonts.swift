@@ -17,6 +17,10 @@ extension Font {
         .custom(Fonts.semibold, size: 24)
     }
     
+    static var onboardingTitle: Font {
+        .custom(Fonts.semibold, size: 30)
+    }
+    
     static var travelTitle: Font {
         .custom(Fonts.semibold, size: 22)
     }
@@ -28,4 +32,5 @@ extension Font {
     static var travelDetail: Font {
         .custom(Fonts.semibold, size: 18)
     }
+    
 }

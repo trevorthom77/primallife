@@ -82,6 +82,21 @@ struct OthersProfileView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.top, 8)
                     
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Likes")
+                            .font(.custom(Fonts.semibold, size: 18))
+                            .foregroundStyle(Colors.primaryText)
+                        
+                        Text("Likes")
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.top, 8)
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Trip Plans")
                             .font(.custom(Fonts.semibold, size: 18))

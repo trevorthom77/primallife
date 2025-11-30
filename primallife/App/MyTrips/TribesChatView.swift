@@ -4,7 +4,7 @@ struct TribesChatView: View {
     let title: String
     let location: String
     let imageURL: URL?
-    let totalExplorers: Int
+    let totalTravelers: Int
     let messages: [ChatMessage]
     @State private var draft = ""
     @Environment(\.dismiss) private var dismiss
@@ -133,7 +133,7 @@ struct TribesChatView: View {
                             }
                     }
 
-                    Text("\(totalExplorers) explorers")
+                    Text("\(totalTravelers) travelers")
                         .font(.custom(Fonts.regular, size: 14))
                         .foregroundStyle(Colors.secondaryText)
                         .lineLimit(1)

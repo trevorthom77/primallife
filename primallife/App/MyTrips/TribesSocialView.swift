@@ -113,7 +113,7 @@ struct TribesSocialView: View {
                             title: title,
                             location: location,
                             imageURL: imageURL,
-                            totalExplorers: 67,
+                            totalTravelers: 67,
                             messages: tribeMessages
                         )
                     } label: {

@@ -5,17 +5,19 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict/>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+		</dict>
 	</array>
 	<key>MBXAccessToken</key>
 	<string>pk.eyJ1IjoidHJldm9ydGhvbTciLCJhIjoiY21pMmtvc3Q1MWwzZTJscTZ3NWNvdGdobSJ9.ayj6QcFtgsSY05V3I8_1mA</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow primallife to access your location to share where you are with friends.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Epilogue-Regular.ttf</string>
 		<string>Epilogue-SemiBold.ttf</string>
 	</array>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 </dict>
 </plist>

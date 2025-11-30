@@ -1,14 +1,14 @@
 import SwiftUI
 
-struct OriginView: View {
+struct LanguagesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     
-    private var filteredCountries: [Country] {
+    private var filteredLanguages: [Language] {
         if searchText.isEmpty {
-            return CountryDatabase.all
+            return LanguageDatabase.all
         }
-        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return LanguageDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
     
     var body: some View {
@@ -21,18 +21,18 @@ struct OriginView: View {
                     BackButton {
                         dismiss()
                     }
-
+                    
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Where are you from?")
+                        Text("What languages do you speak?")
                             .font(.onboardingTitle)
                             .foregroundColor(Colors.primaryText)
-                        Text("This helps us match you with people who share similar origin.")
+                        Text("This helps us match you with people with similar languages.")
                             .font(.travelBody)
                             .foregroundColor(Colors.secondaryText)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
+                
                 HStack(spacing: 12) {
                     ForEach(["profile7", "profile8", "profile9"], id: \.self) { name in
                         Image(name)
@@ -43,11 +43,11 @@ struct OriginView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
+                
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(Colors.secondaryText)
-                    TextField("Search city or country", text: $searchText)
+                    TextField("Search languages", text: $searchText)
                         .font(.travelBody)
                         .foregroundColor(Colors.primaryText)
                 }
@@ -58,11 +58,11 @@ struct OriginView: View {
                 
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(filteredCountries) { country in
+                        ForEach(filteredLanguages) { language in
                             HStack(spacing: 12) {
-                                Text(country.flag)
+                                Text(language.flag)
                                     .font(.travelTitle)
-                                Text(country.name)
+                                Text(language.name)
                                     .font(.travelBody)
                                     .foregroundColor(Colors.primaryText)
                             }
@@ -80,7 +80,7 @@ struct OriginView: View {
             }
             .padding(20)
             .padding(.top, 18)
-
+            
             Button { } label: {
                 Text("Continue")
                     .font(.travelDetail)
@@ -97,5 +97,5 @@ struct OriginView: View {
 }
 
 #Preview {
-    OriginView()
+    LanguagesView()
 }

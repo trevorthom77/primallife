@@ -98,7 +98,7 @@ struct OthersProfileView: View {
                     .padding(.top, 8)
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Trip Plans")
+                        Text("Upcoming Trips")
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         

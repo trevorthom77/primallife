@@ -25,8 +25,8 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 28)
                                 .stroke(Color(hex: "#06d6a0"), lineWidth: 4)
                         }
-                        .scaleEffect(showTopLeft ? 1 : 0.6)
-                        .opacity(showTopLeft ? 1 : 0)
+                        .scaleEffect(showTopLeft ? 1 : 0.01)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showTopLeft)
                         .sensoryFeedback(.impact(weight: .medium), trigger: showTopLeft)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.leading, 24)
@@ -42,8 +42,8 @@ struct ContentView: View {
                                 .stroke(Color(hex: "#40e0d0"), lineWidth: 4)
                         }
                         .rotationEffect(.degrees(10))
-                        .scaleEffect(showTopRight ? 1 : 0.6)
-                        .opacity(showTopRight ? 1 : 0)
+                        .scaleEffect(showTopRight ? 1 : 0.01)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showTopRight)
                         .sensoryFeedback(.impact(weight: .medium), trigger: showTopRight)
                         .frame(maxWidth: .infinity, alignment: .topTrailing)
                         .padding(.top, -184)
@@ -60,8 +60,8 @@ struct ContentView: View {
                         }
                         .rotationEffect(.degrees(-8))
                         .zIndex(1)
-                        .scaleEffect(showMiddle ? 1 : 0.6)
-                        .opacity(showMiddle ? 1 : 0)
+                        .scaleEffect(showMiddle ? 1 : 0.01)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showMiddle)
                         .sensoryFeedback(.impact(weight: .medium), trigger: showMiddle)
                         .frame(maxWidth: .infinity, alignment: .top)
                         .padding(.top, 0)
@@ -75,8 +75,8 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 28)
                                 .stroke(Colors.accent, lineWidth: 4)
                         }
-                        .scaleEffect(showBottomLeft ? 1 : 0.6)
-                        .opacity(showBottomLeft ? 1 : 0)
+                        .scaleEffect(showBottomLeft ? 1 : 0.01)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showBottomLeft)
                         .sensoryFeedback(.impact(weight: .medium), trigger: showBottomLeft)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 340)
@@ -92,8 +92,8 @@ struct ContentView: View {
                                 .stroke(Color(hex: "#1ca9c9"), lineWidth: 4)
                         }
                         .rotationEffect(.degrees(16))
-                        .scaleEffect(showBottomRight ? 1 : 0.6)
-                        .opacity(showBottomRight ? 1 : 0)
+                        .scaleEffect(showBottomRight ? 1 : 0.01)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showBottomRight)
                         .sensoryFeedback(.impact(weight: .medium), trigger: showBottomRight)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(.top, 360)
@@ -131,35 +131,26 @@ struct ContentView: View {
     
     private func startPopSequence() {
         let delayStep: TimeInterval = 0.25
+        let initialDelay: TimeInterval = 0.3
         
-        DispatchQueue.main.asyncAfter(deadline: .now()) {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
-                showTopLeft = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay) {
+            showTopLeft = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + delayStep) {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
-                showTopRight = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay + delayStep) {
+            showTopRight = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + delayStep * 2) {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
-                showBottomLeft = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay + delayStep * 2) {
+            showBottomLeft = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + delayStep * 3) {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
-                showBottomRight = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay + delayStep * 3) {
+            showBottomRight = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + delayStep * 4) {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
-                showMiddle = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay + delayStep * 4) {
+            showMiddle = true
         }
     }
 }

@@ -351,7 +351,7 @@ struct ProfileTrip: Identifiable {
             ProfileCountry(flag: "🇮🇹", name: "Italy", note: "Jun 18–20", imageQuery: "Italy coast")
         ],
         tribes: [
-            ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
+            ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
             ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
         ],
         friends: [

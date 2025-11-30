@@ -18,7 +18,7 @@ extension Font {
     }
     
     static var onboardingTitle: Font {
-        .custom(Fonts.semibold, size: 30)
+        .custom(Fonts.semibold, size: 28)
     }
     
     static var travelTitle: Font {

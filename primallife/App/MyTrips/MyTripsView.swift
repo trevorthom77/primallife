@@ -51,7 +51,7 @@ struct MyTripsView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Trip Plans")
+                                Text("Upcoming Trips")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
                                 
@@ -405,7 +405,7 @@ struct MyTripsView: View {
                             }
 
                             HStack {
-                                Text("Explorers going")
+                                Text("Travelers going")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
                                 

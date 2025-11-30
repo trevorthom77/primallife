@@ -28,7 +28,7 @@ struct MapBoxView: View {
     @State private var communityTab: CommunityTab = .tribes
     
     private let profileTribes = [
-        ProfileTribe(imageName: "profile4", name: "Pacific Explorers", status: "Active"),
+        ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
         ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
     ]
     
@@ -507,7 +507,7 @@ private struct MapCommunityPanel: View {
 
 private enum CommunityTab: String, CaseIterable {
     case tribes = "Tribes"
-    case explorers = "Explorers"
+    case travelers = "Travelers"
 }
 
 private final class UserLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {

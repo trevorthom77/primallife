@@ -6,7 +6,7 @@ struct BasicInfoView: View {
     private let imageNames = ["travel1", "travel2", "travel3", "travel4"]
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             Colors.background
                 .ignoresSafeArea()
             
@@ -46,6 +46,12 @@ struct BasicInfoView: View {
                     .background(Colors.card)
                     .cornerRadius(12)
                 
+                Spacer()
+            }
+            .padding(20)
+            .padding(.top, 48)
+            
+            VStack {
                 Button { } label: {
                     Text("Continue")
                         .font(.travelDetail)
@@ -55,11 +61,9 @@ struct BasicInfoView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
-                
-                Spacer()
             }
-            .padding(20)
-            .padding(.top, 48)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 48)
         }
     }
 }

@@ -625,7 +625,7 @@ struct TrendingView: View {
                                             .foregroundStyle(Colors.primaryText)
                                     }
                                     
-                                    Text("More female explorers")
+                                    Text("More female travelers")
                                         .font(.travelDetail)
                                         .foregroundStyle(Colors.secondaryText)
                                 }
@@ -706,7 +706,7 @@ struct TrendingView: View {
                                             .foregroundStyle(Colors.primaryText)
                                     }
                                     
-                                    Text("More male explorers")
+                                    Text("More male travelers")
                                         .font(.travelDetail)
                                         .foregroundStyle(Colors.secondaryText)
                                 }

@@ -1,15 +1,10 @@
 import SwiftUI
 
-struct OriginView: View {
+struct MeetingView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var searchText = ""
-    
-    private var filteredCountries: [Country] {
-        if searchText.isEmpty {
-            return CountryDatabase.all
-        }
-        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
+    @State private var selectedOption: String?
+    private let options = ["Only Girls", "Only Boys", "Everyone"]
+    private let imageNames = ["profile4", "profile5", "profile6"]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -21,20 +16,20 @@ struct OriginView: View {
                     BackButton {
                         dismiss()
                     }
-
+                    
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Where are you from?")
+                        Text("Who do you want to travel with?")
                             .font(.onboardingTitle)
                             .foregroundColor(Colors.primaryText)
-                        Text("This helps us match you with people who share similar origin.")
+                        Text("This helps us match you with people you want to travel with.")
                             .font(.travelBody)
                             .foregroundColor(Colors.secondaryText)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
+                
                 HStack(spacing: 12) {
-                    ForEach(["profile7", "profile8", "profile9"], id: \.self) { name in
+                    ForEach(imageNames, id: \.self) { name in
                         Image(name)
                             .resizable()
                             .scaledToFill()
@@ -43,44 +38,31 @@ struct OriginView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(Colors.secondaryText)
-                    TextField("Search city or country", text: $searchText)
-                        .font(.travelBody)
-                        .foregroundColor(Colors.primaryText)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Colors.card)
-                .cornerRadius(12)
                 
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(filteredCountries) { country in
-                            HStack(spacing: 12) {
-                                Text(country.flag)
-                                    .font(.travelTitle)
-                                Text(country.name)
+                VStack(spacing: 12) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            selectedOption = option
+                        } label: {
+                            HStack {
+                                Text(option)
                                     .font(.travelBody)
-                                    .foregroundColor(Colors.primaryText)
+                                Spacer()
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
                             .padding()
-                            .background(Colors.card)
+                            .frame(maxWidth: .infinity)
+                            .background(selectedOption == option ? Colors.accent : Colors.card)
                             .cornerRadius(12)
                         }
                     }
                 }
-                .frame(maxHeight: 260)
-                .scrollIndicators(.hidden)
                 
                 Spacer()
             }
             .padding(20)
             .padding(.top, 18)
-
+            
             Button { } label: {
                 Text("Continue")
                     .font(.travelDetail)
@@ -97,5 +79,5 @@ struct OriginView: View {
 }
 
 #Preview {
-    OriginView()
+    MeetingView()
 }

@@ -1,20 +1,28 @@
 import SwiftUI
 
-struct AboutView: View {
+struct DescriptionView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var bio = ""
+    @State private var selectedOption: String?
+    private let options = [
+        "Backpacking",
+        "Gap year",
+        "Studying abroad",
+        "Living abroad",
+        "Just loves to travel",
+        "Digital nomad"
+    ]
     
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             Colors.background
                 .ignoresSafeArea()
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("About you")
+                    Text("What describes you best?")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)
-                    Text("Share a short bio so people know you better.")
+                    Text("Pick the travel situation that fits right now.")
                         .font(.travelBody)
                         .foregroundColor(Colors.secondaryText)
                 }
@@ -22,46 +30,55 @@ struct AboutView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
+                    Image("travel4")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 96)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
                     Image("travel1")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 120)
+                        .frame(height: 96)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel2")
+                    Image("travel3")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 120)
+                        .frame(height: 96)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: $bio)
-                        .font(.travelBody)
-                        .foregroundColor(Colors.primaryText)
-                        .frame(height: 200)
-                        .padding(12)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                        .scrollContentBackground(.hidden)
-                    
-                    if bio.isEmpty {
-                        Text("Share what other travelers should know about you")
-                            .font(.travelBody)
-                            .foregroundColor(Colors.secondaryText)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 18)
-                            .allowsHitTesting(false)
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(options, id: \.self) { option in
+                            Button {
+                                selectedOption = option
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    Spacer()
+                                }
+                                .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(selectedOption == option ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                        }
                     }
                 }
-                
-                Spacer()
+                .scrollIndicators(.hidden)
             }
-            .padding(20)
+            .padding(.horizontal, 20)
             .padding(.top, 48)
-            
+        }
+        .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
                 Button { } label: {
                     Text("Continue")
@@ -85,10 +102,11 @@ struct AboutView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
+            .background(Colors.background)
         }
     }
 }
 
 #Preview {
-    AboutView()
+    DescriptionView()
 }

@@ -33,4 +33,8 @@ extension Font {
         .custom(Fonts.semibold, size: 18)
     }
     
+    static var goBackFont: Font {
+        .custom(Fonts.semibold, size: 18)
+    }
+    
 }

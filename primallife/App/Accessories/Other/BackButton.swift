@@ -18,7 +18,8 @@ struct BackButton: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
                 .background(Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+
         }
     }
 }

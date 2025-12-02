@@ -1,10 +1,3 @@
-//
-//  AdventuresView.swift
-//  primallife
-//
-//  Created by Trevor Thompson on 11/18/25.
-//
-
 import SwiftUI
 
 struct MyTripsView: View {

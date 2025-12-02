@@ -1,10 +1,7 @@
 import SwiftUI
 
-struct MeetingView: View {
+struct LocationPermissionView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedOption: String?
-    private let options = ["Only Girls", "Only Boys", "Everyone"]
-    private let imageNames = ["profile4", "profile5", "profile6"]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -13,44 +10,20 @@ struct MeetingView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Who do you want to travel with?")
+                    Text("Turn on your location")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)
-                    Text("This helps us match you with people you want to travel with.")
+                    Text("Find travelers near you.")
                         .font(.travelBody)
                         .foregroundColor(Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(spacing: 12) {
-                    ForEach(imageNames, id: \.self) { name in
-                        Image(name)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
                 VStack(spacing: 12) {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            selectedOption = option
-                        } label: {
-                            HStack {
-                                Text(option)
-                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
-                                Spacer()
-                            }
-                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(selectedOption == option ? Colors.accent : Colors.card)
-                            .cornerRadius(12)
-                        }
-                    }
+                    benefitCard(emoji: "🗺️", title: "Find travelers near you")
+                    benefitCard(emoji: "🤝", title: "See travelers going on the same trips")
+                    benefitCard(emoji: "🌐", title: "Discover local tribes")
                 }
                 
                 Spacer()
@@ -83,8 +56,26 @@ struct MeetingView: View {
             .padding(.bottom, 48)
         }
     }
+    
+    private func benefitCard(emoji: String, title: String) -> some View {
+        HStack(spacing: 12) {
+            Text(emoji)
+                .font(.onboardingTitle)
+                .foregroundColor(Colors.primaryText)
+            
+            Text(title)
+                .font(.travelBody)
+                .foregroundColor(Colors.primaryText)
+            
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(Colors.card)
+        .cornerRadius(12)
+    }
 }
 
 #Preview {
-    MeetingView()
+    LocationPermissionView()
 }

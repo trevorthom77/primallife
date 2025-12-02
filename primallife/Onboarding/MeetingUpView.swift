@@ -1,11 +1,9 @@
 import SwiftUI
 
-struct UpcomingTripsView: View {
+struct MeetingUpView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var destination = ""
-    @State private var arrivalDate = Date()
-    @State private var departingDate = Date()
-    private let imageNames = ["travel2", "travel3", "travel4"]
+    @State private var selectedOption: String?
+    private let options = ["Travel together", "Meet at destination", "Open to both"]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -14,49 +12,56 @@ struct UpcomingTripsView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Upcoming trips")
+                    Text("How do u want to travel with other travelers?")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)
-                    Text("Share the destination and your arrival and departing dates.")
+                    Text("Share how you prefer linking with other travelers.")
                         .font(.travelBody)
                         .foregroundColor(Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(spacing: 12) {
-                    ForEach(imageNames, id: \.self) { name in
-                        Image(name)
+                HStack(alignment: .top, spacing: 12) {
+                    Image("travel3")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 200, height: 190)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
+                    VStack(spacing: 12) {
+                        Image("travel4")
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 110)
-                            .frame(maxWidth: .infinity)
+                            .frame(width: 120, height: 88)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        
+                        Image("travel5")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 88)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 VStack(spacing: 12) {
-                    TextField("Where are you going?", text: $destination)
-                        .font(.travelBody)
-                        .foregroundColor(Colors.primaryText)
-                        .padding()
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                    
-                    DatePicker("Arrival date", selection: $arrivalDate, displayedComponents: .date)
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.primaryText)
-                        .padding()
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                    
-                    DatePicker("Departing date", selection: $departingDate, displayedComponents: .date)
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.primaryText)
-                        .padding()
-                        .background(Colors.card)
-                        .cornerRadius(12)
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            selectedOption = option
+                        } label: {
+                            HStack {
+                                Text(option)
+                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                Spacer()
+                            }
+                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(selectedOption == option ? Colors.accent : Colors.card)
+                            .cornerRadius(12)
+                        }
+                    }
                 }
                 
                 Spacer()
@@ -92,5 +97,5 @@ struct UpcomingTripsView: View {
 }
 
 #Preview {
-    UpcomingTripsView()
+    MeetingUpView()
 }

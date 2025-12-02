@@ -11,7 +11,7 @@ struct BasicInfoView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Basic info")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)

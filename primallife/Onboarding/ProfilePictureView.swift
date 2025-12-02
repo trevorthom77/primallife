@@ -20,20 +20,15 @@ struct ProfilePictureView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    BackButton {
-                        dismiss()
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Add your profile photo")
-                            .font(.onboardingTitle)
-                            .foregroundColor(Colors.primaryText)
-                        Text("Pick a clear photo of your face.")
-                            .font(.travelBody)
-                            .foregroundColor(Colors.secondaryText)
-                    }
+                    Text("Add your profile photo")
+                        .font(.onboardingTitle)
+                        .foregroundColor(Colors.primaryText)
+                    Text("Pick a clear photo of your face.")
+                        .font(.travelBody)
+                        .foregroundColor(Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 8)
                 
                 sampleRow(images: Array(sampleImages.prefix(3)))
                 
@@ -64,14 +59,12 @@ struct ProfilePictureView: View {
                     }
                 }
                 
-                sampleRow(images: Array(sampleImages.suffix(3)))
-                
                 Spacer()
             }
             .padding(20)
-            .padding(.top, 18)
+            .padding(.top, 48)
             
-            VStack {
+            VStack(spacing: 16) {
                 Button { } label: {
                     Text("Continue")
                         .font(.travelDetail)
@@ -81,6 +74,16 @@ struct ProfilePictureView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Go Back")
+                        .font(.goBackFont)
+                        .foregroundColor(Colors.secondaryText)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 4)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 48)

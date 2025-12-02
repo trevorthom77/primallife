@@ -11,8 +11,17 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            Colors.background
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [
+                    Colors.accent.opacity(0.2),
+                    Colors.background,
+                    Colors.background,
+                    Colors.accent.opacity(0.2)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 ZStack {
@@ -21,9 +30,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .frame(width: 200, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color(hex: "#06d6a0"), lineWidth: 4)
+                        .overlay(alignment: .topTrailing) {
+                            Text("🇪🇸")
+                                .font(.travelTitle)
+                                .padding(12)
                         }
                         .scaleEffect(showTopLeft ? 1 : 0.01)
                         .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showTopLeft)
@@ -37,9 +47,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .frame(width: 200, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color(hex: "#40e0d0"), lineWidth: 4)
+                        .overlay(alignment: .topTrailing) {
+                            Text("🇯🇵")
+                                .font(.travelTitle)
+                                .padding(12)
                         }
                         .rotationEffect(.degrees(10))
                         .scaleEffect(showTopRight ? 1 : 0.01)
@@ -54,9 +65,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .frame(width: 200, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Colors.card, lineWidth: 4)
+                        .overlay(alignment: .topTrailing) {
+                            Text("🇮🇹")
+                                .font(.travelTitle)
+                                .padding(12)
                         }
                         .rotationEffect(.degrees(-8))
                         .zIndex(1)
@@ -71,9 +83,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .frame(width: 200, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Colors.accent, lineWidth: 4)
+                        .overlay(alignment: .topTrailing) {
+                            Text("🇧🇷")
+                                .font(.travelTitle)
+                                .padding(12)
                         }
                         .scaleEffect(showBottomLeft ? 1 : 0.01)
                         .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showBottomLeft)
@@ -87,9 +100,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .frame(width: 200, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color(hex: "#1ca9c9"), lineWidth: 4)
+                        .overlay(alignment: .topTrailing) {
+                            Text("🇺🇸")
+                                .font(.travelTitle)
+                                .padding(12)
                         }
                         .rotationEffect(.degrees(16))
                         .scaleEffect(showBottomRight ? 1 : 0.01)
@@ -110,7 +124,6 @@ struct ContentView: View {
                     Text("You only live once")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)
-                        .padding(.bottom, 8)
                     
                     SignInWithAppleButton(.signIn) { _ in
                     } onCompletion: { _ in
@@ -118,7 +131,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .cornerRadius(16)
-                    .signInWithAppleButtonStyle(.black)
+                    .signInWithAppleButtonStyle(.white)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)

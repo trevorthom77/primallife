@@ -1,8 +1,13 @@
 import SwiftUI
 
-struct AboutView: View {
+struct SplitExpensesView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var bio = ""
+    @State private var selectedOption: String?
+    private let options = [
+        "Yes, let's split the costs",
+        "Depends on the trip",
+        "Prefer to keep expenses separate"
+    ]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -11,10 +16,10 @@ struct AboutView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("About you")
+                    Text("Are you open to splitting costs?")
                         .font(.onboardingTitle)
                         .foregroundColor(Colors.primaryText)
-                    Text("Share a short bio so people know you better.")
+                    Text("Let others know if you'd divide expenses on a trip.")
                         .font(.travelBody)
                         .foregroundColor(Colors.secondaryText)
                 }
@@ -22,38 +27,39 @@ struct AboutView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    Image("travel1")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    
                     Image("travel2")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 120)
+                        .frame(height: 160)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: $bio)
-                        .font(.travelBody)
-                        .foregroundColor(Colors.primaryText)
-                        .frame(height: 200)
-                        .padding(12)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                        .scrollContentBackground(.hidden)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     
-                    if bio.isEmpty {
-                        Text("Share what other travelers should know about you")
-                            .font(.travelBody)
-                            .foregroundColor(Colors.secondaryText)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 18)
-                            .allowsHitTesting(false)
+                    Image("travel5")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 160)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                VStack(spacing: 12) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            selectedOption = option
+                        } label: {
+                            HStack {
+                                Text(option)
+                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                            }
+                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(selectedOption == option ? Colors.accent : Colors.card)
+                            .cornerRadius(12)
+                        }
                     }
                 }
                 
@@ -90,5 +96,5 @@ struct AboutView: View {
 }
 
 #Preview {
-    AboutView()
+    SplitExpensesView()
 }

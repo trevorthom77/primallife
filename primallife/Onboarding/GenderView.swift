@@ -13,20 +13,15 @@ struct GenderView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    BackButton {
-                        dismiss()
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("What is your gender?")
-                            .font(.onboardingTitle)
-                            .foregroundColor(Colors.primaryText)
-                        Text("Choose the option that fits you best.")
-                            .font(.travelBody)
-                            .foregroundColor(Colors.secondaryText)
-                    }
+                    Text("What is your gender?")
+                        .font(.onboardingTitle)
+                        .foregroundColor(Colors.primaryText)
+                    Text("Choose the option that fits you best.")
+                        .font(.travelBody)
+                        .foregroundColor(Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 8)
                 
                 HStack(spacing: 12) {
                     ForEach(imageNames, id: \.self) { name in
@@ -46,7 +41,7 @@ struct GenderView: View {
                         } label: {
                             HStack {
                                 Text(option)
-                                    .font(.travelBody)
+                                    .font(selectedGender == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                 Spacer()
                             }
                             .foregroundColor(selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
@@ -61,9 +56,9 @@ struct GenderView: View {
                 Spacer()
             }
             .padding(20)
-            .padding(.top, 18)
+            .padding(.top, 48)
             
-            VStack {
+            VStack(spacing: 16) {
                 Button { } label: {
                     Text("Continue")
                         .font(.travelDetail)
@@ -73,6 +68,16 @@ struct GenderView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Go Back")
+                        .font(.goBackFont)
+                        .foregroundColor(Colors.secondaryText)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 4)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 48)

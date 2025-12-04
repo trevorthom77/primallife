@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LocationPermissionView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showNotifications = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -32,7 +33,9 @@ struct LocationPermissionView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showNotifications = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -55,6 +58,10 @@ struct LocationPermissionView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showNotifications) {
+            NotificationsView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
     
     private func benefitCard(emoji: String, title: String) -> some View {

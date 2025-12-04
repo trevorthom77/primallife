@@ -58,6 +58,7 @@ struct WelcomeProfileView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -65,12 +66,6 @@ private struct ProfilePreviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 16) {
-                Image("profile1")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 104, height: 104)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Text("Alex Rider")
@@ -92,6 +87,12 @@ private struct ProfilePreviewCard: View {
                 }
                 
                 Spacer()
+                
+                Image("profile1")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 104, height: 104)
+                    .clipShape(Circle())
             }
             
             HStack {
@@ -120,7 +121,7 @@ private struct ProfilePreviewCard: View {
                     .font(.travelDetail)
                     .foregroundColor(Colors.secondaryText)
                 
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Lisbon")
                             .font(.travelBody)

@@ -3,6 +3,8 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var bio = ""
+    @State private var showUpcomingTrips = false
+    @FocusState private var isBioFocused: Bool
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -46,6 +48,7 @@ struct AboutView: View {
                         .background(Colors.card)
                         .cornerRadius(12)
                         .scrollContentBackground(.hidden)
+                        .focused($isBioFocused)
                     
                     if bio.isEmpty {
                         Text("Share what other travelers should know about you")
@@ -63,7 +66,9 @@ struct AboutView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showUpcomingTrips = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -86,6 +91,14 @@ struct AboutView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showUpcomingTrips) {
+            UpcomingTripsView()
+        }
+        .navigationBarBackButtonHidden(true)
+        .onTapGesture {
+            isBioFocused = false
+        }
+        .ignoresSafeArea(.keyboard)
     }
 }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct DescriptionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedOption: String?
+    @State private var showAbout = false
     private let options = [
         "Backpacking",
         "Gap year",
@@ -80,7 +81,9 @@ struct DescriptionView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showAbout = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -104,6 +107,10 @@ struct DescriptionView: View {
             .padding(.bottom, 48)
             .background(Colors.background)
         }
+        .navigationDestination(isPresented: $showAbout) {
+            AboutView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

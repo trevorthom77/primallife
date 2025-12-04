@@ -3,6 +3,8 @@ import SwiftUI
 struct LanguagesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
+    @State private var showOrigin = false
+    @FocusState private var isSearchFocused: Bool
     
     private var filteredLanguages: [Language] {
         if searchText.isEmpty {
@@ -28,16 +30,12 @@ struct LanguagesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(spacing: 12) {
-                    ForEach(["profile7", "profile8", "profile9"], id: \.self) { name in
-                        Image(name)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Image("travel2")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 140)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
@@ -45,6 +43,11 @@ struct LanguagesView: View {
                     TextField("Search languages", text: $searchText)
                         .font(.travelBody)
                         .foregroundColor(Colors.primaryText)
+                        .focused($isSearchFocused)
+                        .submitLabel(.search)
+                        .onSubmit {
+                            isSearchFocused = false
+                        }
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -76,7 +79,9 @@ struct LanguagesView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showOrigin = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -100,6 +105,14 @@ struct LanguagesView: View {
             .padding(.bottom, 48)
             .background(Colors.background)
         }
+        .navigationDestination(isPresented: $showOrigin) {
+            OriginView()
+        }
+        .navigationBarBackButtonHidden(true)
+        .onTapGesture {
+            isSearchFocused = false
+        }
+        .ignoresSafeArea(.keyboard)
     }
 }
 

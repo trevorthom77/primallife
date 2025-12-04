@@ -7,10 +7,22 @@
 
 import Foundation
 
+struct UnsplashImageDetails {
+    let url: URL
+    let photographerName: String?
+    let photographerProfileURL: URL?
+}
+
 enum UnsplashService {
     private static let accessKey = "REIL_WOXCjSVDsbIkoexE4MVlGNvLW4SU4twImEclXw"
+    private static let utmSource = "primallife"
     
     static func fetchImage(for query: String) async -> URL? {
+        let details = await fetchImageDetails(for: query)
+        return details?.url
+    }
+    
+    static func fetchImageDetails(for query: String) async -> UnsplashImageDetails? {
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "https://api.unsplash.com/search/photos?query=\(encodedQuery)&per_page=1&orientation=landscape")
         else {
@@ -23,11 +35,31 @@ enum UnsplashService {
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
             let response = try JSONDecoder().decode(UnsplashSearchResponse.self, from: data)
-            guard let urlString = response.results.first?.urls.regular else { return nil }
-            return URL(string: urlString)
+            guard let photo = response.results.first,
+                  let url = URL(string: photo.urls.regular)
+            else {
+                return nil
+            }
+            
+            let profileURL = profileURLWithUTM(from: photo.user?.links.html)
+            
+            return UnsplashImageDetails(
+                url: url,
+                photographerName: photo.user?.name,
+                photographerProfileURL: profileURL
+            )
         } catch {
             return nil
         }
+    }
+    
+    private static func profileURLWithUTM(from base: String?) -> URL? {
+        guard let base, var components = URLComponents(string: base) else { return nil }
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "utm_source", value: utmSource))
+        queryItems.append(URLQueryItem(name: "utm_medium", value: "referral"))
+        components.queryItems = queryItems
+        return components.url
     }
 }
 
@@ -37,8 +69,18 @@ private struct UnsplashSearchResponse: Decodable {
 
 private struct UnsplashPhoto: Decodable {
     let urls: UnsplashPhotoURLs
+    let user: UnsplashUser?
 }
 
 private struct UnsplashPhotoURLs: Decodable {
     let regular: String
+}
+
+private struct UnsplashUser: Decodable {
+    let name: String?
+    let links: UnsplashUserLinks
+}
+
+private struct UnsplashUserLinks: Decodable {
+    let html: String?
 }

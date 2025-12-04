@@ -3,6 +3,7 @@ import SwiftUI
 struct InterestView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedInterests: Set<String> = []
+    @State private var showMeetingUp = false
     private let interests = [
         "🏖️ Beaches",
         "🥾 Hiking",
@@ -70,7 +71,9 @@ struct InterestView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showMeetingUp = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -94,6 +97,10 @@ struct InterestView: View {
             .padding(.bottom, 48)
             .background(Colors.background)
         }
+        .navigationDestination(isPresented: $showMeetingUp) {
+            MeetingUpView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
     
     private func toggleSelection(for interest: String) {

@@ -3,6 +3,7 @@ import SwiftUI
 struct SplitExpensesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedOption: String?
+    @State private var showDescription = false
     private let options = [
         "Yes, let's split the costs",
         "Depends on the trip",
@@ -69,7 +70,9 @@ struct SplitExpensesView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showDescription = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -92,6 +95,10 @@ struct SplitExpensesView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showDescription) {
+            DescriptionView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

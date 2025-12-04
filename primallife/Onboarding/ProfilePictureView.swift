@@ -5,6 +5,7 @@ struct ProfilePictureView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedItem: PhotosPickerItem?
     @State private var profileImage: Image?
+    @State private var showLocationPermission = false
     
     private let sampleImages = ["profile1", "profile2", "profile3", "profile4", "profile5", "profile6"]
     private let sampleLabels: [String: String] = [
@@ -65,7 +66,9 @@ struct ProfilePictureView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showLocationPermission = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -91,6 +94,10 @@ struct ProfilePictureView: View {
         .onChange(of: selectedItem) { _, newValue in
             loadImage(from: newValue)
         }
+        .navigationDestination(isPresented: $showLocationPermission) {
+            LocationPermissionView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
     
     private func sampleRow(images: [String]) -> some View {

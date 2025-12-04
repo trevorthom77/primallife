@@ -3,8 +3,8 @@ import SwiftUI
 struct GenderView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedGender: String?
+    @State private var showMeeting = false
     private let options = ["Male", "Female", "Other"]
-    private let imageNames = ["profile1", "profile2", "profile3"]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -24,34 +24,44 @@ struct GenderView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    ForEach(imageNames, id: \.self) { name in
-                        Image(name)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
+                    Image("profile1")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 120)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
+                    Image("profile2")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 120)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity)
                 
-                VStack(spacing: 12) {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            selectedGender = option
-                        } label: {
-                            HStack {
-                                Text(option)
-                                    .font(selectedGender == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
-                                Spacer()
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(options, id: \.self) { option in
+                            Button {
+                                selectedGender = option
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(selectedGender == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    Spacer()
+                                }
+                                .foregroundColor(selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(selectedGender == option ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
                             }
-                            .foregroundColor(selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(selectedGender == option ? Colors.accent : Colors.card)
-                            .cornerRadius(12)
                         }
                     }
                 }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: 200)
                 
                 Spacer()
             }
@@ -59,7 +69,9 @@ struct GenderView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showMeeting = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -82,6 +94,10 @@ struct GenderView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showMeeting) {
+            MeetingView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

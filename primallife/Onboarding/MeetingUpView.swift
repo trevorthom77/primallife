@@ -3,6 +3,7 @@ import SwiftUI
 struct MeetingUpView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedOption: String?
+    @State private var showSplitExpenses = false
     private let options = ["Travel together", "Meet at destination", "Open to both"]
     
     var body: some View {
@@ -22,26 +23,27 @@ struct MeetingUpView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(alignment: .top, spacing: 12) {
+                HStack(spacing: 12) {
+                    Image("travel2")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 110)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
                     Image("travel3")
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 200, height: 190)
+                        .frame(height: 110)
+                        .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    VStack(spacing: 12) {
-                        Image("travel4")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 120, height: 88)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        
-                        Image("travel5")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 120, height: 88)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
+                    Image("travel4")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 110)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -70,7 +72,9 @@ struct MeetingUpView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showSplitExpenses = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -93,6 +97,10 @@ struct MeetingUpView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showSplitExpenses) {
+            SplitExpensesView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

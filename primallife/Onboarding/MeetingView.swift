@@ -3,8 +3,8 @@ import SwiftUI
 struct MeetingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedOption: String?
+    @State private var showInterests = false
     private let options = ["Only Girls", "Only Boys", "Everyone"]
-    private let imageNames = ["profile4", "profile5", "profile6"]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -23,35 +23,43 @@ struct MeetingView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(spacing: 12) {
-                    ForEach(imageNames, id: \.self) { name in
-                        Image(name)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                ScrollView(.horizontal) {
+                    HStack(spacing: 12) {
+                        ForEach(["profile4", "profile5", "profile6", "profile7"], id: \.self) { name in
+                            Image(name)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 160, height: 110)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
+                .scrollIndicators(.hidden)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
-                VStack(spacing: 12) {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            selectedOption = option
-                        } label: {
-                            HStack {
-                                Text(option)
-                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
-                                Spacer()
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(options, id: \.self) { option in
+                            Button {
+                                selectedOption = option
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    Spacer()
+                                }
+                                .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(selectedOption == option ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
                             }
-                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(selectedOption == option ? Colors.accent : Colors.card)
-                            .cornerRadius(12)
                         }
                     }
                 }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: 200)
                 
                 Spacer()
             }
@@ -59,7 +67,9 @@ struct MeetingView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showInterests = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -82,6 +92,10 @@ struct MeetingView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showInterests) {
+            InterestView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

@@ -10,6 +10,7 @@ import Foundation
 
 enum Colors {
     static let accent = Color(hex: "#47c9db")
+    static let contentview = Color(hex: "#EFF2F7")
     static let background = Color(hex: "#F7FAFF")
     static let card = Color.white
     static let primaryText = Color(hex: "#232323")

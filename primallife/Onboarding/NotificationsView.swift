@@ -3,6 +3,7 @@ import UserNotifications
 
 struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showWelcomeProfile = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -52,6 +53,7 @@ struct NotificationsView: View {
             VStack(spacing: 16) {
                 Button {
                     requestNotifications()
+                    showWelcomeProfile = true
                 } label: {
                     Text("Continue")
                         .font(.travelDetail)
@@ -75,6 +77,10 @@ struct NotificationsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showWelcomeProfile) {
+            WelcomeProfileView()
+        }
+        .navigationBarBackButtonHidden(true)
     }
     
     private func infoCard(emoji: String, title: String) -> some View {

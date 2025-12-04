@@ -5,6 +5,8 @@ struct UpcomingTripsView: View {
     @State private var destination = ""
     @State private var arrivalDate = Date()
     @State private var departingDate = Date()
+    @State private var showProfilePicture = false
+    @FocusState private var isDestinationFocused: Bool
     private let imageNames = ["travel2", "travel3", "travel4"]
     
     var body: some View {
@@ -40,9 +42,14 @@ struct UpcomingTripsView: View {
                     TextField("Where are you going?", text: $destination)
                         .font(.travelBody)
                         .foregroundColor(Colors.primaryText)
+                        .focused($isDestinationFocused)
                         .padding()
                         .background(Colors.card)
                         .cornerRadius(12)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isDestinationFocused = false
+                        }
                     
                     DatePicker("Arrival date", selection: $arrivalDate, displayedComponents: .date)
                         .font(.travelDetail)
@@ -65,7 +72,9 @@ struct UpcomingTripsView: View {
             .padding(.top, 48)
             
             VStack(spacing: 16) {
-                Button { } label: {
+                Button {
+                    showProfilePicture = true
+                } label: {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -88,6 +97,14 @@ struct UpcomingTripsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
+        .navigationDestination(isPresented: $showProfilePicture) {
+            ProfilePictureView()
+        }
+        .navigationBarBackButtonHidden(true)
+        .onTapGesture {
+            isDestinationFocused = false
+        }
+        .ignoresSafeArea(.keyboard)
     }
 }
 

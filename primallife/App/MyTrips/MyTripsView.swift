@@ -57,7 +57,7 @@ struct MyTripsView: View {
                             
                             TabView(selection: $selectedTripIndex) {
                                 HStack(spacing: 0) {
-                                    TravelCard()
+                                    TravelCard(showsAttribution: true)
                                     Spacer()
                                 }
                                 .tag(0)

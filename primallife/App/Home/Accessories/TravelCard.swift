@@ -9,11 +9,14 @@ import SwiftUI
 
 struct TravelCard: View {
     @State private var imageURL: URL?
+    @State private var photographerName: String?
+    @State private var photographerProfileURL: URL?
     var flag: String = "🇨🇷"
     var location: String = "Costa Rica"
     var dates: String = "Jan 12–20"
     var imageQuery: String = "Hawaii"
     var showsParticipants: Bool = true
+    var showsAttribution: Bool = false
     var height: CGFloat = 180
     
     var body: some View {
@@ -111,8 +114,29 @@ struct TravelCard: View {
                 .padding(.bottom, 16)
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            if showsAttribution,
+               let name = photographerName,
+               !name.isEmpty,
+               let profileURL = photographerProfileURL {
+                Link(name, destination: profileURL)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 180, alignment: .trailing)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .padding(12)
+            }
+        }
         .task {
-            imageURL = await UnsplashService.fetchImage(for: imageQuery)
+            let details = await UnsplashService.fetchImageDetails(for: imageQuery)
+            imageURL = details?.url
+            photographerName = details?.photographerName
+            photographerProfileURL = details?.photographerProfileURL
         }
     }
 }

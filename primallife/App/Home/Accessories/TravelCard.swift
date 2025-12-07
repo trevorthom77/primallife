@@ -120,7 +120,7 @@ struct TravelCard: View {
                !name.isEmpty,
                let profileURL = photographerProfileURL {
                 Link(name, destination: profileURL)
-                    .font(.travelDetail)
+                    .font(.custom(Fonts.semibold, size: 16))
                     .foregroundStyle(Colors.primaryText)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)

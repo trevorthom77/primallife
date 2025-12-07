@@ -63,6 +63,7 @@ struct WelcomeProfileView: View {
 }
 
 private struct ProfilePreviewCard: View {
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 16) {
@@ -88,7 +89,7 @@ private struct ProfilePreviewCard: View {
                 
                 Spacer()
                 
-                Image("profile1")
+                Image("travel29")
                     .resizable()
                     .scaledToFill()
                     .frame(width: 104, height: 104)
@@ -133,7 +134,7 @@ private struct ProfilePreviewCard: View {
                     
                     Spacer()
                     
-                    Image("travel3")
+                    Image("travel30")
                         .resizable()
                         .scaledToFill()
                         .frame(width: 140, height: 96)

@@ -1,8 +1,10 @@
 import SwiftUI
+import CoreLocation
 
 struct LocationPermissionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showNotifications = false
+    private let locationManager = CLLocationManager()
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -62,6 +64,9 @@ struct LocationPermissionView: View {
             NotificationsView()
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            requestLocationPermission()
+        }
     }
     
     private func benefitCard(emoji: String, title: String) -> some View {
@@ -80,6 +85,10 @@ struct LocationPermissionView: View {
         .frame(maxWidth: .infinity)
         .background(Colors.card)
         .cornerRadius(12)
+    }
+    
+    private func requestLocationPermission() {
+        locationManager.requestWhenInUseAuthorization()
     }
 }
 

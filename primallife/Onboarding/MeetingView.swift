@@ -6,6 +6,10 @@ struct MeetingView: View {
     @State private var showInterests = false
     private let options = ["Only Girls", "Only Boys", "Everyone"]
     
+    private var isContinueEnabled: Bool {
+        selectedOption != nil
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -23,19 +27,16 @@ struct MeetingView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                ScrollView(.horizontal) {
-                    HStack(spacing: 12) {
-                        ForEach(["profile4", "profile5", "profile6", "profile7"], id: \.self) { name in
-                            Image(name)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 160, height: 110)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
+                HStack(spacing: 12) {
+                    ForEach(["travel12", "travel13", "travel14"], id: \.self) { name in
+                        Image(name)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 110)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .padding(.vertical, 2)
                 }
-                .scrollIndicators(.hidden)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 ScrollView {
@@ -78,6 +79,8 @@ struct MeetingView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

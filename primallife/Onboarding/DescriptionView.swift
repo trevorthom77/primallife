@@ -9,9 +9,13 @@ struct DescriptionView: View {
         "Gap year",
         "Studying abroad",
         "Living abroad",
-        "Just loves to travel",
+        "Just love to travel",
         "Digital nomad"
     ]
+    
+    private var isContinueEnabled: Bool {
+        selectedOption != nil
+    }
     
     var body: some View {
         ZStack {
@@ -31,21 +35,21 @@ struct DescriptionView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    Image("travel4")
+                    Image("travel21")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 96)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel1")
+                    Image("travel22")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 96)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel3")
+                    Image("travel23")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 96)
@@ -92,6 +96,8 @@ struct DescriptionView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

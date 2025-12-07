@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -52,7 +51,6 @@ struct NotificationsView: View {
             
             VStack(spacing: 16) {
                 Button {
-                    requestNotifications()
                     showWelcomeProfile = true
                 } label: {
                     Text("Continue")
@@ -99,10 +97,6 @@ struct NotificationsView: View {
         .frame(maxWidth: .infinity)
         .background(Colors.card)
         .cornerRadius(12)
-    }
-    
-    private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 }
 

@@ -5,25 +5,50 @@ struct InterestView: View {
     @State private var selectedInterests: Set<String> = []
     @State private var showMeetingUp = false
     private let interests = [
-        "🏖️ Beaches",
-        "🥾 Hiking",
-        "🎨 Museums",
-        "🍜 Food tours",
-        "🚐 Road trips",
-        "📸 Photography",
-        "🌃 Nightlife",
-        "📚 History",
-        "🧘 Wellness",
-        "🖼️ Art",
+        "🧭 Adventure",
+        "✝️ God",
+        "🧳 Solo Traveling",
+        "🚗 Road Trips",
+        "🚐 Van Travel",
+        "🛳️ Cruises",
+        "🛥️ Boats",
+        "⛵️ Sailing",
+        "🚤 Jet Skis",
+        "🏝️ Island Hopping",
+        "🤿 Scuba Diving",
         "🏄 Surfing",
-        "🧗 Climbing",
-        "🎶 Live music",
-        "⛰️ National parks",
-        "🚴 Cycling",
-        "⛺ Camping",
         "🛶 Kayaking",
-        "🛍️ Markets"
+        "🎣 Fishing",
+        "🦈 Sharks",
+        "🌊 Ocean",
+        "🏖️ Beaches",
+        "🌴 Tropical",
+        "🌧️ Rainforests",
+        "🍃 Nature",
+        "🏞️ National Parks",
+        "🧗 Rock Climbing",
+        "🥾 Hiking",
+        "🚲 Biking",
+        "⛺️ Camping",
+        "🌲 Off Grid",
+        "🎿 Snow and Ski",
+        "🏅 Sports",
+        "🐶 Animal Lover",
+        "🍽️ Food",
+        "🛍️ Shopping",
+        "🍻 Bar Hopping",
+        "🌃 Nightlife",
+        "🎨 Art",
+        "📸 Photography",
+        "🖼️ Museums",
+        "🛏️ Hostels",
+        "💸 Budget Travel",
+        "🛎️ Luxury Travel"
     ]
+    
+    private var isContinueEnabled: Bool {
+        !selectedInterests.isEmpty
+    }
     
     var body: some View {
         ZStack {
@@ -63,11 +88,12 @@ struct InterestView: View {
                     }
                     .padding(.top, 4)
                 }
-                .frame(maxHeight: 460)
                 .scrollIndicators(.hidden)
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .padding(.horizontal, 20)
             .padding(.top, 48)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
@@ -82,6 +108,8 @@ struct InterestView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

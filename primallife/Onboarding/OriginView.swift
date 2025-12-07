@@ -4,13 +4,28 @@ struct OriginView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var showGender = false
+    @State private var selectedCountryID: String?
     @FocusState private var isSearchFocused: Bool
     
+    private var selectedCountryText: String {
+        guard let selectedCountryID,
+              let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
+            return ""
+        }
+        return "\(country.flag) \(country.name)"
+    }
+    
     private var filteredCountries: [Country] {
-        if searchText.isEmpty {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        
+        if query.isEmpty || query == selectedCountryText {
             return CountryDatabase.all
         }
-        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+    
+    private var isContinueEnabled: Bool {
+        selectedCountryID != nil
     }
     
     var body: some View {
@@ -20,22 +35,19 @@ struct OriginView: View {
             
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Where are you from?")
-                        .font(.onboardingTitle)
-                        .foregroundColor(Colors.primaryText)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("Where are you from?")
+                        Text("🗺️")
+                            .font(.custom(Fonts.semibold, size: 36))
+                    }
+                    .font(.onboardingTitle)
+                    .foregroundColor(Colors.primaryText)
                     Text("This helps us match you with people who share similar origin.")
                         .font(.travelBody)
                         .foregroundColor(Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
-
-                Image("travel4")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 140)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
@@ -57,25 +69,39 @@ struct OriginView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredCountries) { country in
-                            HStack(spacing: 12) {
-                                Text(country.flag)
-                                    .font(.travelTitle)
-                                Text(country.name)
-                                    .font(.travelBody)
-                                    .foregroundColor(Colors.primaryText)
+                            let isSelected = selectedCountryID == country.id
+                            
+                            Button {
+                                if isSelected {
+                                    selectedCountryID = nil
+                                    searchText = ""
+                                } else {
+                                    selectedCountryID = country.id
+                                    searchText = selectedCountryText
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(country.flag)
+                                        .font(.travelTitle)
+                                    Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Colors.card)
-                            .cornerRadius(12)
+                            .buttonStyle(.plain)
                         }
                     }
                 }
-                .frame(maxHeight: 260)
                 .scrollIndicators(.hidden)
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .padding(.horizontal, 20)
             .padding(.top, 48)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
@@ -90,6 +116,8 @@ struct OriginView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

@@ -24,20 +24,21 @@ struct AboutView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    Image("travel1")
+                    Image("travel24")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 120)
+                        .frame(height: 110)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel2")
+                    Image("travel25")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 120)
+                        .frame(height: 110)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: $bio)
@@ -54,7 +55,7 @@ struct AboutView: View {
                         Text("Share what other travelers should know about you")
                             .font(.travelBody)
                             .foregroundColor(Colors.secondaryText)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 16)
                             .padding(.vertical, 18)
                             .allowsHitTesting(false)
                     }
@@ -76,6 +77,15 @@ struct AboutView: View {
                         .frame(height: 56)
                         .background(Colors.accent)
                         .cornerRadius(16)
+                }
+                
+                Button {
+                    showUpcomingTrips = true
+                } label: {
+                    Text("Skip")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.primaryText)
+                        .frame(maxWidth: .infinity)
                 }
                 
                 Button {

@@ -1,17 +1,16 @@
-//
-//  primallifeApp.swift
-//  primallife
-//
-//  Created by Trevor Thompson on 11/16/25.
-//
-
 import SwiftUI
+import Supabase
 
 @main
 struct primallifeApp: App {
+    private let supabase = SupabaseClient(
+        supabaseURL: URL(string: "https://fefucqrztvepcbfjikrq.supabase.co")!,
+        supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
+    )
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(supabase: supabase)
         }
     }
 }

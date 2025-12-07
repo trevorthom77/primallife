@@ -16,8 +16,8 @@
 	<string>pk.eyJ1IjoidHJldm9ydGhvbTciLCJhIjoiY21pMmtvc3Q1MWwzZTJscTZ3NWNvdGdobSJ9.ayj6QcFtgsSY05V3I8_1mA</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Epilogue-Regular.ttf</string>
-		<string>Epilogue-SemiBold.ttf</string>
+		<string>Unbounded-SemiBold.ttf</string>
+		<string>Unbounded-Regular.ttf</string>
 	</array>
 </dict>
 </plist>

@@ -67,7 +67,8 @@ struct MyTripsView: View {
                                         flag: "🇧🇸",
                                         location: "Bahamas",
                                         dates: "Mar 2–9",
-                                        imageQuery: "Bahamas beach")
+                                        imageQuery: "Bahamas beach",
+                                        showsAttribution: true)
                                     Spacer()
                                 }
                                 .tag(1)

@@ -142,6 +142,36 @@ struct TribesSocialView: View {
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
+                    if title == "Party Tonight Costa Rica" {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Interests")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack(spacing: 10) {
+                                Text("🦈 Sharks")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 12)
+                                    .background(Colors.accent)
+                                    .clipShape(Capsule())
+
+                                Text("🐟 Jeremy Wade")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 12)
+                                    .background(Colors.accent)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Places")

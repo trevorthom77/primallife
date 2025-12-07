@@ -429,7 +429,7 @@ private struct MapCommunityPanel: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .frame(maxWidth: 240)
+                .frame(maxWidth: 280)
                 
                 Spacer()
             }

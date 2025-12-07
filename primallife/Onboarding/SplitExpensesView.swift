@@ -10,6 +10,10 @@ struct SplitExpensesView: View {
         "Prefer to keep expenses separate"
     ]
     
+    private var isContinueEnabled: Bool {
+        selectedOption != nil
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -28,19 +32,14 @@ struct SplitExpensesView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    Image("travel2")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 160)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                    
-                    Image("travel5")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 160)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                    ForEach(["travel11", "travel10", "travel31"], id: \.self) { name in
+                        Image(name)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 110)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -81,6 +80,8 @@ struct SplitExpensesView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

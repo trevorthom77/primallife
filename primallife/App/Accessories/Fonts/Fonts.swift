@@ -8,8 +8,8 @@
 import SwiftUI
 
 enum Fonts {
-    static let semibold = "Epilogue-SemiBold"
-    static let regular = "Epilogue-Regular"
+    static let semibold = "Unbounded-SemiBold"
+    static let regular = "Unbounded-Regular"
 }
 
 extension Font {

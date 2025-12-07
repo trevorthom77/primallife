@@ -3,8 +3,18 @@ import SwiftUI
 struct BasicInfoView: View {
     @State private var name = ""
     @State private var birthday = Date()
+    @State private var hasSelectedBirthday = false
     @State private var showLanguages = false
+    @State private var showBirthdayPicker = false
     @FocusState private var isNameFieldFocused: Bool
+    
+    private var birthdayText: String {
+        birthday.formatted(date: .abbreviated, time: .omitted)
+    }
+    
+    private var isContinueEnabled: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasSelectedBirthday
+    }
     
     var body: some View {
         ZStack {
@@ -24,14 +34,14 @@ struct BasicInfoView: View {
                 
                 HStack(spacing: 12) {
                     VStack(spacing: 12) {
-                        Image("travel1")
+                        Image("travel6")
                             .resizable()
                             .scaledToFill()
                             .frame(height: 180)
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         
-                        Image("travel2")
+                        Image("travel7")
                             .resizable()
                             .scaledToFill()
                             .frame(height: 120)
@@ -40,14 +50,14 @@ struct BasicInfoView: View {
                     }
                     
                     VStack(spacing: 12) {
-                        Image("travel3")
+                        Image("travel8")
                             .resizable()
                             .scaledToFill()
                             .frame(height: 120)
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         
-                        Image("travel4")
+                        Image("travel9")
                             .resizable()
                             .scaledToFill()
                             .frame(height: 180)
@@ -77,22 +87,35 @@ struct BasicInfoView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Colors.card)
                     .cornerRadius(12)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Birthday")
-                            .font(.travelDetail)
-                            .foregroundColor(Colors.primaryText)
-                        
-                        DatePicker("", selection: $birthday, displayedComponents: .date)
-                            .labelsHidden()
-                            .font(.travelBody)
-                            .foregroundColor(Colors.primaryText)
-                            .tint(Colors.accent)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isNameFieldFocused = true
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .cornerRadius(12)
+                    
+                    Button {
+                        showBirthdayPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Birthday")
+                                .font(.travelDetail)
+                                .foregroundColor(Colors.primaryText)
+                            
+                            HStack {
+                                Text(hasSelectedBirthday ? birthdayText : "Select your birthday")
+                                    .font(.travelBody)
+                                    .foregroundColor(hasSelectedBirthday ? Colors.primaryText : Colors.secondaryText)
+                                
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
                 }
                 
                 Spacer()
@@ -120,9 +143,41 @@ struct BasicInfoView: View {
                     .background(Colors.accent)
                     .cornerRadius(16)
             }
+            .disabled(!isContinueEnabled)
+            .opacity(isContinueEnabled ? 1 : 0.6)
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
             .background(Colors.background)
+        }
+        .sheet(isPresented: $showBirthdayPicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+                        
+                        Button("Done") {
+                            showBirthdayPicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.accent)
+                    }
+                    
+                    DatePicker("", selection: $birthday, displayedComponents: .date)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .tint(Colors.accent)
+                        .onChange(of: birthday) {
+                            hasSelectedBirthday = true
+                        }
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
         }
     }
 }

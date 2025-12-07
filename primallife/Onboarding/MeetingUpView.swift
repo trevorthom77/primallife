@@ -6,6 +6,10 @@ struct MeetingUpView: View {
     @State private var showSplitExpenses = false
     private let options = ["Travel together", "Meet at destination", "Open to both"]
     
+    private var isContinueEnabled: Bool {
+        selectedOption != nil
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -24,21 +28,21 @@ struct MeetingUpView: View {
                 .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    Image("travel2")
+                    Image("travel16")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 110)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel3")
+                    Image("travel17")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 110)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
-                    Image("travel4")
+                    Image("travel18")
                         .resizable()
                         .scaledToFill()
                         .frame(height: 110)
@@ -83,6 +87,8 @@ struct MeetingUpView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

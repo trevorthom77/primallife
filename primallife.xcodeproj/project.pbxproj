@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D587A35F2EE2815B00A32AB9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D587A35E2EE2815B00A32AB9 /* Supabase */; };
 		D5B395242ECE5C26003E48E9 /* MapboxSearch in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395232ECE5C26003E48E9 /* MapboxSearch */; };
 		D5B395262ECE5C26003E48E9 /* MapboxSearchUI in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395252ECE5C26003E48E9 /* MapboxSearchUI */; };
 		D5B395292ECE5C6B003E48E9 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = D5B395282ECE5C6B003E48E9 /* MapboxMaps */; };
@@ -42,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D587A35F2EE2815B00A32AB9 /* Supabase in Frameworks */,
 				D5B395292ECE5C6B003E48E9 /* MapboxMaps in Frameworks */,
 				D5B395242ECE5C26003E48E9 /* MapboxSearch in Frameworks */,
 				D5B395262ECE5C26003E48E9 /* MapboxSearchUI in Frameworks */,
@@ -90,6 +92,7 @@
 				D5B395232ECE5C26003E48E9 /* MapboxSearch */,
 				D5B395252ECE5C26003E48E9 /* MapboxSearchUI */,
 				D5B395282ECE5C6B003E48E9 /* MapboxMaps */,
+				D587A35E2EE2815B00A32AB9 /* Supabase */,
 			);
 			productName = primallife;
 			productReference = D5730CEA2ECA941A00BF989C /* primallife.app */;
@@ -127,6 +130,7 @@
 			packageReferences = (
 				D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */,
 				D5B395272ECE5C6B003E48E9 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
+				D587A35D2EE2815B00A32AB9 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5730CEB2ECA941A00BF989C /* Products */;
@@ -282,6 +286,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = primallife/primallife.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UUZS9J9Y2Q;
@@ -332,6 +337,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = primallife/primallife.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UUZS9J9Y2Q;
@@ -401,6 +407,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		D587A35D2EE2815B00A32AB9 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
 		D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/mapbox/mapbox-search-ios.git";
@@ -420,6 +434,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D587A35E2EE2815B00A32AB9 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D587A35D2EE2815B00A32AB9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
 		D5B395232ECE5C26003E48E9 /* MapboxSearch */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D5B395222ECE5C26003E48E9 /* XCRemoteSwiftPackageReference "mapbox-search-ios" */;

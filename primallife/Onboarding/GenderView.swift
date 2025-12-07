@@ -6,6 +6,10 @@ struct GenderView: View {
     @State private var showMeeting = false
     private let options = ["Male", "Female", "Other"]
     
+    private var isContinueEnabled: Bool {
+        selectedGender != nil
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -23,22 +27,21 @@ struct GenderView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                HStack(spacing: 12) {
-                    Image("profile1")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                GeometryReader { geometry in
+                    let width = min((geometry.size.width - 24) / 3, 140)
                     
-                    Image("profile2")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    HStack(spacing: 12) {
+                        ForEach(["travel26", "travel27", "travel28"], id: \.self) { name in
+                            Image(name)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: width, height: 110)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(height: 110)
                 
                 ScrollView {
                     VStack(spacing: 12) {
@@ -80,6 +83,8 @@ struct GenderView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     dismiss()

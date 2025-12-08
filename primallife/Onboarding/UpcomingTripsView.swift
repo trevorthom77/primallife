@@ -23,6 +23,10 @@ struct UpcomingTripsView: View {
         departingDate.formatted(date: .abbreviated, time: .omitted)
     }
     
+    private var isContinueEnabled: Bool {
+        !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasSelectedArrival && hasSelectedDeparting
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -127,6 +131,8 @@ struct UpcomingTripsView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     showProfilePicture = true

@@ -1,11 +1,15 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 
 struct ProfilePictureView: View {
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
+    @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     @State private var profileImage: UIImage?
     @State private var selectedItem: PhotosPickerItem?
     @State private var showLocationPermission = false
+    @State private var avatarURL: URL?
     
     private var isContinueEnabled: Bool {
         profileImage != nil
@@ -38,22 +42,24 @@ struct ProfilePictureView: View {
                         .frame(height: 320)
                         .frame(maxWidth: .infinity)
                         .overlay {
-                            if let image = profileImage {
+                            if let avatarURL {
+                                AsyncImage(url: avatarURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .clipped()
+                                } placeholder: {
+                                    placeholderContent
+                                }
+                            } else if let image = profileImage {
                                 Image(uiImage: image)
                                     .resizable()
                                     .scaledToFill()
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .clipped()
                             } else {
-                                VStack(spacing: 8) {
-                                    Text("Tap to upload your photo")
-                                        .font(.travelDetail)
-                                        .foregroundColor(Colors.primaryText)
-                                    Text("Make sure your face is easy to see.")
-                                        .font(.travelBody)
-                                        .foregroundColor(Colors.secondaryText)
-                                }
-                                .padding(.horizontal, 20)
+                                placeholderContent
                             }
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -106,14 +112,59 @@ struct ProfilePictureView: View {
         guard let item else { return }
         
         Task {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let uiImage = UIImage(data: data) {
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let uiImage = UIImage(data: data) else { return }
+            
+            await MainActor.run {
                 profileImage = uiImage
             }
+            
+            await uploadAvatar(data)
         }
+    }
+    
+    private func uploadAvatar(_ data: Data) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        let path = "\(userID)/avatar.jpg"
+        
+        do {
+            try await supabase.storage
+                .from("profile-photos")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
+            
+            let signedURL = try await supabase.storage
+                .from("profile-photos")
+                .createSignedURL(path: path, expiresIn: 60 * 60)
+            
+            await MainActor.run {
+                onboardingViewModel.avatarPath = path
+                avatarURL = signedURL
+            }
+        } catch {
+            print("Avatar upload failed: \(error)")
+        }
+    }
+    
+    private var placeholderContent: some View {
+        VStack(spacing: 8) {
+            Text("Tap to upload your photo")
+                .font(.travelDetail)
+                .foregroundColor(Colors.primaryText)
+            Text("Make sure your face is easy to see.")
+                .font(.travelBody)
+                .foregroundColor(Colors.secondaryText)
+        }
+        .padding(.horizontal, 20)
     }
 }
 
 #Preview {
-    ProfilePictureView()
+    let supabase = SupabaseClient(
+        supabaseURL: URL(string: "https://fefucqrztvepcbfjikrq.supabase.co")!,
+        supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
+    )
+    
+    return ProfilePictureView()
+        .environment(\.supabaseClient, supabase)
+        .environmentObject(OnboardingViewModel())
 }

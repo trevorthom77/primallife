@@ -6,6 +6,10 @@ struct AboutView: View {
     @State private var showUpcomingTrips = false
     @FocusState private var isBioFocused: Bool
     
+    private var isContinueEnabled: Bool {
+        !bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -41,16 +45,6 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 ZStack(alignment: .topLeading) {
-                    TextEditor(text: $bio)
-                        .font(.travelBody)
-                        .foregroundColor(Colors.primaryText)
-                        .frame(height: 200)
-                        .padding(12)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                        .scrollContentBackground(.hidden)
-                        .focused($isBioFocused)
-                    
                     if bio.isEmpty {
                         Text("Share what other travelers should know about you")
                             .font(.travelBody)
@@ -59,7 +53,17 @@ struct AboutView: View {
                             .padding(.vertical, 18)
                             .allowsHitTesting(false)
                     }
+                    
+                    TextEditor(text: $bio)
+                        .font(.travelBody)
+                        .foregroundColor(Colors.primaryText)
+                        .padding(12)
+                        .frame(height: 200)
+                        .scrollContentBackground(.hidden)
+                        .focused($isBioFocused)
                 }
+                .background(Colors.card)
+                .cornerRadius(12)
                 
                 Spacer()
             }
@@ -78,6 +82,8 @@ struct AboutView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 
                 Button {
                     showUpcomingTrips = true

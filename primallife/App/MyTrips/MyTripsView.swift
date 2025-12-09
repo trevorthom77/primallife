@@ -178,39 +178,29 @@ struct MyTripsView: View {
                                     .foregroundStyle(Colors.accent)
                             }
                             
-                            TabView(selection: $selectedTripIndex) {
-                                HStack(spacing: 0) {
-                                    TravelCard(showsAttribution: true)
-                                    Spacer()
+                            VStack(spacing: 12) {
+                                ForEach(viewModel.trips) { trip in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(trip.destination)
+                                            .font(.travelTitle)
+                                            .foregroundStyle(Colors.primaryText)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Check-in: \(myTripsDateFormatter.string(from: trip.checkIn))")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                            
+                                            Text("Return: \(myTripsDateFormatter.string(from: trip.returnDate))")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
+                                    }
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
-                                .tag(0)
-                                
-                                HStack(spacing: 0) {
-                                    TravelCard(
-                                        flag: "🇧🇸",
-                                        location: "Bahamas",
-                                        dates: "Mar 2–9",
-                                        imageQuery: "Bahamas beach",
-                                        showsAttribution: true)
-                                    Spacer()
-                                }
-                                .tag(1)
                             }
-                            .frame(height: 180)
-                            .tabViewStyle(.page(indexDisplayMode: .never))
-                            .sensoryFeedback(.impact(weight: .medium), trigger: selectedTripIndex)
-                            
-                            HStack(spacing: 18) {
-                                Image("airplane")
-                                    .renderingMode(.template)
-                                    .foregroundStyle(selectedTripIndex == 0 ? Colors.accent : Colors.secondaryText)
-                                    
-                                Image("airplane")
-                                    .renderingMode(.template)
-                                    .foregroundStyle(selectedTripIndex == 1 ? Colors.accent : Colors.secondaryText)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, 8)
                             
                             HStack {
                                 Text("Costa Rica Tribes")
@@ -653,7 +643,7 @@ struct MyTripsView: View {
                 }
             }
             .navigationDestination(isPresented: $isShowingTrips) {
-                TripsView()
+                TripsView(viewModel: viewModel)
             }
             .navigationDestination(isPresented: $isShowingTribeTrips) {
                 TribeTripsView()

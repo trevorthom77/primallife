@@ -1,6 +1,9 @@
 import SwiftUI
+import Supabase
 
 struct TripsView: View {
+    @Environment(\.supabaseClient) var supabase
+    @ObservedObject var viewModel: MyTripsViewModel
     @State private var destination = ""
     @State private var searchQuery = ""
     @State private var checkInDate = Date()
@@ -121,6 +124,19 @@ struct TripsView: View {
                     .frame(height: 220)
                 
                 Button {
+                    Task {
+                        guard let supabase = supabase, supabase.auth.currentUser != nil else { return }
+                        await viewModel.addTrip(
+                            destination: destination,
+                            checkIn: checkInDate,
+                            returnDate: returnDate,
+                            supabase: supabase
+                        )
+                        
+                        if viewModel.error == nil {
+                            dismiss()
+                        }
+                    }
                 } label: {
                     Text("Add Trip")
                         .font(.travelDetail)
@@ -218,9 +234,10 @@ struct TripsView: View {
                         .onTapGesture {
                             activeDatePicker = nil
                         }
-                    
+                
                     datePickerOverlay(for: picker)
                 }
+                .preferredColorScheme(.light)
             }
         }
     }

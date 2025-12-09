@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var showBottomRight = false
     @State private var showMiddle = false
     @State private var showBasicInfo = false
+    @State private var showHome = false
     @State private var currentNonce: String?
     
     var body: some View {
@@ -119,7 +120,7 @@ struct ContentView: View {
                                                 nonce: nonce
                                             )
                                         )
-                                        showBasicInfo = true
+                                        await checkOnboardingCompletion()
                                     } catch {
                                         print("Apple sign-in failed: \(error)")
                                     }
@@ -140,6 +141,9 @@ struct ContentView: View {
             }
             .navigationDestination(isPresented: $showBasicInfo) {
                 BasicInfoView()
+            }
+            .navigationDestination(isPresented: $showHome) {
+                HomeView()
             }
         }
     }
@@ -185,6 +189,39 @@ struct ContentView: View {
         let data = Data(input.utf8)
         let hashed = SHA256.hash(data: data)
         return hashed.map { String(format: "%02x", $0) }.joined()
+    }
+    
+    private struct OnboardingCompletion: Decodable {
+        let completedAt: String?
+        
+        private enum CodingKeys: String, CodingKey {
+            case completedAt = "completed_at"
+        }
+    }
+    
+    private func checkOnboardingCompletion() async {
+        guard let userID = supabase.auth.currentUser?.id else { return }
+        
+        do {
+            let response: [OnboardingCompletion] = try await supabase
+                .from("onboarding")
+                .select("completed_at")
+                .eq("user_id", value: "\(userID)")
+                .limit(1)
+                .execute()
+                .value
+            
+            let completedAt = response.first?.completedAt
+            await MainActor.run {
+                showHome = completedAt != nil
+                showBasicInfo = completedAt == nil
+            }
+        } catch {
+            await MainActor.run {
+                showBasicInfo = true
+            }
+            print("Onboarding completion check failed: \(error)")
+        }
     }
 }
 

@@ -107,6 +107,15 @@ struct ProfilePictureView: View {
                let data = onboardingViewModel.profileImageData {
                 profileImage = UIImage(data: data)
             }
+
+            if let path = onboardingViewModel.avatarPath {
+                Task {
+                    let signedURL = await generateSignedAvatarURL(for: path)
+                    await MainActor.run {
+                        avatarURL = signedURL
+                    }
+                }
+            }
         }
         .navigationDestination(isPresented: $showLocationPermission) {
             LocationPermissionView()
@@ -139,9 +148,7 @@ struct ProfilePictureView: View {
                 .from("profile-photos")
                 .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
             
-            let signedURL = try await supabase.storage
-                .from("profile-photos")
-                .createSignedURL(path: path, expiresIn: 60 * 60)
+            guard let signedURL = await generateSignedAvatarURL(for: path) else { return }
             
             await MainActor.run {
                 onboardingViewModel.avatarPath = path
@@ -149,6 +156,19 @@ struct ProfilePictureView: View {
             }
         } catch {
             print("Avatar upload failed: \(error)")
+        }
+    }
+    
+    private func generateSignedAvatarURL(for path: String) async -> URL? {
+        guard let supabase else { return nil }
+        
+        do {
+            return try await supabase.storage
+                .from("profile-photos")
+                .createSignedURL(path: path, expiresIn: 3600)
+        } catch {
+            print("Failed to create signed URL: \(error)")
+            return nil
         }
     }
     

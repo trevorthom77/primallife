@@ -1,6 +1,129 @@
 import SwiftUI
+import Combine
+import Supabase
+
+private let myTripsDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+struct Trip: Decodable, Identifiable {
+    let id: UUID
+    let userID: UUID
+    let destination: String
+    let checkIn: Date
+    let returnDate: Date
+    let createdAt: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case destination
+        case checkIn = "check_in"
+        case returnDate = "return_date"
+        case createdAt = "created_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        userID = try container.decode(UUID.self, forKey: .userID)
+        destination = try container.decode(String.self, forKey: .destination)
+
+        let checkInString = try container.decode(String.self, forKey: .checkIn)
+        guard let checkInDate = myTripsDateFormatter.date(from: checkInString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.checkIn], debugDescription: "Invalid check-in date format")
+            )
+        }
+        checkIn = checkInDate
+
+        let returnDateString = try container.decode(String.self, forKey: .returnDate)
+        guard let decodedReturnDate = myTripsDateFormatter.date(from: returnDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.returnDate], debugDescription: "Invalid return date format")
+            )
+        }
+        returnDate = decodedReturnDate
+
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+    }
+}
+
+struct NewTrip: Encodable {
+    let userID: UUID
+    let destination: String
+    let checkIn: Date
+    let returnDate: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case destination
+        case checkIn = "check_in"
+        case returnDate = "return_date"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(userID, forKey: .userID)
+        try container.encode(destination, forKey: .destination)
+        try container.encode(myTripsDateFormatter.string(from: checkIn), forKey: .checkIn)
+        try container.encode(myTripsDateFormatter.string(from: returnDate), forKey: .returnDate)
+    }
+}
+
+@MainActor
+final class MyTripsViewModel: ObservableObject {
+    @Published var trips: [Trip] = []
+    @Published var error: String?
+
+    func loadTrips(supabase: SupabaseClient?) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let fetchedTrips: [Trip] = try await supabase
+                .from("mytrips")
+                .select()
+                .eq("user_id", value: "\(userID)")
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+
+            trips = fetchedTrips
+            error = nil
+        } catch {
+            self.error = "Unable to load trips."
+        }
+    }
+
+    func addTrip(destination: String, checkIn: Date, returnDate: Date, supabase: SupabaseClient?) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        let payload = NewTrip(
+            userID: userID,
+            destination: destination,
+            checkIn: checkIn,
+            returnDate: returnDate
+        )
+
+        do {
+            try await supabase
+                .from("mytrips")
+                .insert(payload)
+                .execute()
+
+            await loadTrips(supabase: supabase)
+        } catch {
+            self.error = "Unable to add trip."
+        }
+    }
+}
 
 struct MyTripsView: View {
+    @Environment(\.supabaseClient) var supabase
+    @StateObject private var viewModel = MyTripsViewModel()
     @State private var tribeImageURL: URL?
     @State private var secondTribeImageURL: URL?
     @State private var sunImageURL: URL?
@@ -535,6 +658,9 @@ struct MyTripsView: View {
             .navigationDestination(isPresented: $isShowingTribeTrips) {
                 TribeTripsView()
             }
+        }
+        .task {
+            await viewModel.loadTrips(supabase: supabase)
         }
     }
 }

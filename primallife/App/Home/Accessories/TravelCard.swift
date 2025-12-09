@@ -120,13 +120,12 @@ struct TravelCard: View {
                !name.isEmpty,
                let profileURL = photographerProfileURL {
                 Link(name, destination: profileURL)
-                    .font(.custom(Fonts.semibold, size: 16))
+                    .font(.custom(Fonts.semibold, size: 14))
                     .foregroundStyle(Colors.primaryText)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 7)
                     .padding(.horizontal, 12)
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(width: 180, alignment: .trailing)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .padding(12)

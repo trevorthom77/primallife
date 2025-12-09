@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -79,6 +80,9 @@ struct NotificationsView: View {
             WelcomeProfileView()
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            requestNotificationPermission()
+        }
     }
     
     private func infoCard(emoji: String, title: String) -> some View {
@@ -97,6 +101,10 @@ struct NotificationsView: View {
         .frame(maxWidth: .infinity)
         .background(Colors.card)
         .cornerRadius(12)
+    }
+    
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
     }
 }
 

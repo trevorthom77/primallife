@@ -18,24 +18,25 @@ struct WelcomeProfileView: View {
             Colors.background
                 .ignoresSafeArea()
             
-            VStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Welcome to your profile")
-                        .font(.onboardingTitle)
-                        .foregroundColor(Colors.primaryText)
-                    Text("This is how others will see you.")
-                        .font(.travelBody)
-                        .foregroundColor(Colors.secondaryText)
+            ScrollView {
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Welcome to your profile")
+                            .font(.onboardingTitle)
+                            .foregroundColor(Colors.primaryText)
+                        Text("This is how others will see you.")
+                            .font(.travelBody)
+                            .foregroundColor(Colors.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                    
+                    ProfilePreviewCard()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 8)
-                
-                ProfilePreviewCard()
-                
-                Spacer()
+                .padding(20)
+                .padding(.top, 48)
+                .padding(.bottom, 180)
             }
-            .padding(20)
-            .padding(.top, 48)
             
             VStack(spacing: 16) {
                 Button {

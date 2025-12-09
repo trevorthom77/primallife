@@ -2,13 +2,13 @@ import SwiftUI
 
 struct OriginView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var searchText = ""
     @State private var showGender = false
-    @State private var selectedCountryID: String?
     @FocusState private var isSearchFocused: Bool
     
     private var selectedCountryText: String {
-        guard let selectedCountryID,
+        guard let selectedCountryID = onboardingViewModel.selectedCountryID,
               let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
             return ""
         }
@@ -25,7 +25,7 @@ struct OriginView: View {
     }
     
     private var isContinueEnabled: Bool {
-        selectedCountryID != nil
+        onboardingViewModel.selectedCountryID != nil
     }
     
     var body: some View {
@@ -69,15 +69,15 @@ struct OriginView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredCountries) { country in
-                            let isSelected = selectedCountryID == country.id
+                            let isSelected = onboardingViewModel.selectedCountryID == country.id
                             
                             Button {
                                 if isSelected {
-                                    selectedCountryID = nil
+                                    onboardingViewModel.selectedCountryID = nil
                                     searchText = ""
                                 } else {
-                                    selectedCountryID = country.id
-                                    searchText = selectedCountryText
+                                    onboardingViewModel.selectedCountryID = country.id
+                                    searchText = "\(country.flag) \(country.name)"
                                 }
                             } label: {
                                 HStack(spacing: 12) {
@@ -146,4 +146,5 @@ struct OriginView: View {
 
 #Preview {
     OriginView()
+        .environmentObject(OnboardingViewModel())
 }

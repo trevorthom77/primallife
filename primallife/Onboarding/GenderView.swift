@@ -2,12 +2,12 @@ import SwiftUI
 
 struct GenderView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedGender: String?
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showMeeting = false
     private let options = ["Male", "Female", "Other"]
     
     private var isContinueEnabled: Bool {
-        selectedGender != nil
+        onboardingViewModel.selectedGender != nil
     }
     
     var body: some View {
@@ -47,17 +47,17 @@ struct GenderView: View {
                     VStack(spacing: 12) {
                         ForEach(options, id: \.self) { option in
                             Button {
-                                selectedGender = option
+                                onboardingViewModel.selectedGender = option
                             } label: {
                                 HStack {
                                     Text(option)
-                                        .font(selectedGender == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                        .font(onboardingViewModel.selectedGender == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                     Spacer()
                                 }
-                                .foregroundColor(selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
+                                .foregroundColor(onboardingViewModel.selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(selectedGender == option ? Colors.accent : Colors.card)
+                                .background(onboardingViewModel.selectedGender == option ? Colors.accent : Colors.card)
                                 .cornerRadius(12)
                             }
                         }
@@ -108,4 +108,5 @@ struct GenderView: View {
 
 #Preview {
     GenderView()
+        .environmentObject(OnboardingViewModel())
 }

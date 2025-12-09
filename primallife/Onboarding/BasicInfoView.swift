@@ -1,19 +1,17 @@
 import SwiftUI
 
 struct BasicInfoView: View {
-    @State private var name = ""
-    @State private var birthday = Date()
-    @State private var hasSelectedBirthday = false
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showLanguages = false
     @State private var showBirthdayPicker = false
     @FocusState private var isNameFieldFocused: Bool
     
     private var birthdayText: String {
-        birthday.formatted(date: .abbreviated, time: .omitted)
+        onboardingViewModel.birthday.formatted(date: .abbreviated, time: .omitted)
     }
     
     private var isContinueEnabled: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasSelectedBirthday
+        !onboardingViewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && onboardingViewModel.hasSelectedBirthday
     }
     
     var body: some View {
@@ -73,7 +71,7 @@ struct BasicInfoView: View {
                             .font(.travelDetail)
                             .foregroundColor(Colors.primaryText)
                         
-                        TextField("", text: $name, prompt: Text("Enter your name").foregroundColor(Colors.secondaryText))
+                        TextField("", text: $onboardingViewModel.name, prompt: Text("Enter your name").foregroundColor(Colors.secondaryText))
                             .font(.travelBody)
                             .foregroundColor(Colors.primaryText)
                             .focused($isNameFieldFocused)
@@ -101,9 +99,9 @@ struct BasicInfoView: View {
                                 .foregroundColor(Colors.primaryText)
                             
                             HStack {
-                                Text(hasSelectedBirthday ? birthdayText : "Select your birthday")
+                                Text(onboardingViewModel.hasSelectedBirthday ? birthdayText : "Select your birthday")
                                     .font(.travelBody)
-                                    .foregroundColor(hasSelectedBirthday ? Colors.primaryText : Colors.secondaryText)
+                                    .foregroundColor(onboardingViewModel.hasSelectedBirthday ? Colors.primaryText : Colors.secondaryText)
                                 
                                 Spacer()
                             }
@@ -165,12 +163,12 @@ struct BasicInfoView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $birthday, displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.birthday, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
-                        .onChange(of: birthday) {
-                            hasSelectedBirthday = true
+                        .onChange(of: onboardingViewModel.birthday) {
+                            onboardingViewModel.hasSelectedBirthday = true
                         }
                 }
                 .padding(20)
@@ -184,4 +182,5 @@ struct BasicInfoView: View {
 
 #Preview {
     BasicInfoView()
+        .environmentObject(OnboardingViewModel())
 }

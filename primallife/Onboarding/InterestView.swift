@@ -2,7 +2,7 @@ import SwiftUI
 
 struct InterestView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedInterests: Set<String> = []
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showMeetingUp = false
     private let interests = [
         "🧭 Adventure",
@@ -47,7 +47,7 @@ struct InterestView: View {
     ]
     
     private var isContinueEnabled: Bool {
-        !selectedInterests.isEmpty
+        !onboardingViewModel.selectedInterests.isEmpty
     }
     
     var body: some View {
@@ -70,7 +70,7 @@ struct InterestView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(interests, id: \.self) { interest in
-                            let isSelected = selectedInterests.contains(interest)
+                            let isSelected = onboardingViewModel.selectedInterests.contains(interest)
                             
                             Button {
                                 toggleSelection(for: interest)
@@ -132,14 +132,15 @@ struct InterestView: View {
     }
     
     private func toggleSelection(for interest: String) {
-        if selectedInterests.contains(interest) {
-            selectedInterests.remove(interest)
-        } else if selectedInterests.count < 6 {
-            selectedInterests.insert(interest)
+        if onboardingViewModel.selectedInterests.contains(interest) {
+            onboardingViewModel.selectedInterests.remove(interest)
+        } else if onboardingViewModel.selectedInterests.count < 6 {
+            onboardingViewModel.selectedInterests.insert(interest)
         }
     }
 }
 
 #Preview {
     InterestView()
+        .environmentObject(OnboardingViewModel())
 }

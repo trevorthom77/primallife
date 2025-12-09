@@ -2,7 +2,7 @@ import SwiftUI
 
 struct DescriptionView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedOption: String?
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showAbout = false
     private let options = [
         "Backpacking",
@@ -14,7 +14,7 @@ struct DescriptionView: View {
     ]
     
     private var isContinueEnabled: Bool {
-        selectedOption != nil
+        onboardingViewModel.travelDescription != nil
     }
     
     var body: some View {
@@ -62,17 +62,17 @@ struct DescriptionView: View {
                     VStack(spacing: 12) {
                         ForEach(options, id: \.self) { option in
                             Button {
-                                selectedOption = option
+                                onboardingViewModel.travelDescription = option
                             } label: {
                                 HStack {
                                     Text(option)
-                                        .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                        .font(onboardingViewModel.travelDescription == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                     Spacer()
                                 }
-                                .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                                .foregroundColor(onboardingViewModel.travelDescription == option ? Colors.tertiaryText : Colors.primaryText)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(selectedOption == option ? Colors.accent : Colors.card)
+                                .background(onboardingViewModel.travelDescription == option ? Colors.accent : Colors.card)
                                 .cornerRadius(12)
                             }
                         }
@@ -122,4 +122,5 @@ struct DescriptionView: View {
 
 #Preview {
     DescriptionView()
+        .environmentObject(OnboardingViewModel())
 }

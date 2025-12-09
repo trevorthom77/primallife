@@ -2,12 +2,12 @@ import SwiftUI
 
 struct MeetingUpView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedOption: String?
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showSplitExpenses = false
     private let options = ["Travel together", "Meet at destination", "Open to both"]
     
     private var isContinueEnabled: Bool {
-        selectedOption != nil
+        onboardingViewModel.meetingStyle != nil
     }
     
     var body: some View {
@@ -54,17 +54,17 @@ struct MeetingUpView: View {
                 VStack(spacing: 12) {
                     ForEach(options, id: \.self) { option in
                         Button {
-                            selectedOption = option
+                            onboardingViewModel.meetingStyle = option
                         } label: {
                             HStack {
                                 Text(option)
-                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    .font(onboardingViewModel.meetingStyle == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                 Spacer()
                             }
-                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                            .foregroundColor(onboardingViewModel.meetingStyle == option ? Colors.tertiaryText : Colors.primaryText)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(selectedOption == option ? Colors.accent : Colors.card)
+                            .background(onboardingViewModel.meetingStyle == option ? Colors.accent : Colors.card)
                             .cornerRadius(12)
                         }
                     }
@@ -112,4 +112,5 @@ struct MeetingUpView: View {
 
 #Preview {
     MeetingUpView()
+        .environmentObject(OnboardingViewModel())
 }

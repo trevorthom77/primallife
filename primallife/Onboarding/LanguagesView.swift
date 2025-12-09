@@ -2,9 +2,9 @@ import SwiftUI
 
 struct LanguagesView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var searchText = ""
     @State private var showOrigin = false
-    @State private var selectedLanguageIDs: Set<String> = []
     @FocusState private var isSearchFocused: Bool
     
     private var filteredLanguages: [Language] {
@@ -18,7 +18,7 @@ struct LanguagesView: View {
     }
     
     private var isContinueEnabled: Bool {
-        !selectedLanguageIDs.isEmpty
+        !onboardingViewModel.selectedLanguageIDs.isEmpty
     }
     
     var body: some View {
@@ -62,13 +62,13 @@ struct LanguagesView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredLanguages) { language in
-                            let isSelected = selectedLanguageIDs.contains(language.id)
+                            let isSelected = onboardingViewModel.selectedLanguageIDs.contains(language.id)
                             
                             Button {
                                 if isSelected {
-                                    selectedLanguageIDs.remove(language.id)
+                                    onboardingViewModel.selectedLanguageIDs.remove(language.id)
                                 } else {
-                                    selectedLanguageIDs.insert(language.id)
+                                    onboardingViewModel.selectedLanguageIDs.insert(language.id)
                                 }
                             } label: {
                                 HStack(spacing: 12) {
@@ -137,4 +137,5 @@ struct LanguagesView: View {
 
 #Preview {
     LanguagesView()
+        .environmentObject(OnboardingViewModel())
 }

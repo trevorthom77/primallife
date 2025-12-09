@@ -2,12 +2,12 @@ import SwiftUI
 
 struct MeetingView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedOption: String?
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showInterests = false
     private let options = ["Only Girls", "Only Boys", "Everyone"]
     
     private var isContinueEnabled: Bool {
-        selectedOption != nil
+        onboardingViewModel.travelCompanionPreference != nil
     }
     
     var body: some View {
@@ -43,17 +43,17 @@ struct MeetingView: View {
                     VStack(spacing: 12) {
                         ForEach(options, id: \.self) { option in
                             Button {
-                                selectedOption = option
+                                onboardingViewModel.travelCompanionPreference = option
                             } label: {
                                 HStack {
                                     Text(option)
-                                        .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                        .font(onboardingViewModel.travelCompanionPreference == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                     Spacer()
                                 }
-                                .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                                .foregroundColor(onboardingViewModel.travelCompanionPreference == option ? Colors.tertiaryText : Colors.primaryText)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(selectedOption == option ? Colors.accent : Colors.card)
+                                .background(onboardingViewModel.travelCompanionPreference == option ? Colors.accent : Colors.card)
                                 .cornerRadius(12)
                             }
                         }
@@ -104,4 +104,5 @@ struct MeetingView: View {
 
 #Preview {
     MeetingView()
+        .environmentObject(OnboardingViewModel())
 }

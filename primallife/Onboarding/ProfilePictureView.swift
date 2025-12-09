@@ -42,7 +42,13 @@ struct ProfilePictureView: View {
                         .frame(height: 320)
                         .frame(maxWidth: .infinity)
                         .overlay {
-                            if let avatarURL {
+                            if let image = profileImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            } else if let avatarURL {
                                 AsyncImage(url: avatarURL) { image in
                                     image
                                         .resizable()
@@ -52,12 +58,6 @@ struct ProfilePictureView: View {
                                 } placeholder: {
                                     placeholderContent
                                 }
-                            } else if let image = profileImage {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
                             } else {
                                 placeholderContent
                             }
@@ -102,6 +102,12 @@ struct ProfilePictureView: View {
         .onChange(of: selectedItem) { _, newValue in
             loadImage(from: newValue)
         }
+        .onAppear {
+            if profileImage == nil,
+               let data = onboardingViewModel.profileImageData {
+                profileImage = UIImage(data: data)
+            }
+        }
         .navigationDestination(isPresented: $showLocationPermission) {
             LocationPermissionView()
         }
@@ -117,6 +123,7 @@ struct ProfilePictureView: View {
             
             await MainActor.run {
                 profileImage = uiImage
+                onboardingViewModel.profileImageData = data
             }
             
             await uploadAvatar(data)

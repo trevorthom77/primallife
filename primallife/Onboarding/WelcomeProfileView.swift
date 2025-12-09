@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WelcomeProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -151,4 +152,5 @@ private struct ProfilePreviewCard: View {
 
 #Preview {
     WelcomeProfileView()
+        .environmentObject(OnboardingViewModel())
 }

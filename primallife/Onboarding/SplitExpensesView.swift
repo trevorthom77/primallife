@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SplitExpensesView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedOption: String?
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showDescription = false
     private let options = [
         "Yes, let's split the costs",
@@ -11,7 +11,7 @@ struct SplitExpensesView: View {
     ]
     
     private var isContinueEnabled: Bool {
-        selectedOption != nil
+        onboardingViewModel.splitExpensesPreference != nil
     }
     
     var body: some View {
@@ -46,18 +46,18 @@ struct SplitExpensesView: View {
                 VStack(spacing: 12) {
                     ForEach(options, id: \.self) { option in
                         Button {
-                            selectedOption = option
+                            onboardingViewModel.splitExpensesPreference = option
                         } label: {
                             HStack {
                                 Text(option)
-                                    .font(selectedOption == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
+                                    .font(onboardingViewModel.splitExpensesPreference == option ? .custom(Fonts.semibold, size: 20) : .travelBody)
                                     .multilineTextAlignment(.leading)
                                 Spacer()
                             }
-                            .foregroundColor(selectedOption == option ? Colors.tertiaryText : Colors.primaryText)
+                            .foregroundColor(onboardingViewModel.splitExpensesPreference == option ? Colors.tertiaryText : Colors.primaryText)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(selectedOption == option ? Colors.accent : Colors.card)
+                            .background(onboardingViewModel.splitExpensesPreference == option ? Colors.accent : Colors.card)
                             .cornerRadius(12)
                         }
                     }
@@ -105,4 +105,5 @@ struct SplitExpensesView: View {
 
 #Preview {
     SplitExpensesView()
+        .environmentObject(OnboardingViewModel())
 }

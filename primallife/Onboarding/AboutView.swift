@@ -2,12 +2,12 @@ import SwiftUI
 
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var bio = ""
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showUpcomingTrips = false
     @FocusState private var isBioFocused: Bool
     
     private var isContinueEnabled: Bool {
-        !bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !onboardingViewModel.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     var body: some View {
@@ -45,7 +45,7 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
                 ZStack(alignment: .topLeading) {
-                    if bio.isEmpty {
+                    if onboardingViewModel.bio.isEmpty {
                         Text("Share what other travelers should know about you")
                             .font(.travelBody)
                             .foregroundColor(Colors.secondaryText)
@@ -54,7 +54,7 @@ struct AboutView: View {
                             .allowsHitTesting(false)
                     }
                     
-                    TextEditor(text: $bio)
+                    TextEditor(text: $onboardingViewModel.bio)
                         .font(.travelBody)
                         .foregroundColor(Colors.primaryText)
                         .padding(12)
@@ -120,4 +120,5 @@ struct AboutView: View {
 
 #Preview {
     AboutView()
+        .environmentObject(OnboardingViewModel())
 }

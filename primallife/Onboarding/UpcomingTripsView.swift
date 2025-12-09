@@ -2,29 +2,25 @@ import SwiftUI
 
 struct UpcomingTripsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var destination = ""
-    @State private var arrivalDate = Date()
-    @State private var departingDate = Date()
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showProfilePicture = false
     @State private var showDestinationSheet = false
     @State private var showArrivalPicker = false
     @State private var showDepartingPicker = false
-    @State private var hasSelectedArrival = false
-    @State private var hasSelectedDeparting = false
     @State private var searchQuery = ""
     @State private var searchResults: [UpcomingMapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
     
     private var arrivalDateText: String {
-        arrivalDate.formatted(date: .abbreviated, time: .omitted)
+        onboardingViewModel.arrivalDate.formatted(date: .abbreviated, time: .omitted)
     }
     
     private var departingDateText: String {
-        departingDate.formatted(date: .abbreviated, time: .omitted)
+        onboardingViewModel.departingDate.formatted(date: .abbreviated, time: .omitted)
     }
     
     private var isContinueEnabled: Bool {
-        !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasSelectedArrival && hasSelectedDeparting
+        !onboardingViewModel.upcomingDestination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting
     }
     
     var body: some View {
@@ -47,16 +43,16 @@ struct UpcomingTripsView: View {
                 
                 VStack(spacing: 12) {
                     Button {
-                        searchQuery = destination
+                        searchQuery = onboardingViewModel.upcomingDestination
                         showDestinationSheet = true
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(Colors.secondaryText)
                             
-                            Text(destination.isEmpty ? "Where are you going?" : destination)
+                            Text(onboardingViewModel.upcomingDestination.isEmpty ? "Where are you going?" : onboardingViewModel.upcomingDestination)
                                 .font(.travelBody)
-                                .foregroundColor(destination.isEmpty ? Colors.secondaryText : Colors.primaryText)
+                                .foregroundColor(onboardingViewModel.upcomingDestination.isEmpty ? Colors.secondaryText : Colors.primaryText)
                         }
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,9 +70,9 @@ struct UpcomingTripsView: View {
                                 .foregroundColor(Colors.primaryText)
                             
                             HStack {
-                                Text(hasSelectedArrival ? arrivalDateText : "Select arrival date")
+                                Text(onboardingViewModel.hasSelectedArrival ? arrivalDateText : "Select arrival date")
                                     .font(.travelBody)
-                                    .foregroundColor(hasSelectedArrival ? Colors.primaryText : Colors.secondaryText)
+                                    .foregroundColor(onboardingViewModel.hasSelectedArrival ? Colors.primaryText : Colors.secondaryText)
                                 
                                 Spacer()
                             }
@@ -98,9 +94,9 @@ struct UpcomingTripsView: View {
                                 .foregroundColor(Colors.primaryText)
                             
                             HStack {
-                                Text(hasSelectedDeparting ? departingDateText : "Select departing date")
+                                Text(onboardingViewModel.hasSelectedDeparting ? departingDateText : "Select departing date")
                                     .font(.travelBody)
-                                    .foregroundColor(hasSelectedDeparting ? Colors.primaryText : Colors.secondaryText)
+                                    .foregroundColor(onboardingViewModel.hasSelectedDeparting ? Colors.primaryText : Colors.secondaryText)
                                 
                                 Spacer()
                             }
@@ -195,7 +191,7 @@ struct UpcomingTripsView: View {
                                     Button {
                                         searchTask?.cancel()
                                         searchResults = []
-                                        destination = result.title
+                                        onboardingViewModel.upcomingDestination = result.title
                                         showDestinationSheet = false
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
@@ -243,12 +239,12 @@ struct UpcomingTripsView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $arrivalDate, displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.arrivalDate, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
-                        .onChange(of: arrivalDate) {
-                            hasSelectedArrival = true
+                        .onChange(of: onboardingViewModel.arrivalDate) {
+                            onboardingViewModel.hasSelectedArrival = true
                         }
                 }
                 .padding(20)
@@ -273,12 +269,12 @@ struct UpcomingTripsView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $departingDate, displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.departingDate, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
-                        .onChange(of: departingDate) {
-                            hasSelectedDeparting = true
+                        .onChange(of: onboardingViewModel.departingDate) {
+                            onboardingViewModel.hasSelectedDeparting = true
                         }
                 }
                 .padding(20)
@@ -427,4 +423,5 @@ private struct UpcomingMapboxProperties: Decodable {
 
 #Preview {
     UpcomingTripsView()
+        .environmentObject(OnboardingViewModel())
 }

@@ -106,10 +106,10 @@ struct ContentView: View {
                             request.nonce = sha256(nonce)
                         } onCompletion: { result in
                             if case .success(let auth) = result,
-                               let appleID = auth.credential as? ASAuthorizationAppleIDCredential,
-                               let tokenData = appleID.identityToken,
-                               let token = String(data: tokenData, encoding: .utf8),
-                               let nonce = currentNonce {
+                           let appleID = auth.credential as? ASAuthorizationAppleIDCredential,
+                           let tokenData = appleID.identityToken,
+                           let token = String(data: tokenData, encoding: .utf8),
+                           let nonce = currentNonce {
                                 Task {
                                     do {
                                         try await supabase.auth.signInWithIdToken(

@@ -4,10 +4,27 @@ struct BasicInfoView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @State private var showLanguages = false
     @State private var showBirthdayPicker = false
+    @State private var showBirthdayWarning = false
     @FocusState private var isNameFieldFocused: Bool
     
     private var birthdayText: String {
         onboardingViewModel.birthday.formatted(date: .abbreviated, time: .omitted)
+    }
+    
+    private var maximumBirthday: Date {
+        Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
+    }
+    
+    private var birthdayBinding: Binding<Date> {
+        Binding(
+            get: { onboardingViewModel.birthday },
+            set: { newValue in
+                let clamped = min(newValue, maximumBirthday)
+                showBirthdayWarning = newValue > maximumBirthday
+                onboardingViewModel.birthday = clamped
+                onboardingViewModel.hasSelectedBirthday = true
+            }
+        )
     }
     
     private var isContinueEnabled: Bool {
@@ -163,13 +180,16 @@ struct BasicInfoView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $onboardingViewModel.birthday, displayedComponents: .date)
+                    DatePicker("", selection: birthdayBinding, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
-                        .onChange(of: onboardingViewModel.birthday) {
-                            onboardingViewModel.hasSelectedBirthday = true
-                        }
+                    
+                    if showBirthdayWarning {
+                        Text("You must be 18 or older.")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.accent)
+                    }
                 }
                 .padding(20)
             }

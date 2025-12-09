@@ -139,10 +139,6 @@ private struct ProfilePreviewCard: View {
                         Text(onboardingViewModel.name)
                             .font(.customTitle)
                             .foregroundColor(Colors.primaryText)
-                        
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(Colors.accent)
                     }
                     
                     if let originText = originText {

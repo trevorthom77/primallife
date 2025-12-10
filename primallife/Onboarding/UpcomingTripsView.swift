@@ -15,6 +15,10 @@ struct UpcomingTripsView: View {
         Calendar.current.startOfDay(for: Date())
     }
     
+    private var isDepartingDateInvalid: Bool {
+        onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting && onboardingViewModel.departingDate < onboardingViewModel.arrivalDate
+    }
+    
     private var arrivalDateText: String {
         onboardingViewModel.arrivalDate.formatted(date: .abbreviated, time: .omitted)
     }
@@ -24,7 +28,7 @@ struct UpcomingTripsView: View {
     }
     
     private var isContinueEnabled: Bool {
-        !onboardingViewModel.upcomingDestination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting
+        !onboardingViewModel.upcomingDestination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting && !isDepartingDateInvalid
     }
     
     var body: some View {
@@ -69,12 +73,12 @@ struct UpcomingTripsView: View {
                         showArrivalPicker = true
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Arrival date")
+                            Text("Check-in date")
                                 .font(.travelDetail)
                                 .foregroundColor(Colors.primaryText)
                             
                             HStack {
-                                Text(onboardingViewModel.hasSelectedArrival ? arrivalDateText : "Select arrival date")
+                                Text(onboardingViewModel.hasSelectedArrival ? arrivalDateText : "Select check-in date")
                                     .font(.travelBody)
                                     .foregroundColor(onboardingViewModel.hasSelectedArrival ? Colors.primaryText : Colors.secondaryText)
                                 
@@ -93,12 +97,12 @@ struct UpcomingTripsView: View {
                         showDepartingPicker = true
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Departing date")
+                            Text("Return date")
                                 .font(.travelDetail)
                                 .foregroundColor(Colors.primaryText)
                             
                             HStack {
-                                Text(onboardingViewModel.hasSelectedDeparting ? departingDateText : "Select departing date")
+                                Text(onboardingViewModel.hasSelectedDeparting ? departingDateText : "Select return date")
                                     .font(.travelBody)
                                     .foregroundColor(onboardingViewModel.hasSelectedDeparting ? Colors.primaryText : Colors.secondaryText)
                                 
@@ -112,6 +116,13 @@ struct UpcomingTripsView: View {
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
+                }
+                
+                if isDepartingDateInvalid {
+                    Text("Return date must be after check-in date.")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
                 Spacer()
@@ -254,7 +265,7 @@ struct UpcomingTripsView: View {
                 .padding(20)
             }
             .presentationDetents([.height(320)])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
         .sheet(isPresented: $showDepartingPicker) {
@@ -273,7 +284,7 @@ struct UpcomingTripsView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $onboardingViewModel.departingDate, in: minimumDate..., displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.departingDate, in: (onboardingViewModel.hasSelectedArrival ? onboardingViewModel.arrivalDate : minimumDate)..., displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
@@ -284,7 +295,7 @@ struct UpcomingTripsView: View {
                 .padding(20)
             }
             .presentationDetents([.height(320)])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
         .navigationBarBackButtonHidden(true)

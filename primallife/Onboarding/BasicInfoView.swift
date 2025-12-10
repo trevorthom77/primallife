@@ -194,7 +194,7 @@ struct BasicInfoView: View {
                 .padding(20)
             }
             .presentationDetents([.height(320)])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
     }

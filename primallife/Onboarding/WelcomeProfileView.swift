@@ -209,7 +209,7 @@ private struct ProfilePreviewCard: View {
                         
                         Spacer()
                         
-                        VStack(alignment: .trailing, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 6) {
                             if let name = destinationPhotographerName,
                                let profileURL = destinationPhotographerProfileURL {
                                 Link(name, destination: profileURL)
@@ -217,6 +217,7 @@ private struct ProfilePreviewCard: View {
                                     .foregroundStyle(Colors.secondaryText)
                                     .lineLimit(1)
                                     .truncationMode(.tail)
+                                    .frame(maxWidth: 140, alignment: .leading)
                             }
                             
                             ZStack {

@@ -15,10 +15,13 @@ struct TripsView: View {
     @State private var searchResults: [MapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
-    private let searchColor = Colors.tertiaryText
+    
+    private var isReturnDateInvalid: Bool {
+        hasCheckInDate && hasReturnDate && returnDate < checkInDate
+    }
     
     private var isAddTripEnabled: Bool {
-        !destination.isEmpty && hasCheckInDate && hasReturnDate && returnDate >= checkInDate
+        !destination.isEmpty && hasCheckInDate && hasReturnDate && !isReturnDateInvalid
     }
     
     private var minimumDate: Date {
@@ -35,7 +38,7 @@ struct TripsView: View {
             Colors.background
                 .ignoresSafeArea()
             
-            VStack(spacing: 16) {
+            VStack(spacing: 24) {
                 HStack {
                     BackButton {
                         dismiss()
@@ -44,84 +47,89 @@ struct TripsView: View {
                     Spacer()
                 }
                 
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Colors.card)
-                    .frame(height: 160)
-                    .overlay {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Add Trip")
-                                .font(.customTitle)
-                                .foregroundStyle(Colors.primaryText)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Add Trip")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+                    
+                    Button {
+                        searchQuery = destination
+                        isShowingDestinationSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(Colors.secondaryText)
                             
-                            Button {
-                                searchQuery = destination
-                                isShowingDestinationSheet = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "magnifyingglass")
-                                        .foregroundStyle(Colors.secondaryText)
-                                    
-                                    Text(destination.isEmpty ? "Search" : destination)
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 16)
-                                .padding(.horizontal, 16)
-                                .background(Colors.secondaryText.opacity(0.3))
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            }
-                            .buttonStyle(.plain)
+                            Text(destination.isEmpty ? "Where are you going?" : destination)
+                                .font(.travelBody)
+                                .foregroundStyle(destination.isEmpty ? Colors.secondaryText : Colors.primaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
-                        .padding(16)
-                        .padding(.top, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
+                    .buttonStyle(.plain)
+                }
                 
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Colors.card)
-                    .overlay {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Select Dates")
-                                .font(.customTitle)
+                VStack(spacing: 12) {
+                    Button {
+                        activeDatePicker = .checkIn
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Check-in date")
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
                             
-                            VStack(spacing: 12) {
-                                Button {
-                                    activeDatePicker = .checkIn
-                                } label: {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Colors.accent)
-                                        .frame(height: 48)
-                                        .overlay(alignment: .center) {
-                                            Text(hasCheckInDate ? formattedDate(checkInDate) : "Check in Date")
-                                                .font(.custom(Fonts.semibold, size: 20))
-                                                .foregroundStyle(searchColor)
-                                        }
-                                        .contentShape(RoundedRectangle(cornerRadius: 10))
-                                }
-                                .buttonStyle(.plain)
+                            HStack {
+                                Text(hasCheckInDate ? formattedDate(checkInDate) : "Select check-in date")
+                                    .font(.travelBody)
+                                    .foregroundStyle(hasCheckInDate ? Colors.primaryText : Colors.secondaryText)
                                 
-                                Button {
-                                    activeDatePicker = .returnDate
-                                } label: {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Colors.accent)
-                                        .frame(height: 48)
-                                        .overlay(alignment: .center) {
-                                            Text(hasReturnDate ? formattedDate(returnDate) : "Return Date")
-                                                .font(.custom(Fonts.semibold, size: 20))
-                                                .foregroundStyle(searchColor)
-                                        }
-                                        .contentShape(RoundedRectangle(cornerRadius: 10))
-                                }
-                                .buttonStyle(.plain)
+                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
-                    .frame(height: 220)
+                    .buttonStyle(.plain)
+                    
+                    Button {
+                        activeDatePicker = .returnDate
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Return date")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+                            
+                            HStack {
+                                Text(hasReturnDate ? formattedDate(returnDate) : "Select return date")
+                                    .font(.travelBody)
+                                    .foregroundStyle(hasReturnDate ? Colors.primaryText : Colors.secondaryText)
+                                
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                if isReturnDateInvalid {
+                    Text("Return date must be after check-in date.")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 
                 Button {
                     Task {
@@ -164,15 +172,15 @@ struct TripsView: View {
                 Colors.background
                     .ignoresSafeArea()
                 
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(Colors.secondaryText)
-                        
-                        TextField("Search", text: $searchQuery)
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
-                            .onSubmit {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(Colors.secondaryText)
+                            
+                            TextField("Search", text: $searchQuery)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .onSubmit {
                                 runSearch(for: searchQuery)
                             }
                     }
@@ -224,64 +232,54 @@ struct TripsView: View {
                 .padding(24)
             }
         }
-        .overlay {
-            if let picker = activeDatePicker {
-                ZStack(alignment: .bottom) {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            activeDatePicker = nil
-                        }
-                
-                    datePickerOverlay(for: picker)
+        .sheet(
+            isPresented: Binding(
+                get: { activeDatePicker != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        activeDatePicker = nil
+                    }
                 }
-                .preferredColorScheme(.light)
+            )
+        ) {
+            if let picker = activeDatePicker {
+                datePickerSheet(for: picker)
             }
         }
     }
     
     @ViewBuilder
-    private func datePickerOverlay(for type: DatePickerType) -> some View {
-        UnevenRoundedRectangle(
-            cornerRadii: RectangleCornerRadii(
-                topLeading: 32,
-                topTrailing: 32
-            )
-        )
-        .fill(Colors.card)
-        .frame(height: 560)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
+    private func datePickerSheet(for type: DatePickerType) -> some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+            
             VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+                    
+                    Button("Done") {
+                        confirmDate(for: type)
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+                
                 DatePicker(
                     "",
                     selection: dateBinding(for: type),
                     in: minimumDate...,
                     displayedComponents: .date
                 )
-                .datePickerStyle(.graphical)
+                .datePickerStyle(.wheel)
+                .labelsHidden()
                 .tint(Colors.accent)
-                
-                Button {
-                    confirmDate(for: type)
-                } label: {
-                    Text("Done")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
-            .padding(.bottom, 16)
+            .padding(20)
         }
-        .ignoresSafeArea(edges: .bottom)
+        .presentationDetents([.height(320)])
+        .presentationDragIndicator(.hidden)
+        .preferredColorScheme(.light)
     }
     
     private func dateBinding(for type: DatePickerType) -> Binding<Date> {

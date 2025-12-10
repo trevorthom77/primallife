@@ -186,11 +186,11 @@ struct MyTripsView: View {
                                             .foregroundStyle(Colors.primaryText)
                                         
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text("Check-in: \(myTripsDateFormatter.string(from: trip.checkIn))")
+                                            Text("Return: \(myTripsDateFormatter.string(from: trip.returnDate))")
                                                 .font(.travelDetail)
                                                 .foregroundStyle(Colors.secondaryText)
                                             
-                                            Text("Return: \(myTripsDateFormatter.string(from: trip.returnDate))")
+                                            Text("Check-in: \(myTripsDateFormatter.string(from: trip.checkIn))")
                                                 .font(.travelDetail)
                                                 .foregroundStyle(Colors.secondaryText)
                                         }

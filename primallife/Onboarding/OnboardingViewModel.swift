@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 
 final class OnboardingViewModel: ObservableObject {
+    @Published var hasCompletedOnboarding = false
     @Published var name = ""
     @Published var birthday = Date()
     @Published var hasSelectedBirthday = false

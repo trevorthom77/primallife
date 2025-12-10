@@ -6,6 +6,7 @@ import CryptoKit
 
 struct ContentView: View {
     let supabase: SupabaseClient
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     
     @State private var showTopLeft = false
     @State private var showTopRight = false
@@ -13,7 +14,6 @@ struct ContentView: View {
     @State private var showBottomRight = false
     @State private var showMiddle = false
     @State private var showBasicInfo = false
-    @State private var showHome = false
     @State private var currentNonce: String?
     
     var body: some View {
@@ -142,9 +142,6 @@ struct ContentView: View {
             .navigationDestination(isPresented: $showBasicInfo) {
                 BasicInfoView()
             }
-            .navigationDestination(isPresented: $showHome) {
-                HomeView()
-            }
         }
     }
     
@@ -206,15 +203,18 @@ struct ContentView: View {
             let response: [OnboardingCompletion] = try await supabase
                 .from("onboarding")
                 .select("completed_at")
-                .eq("user_id", value: "\(userID)")
+                .eq("id", value: "\(userID)")
                 .limit(1)
                 .execute()
                 .value
             
             let completedAt = response.first?.completedAt
             await MainActor.run {
-                showHome = completedAt != nil
-                showBasicInfo = completedAt == nil
+                if completedAt != nil {
+                    onboardingViewModel.hasCompletedOnboarding = true
+                } else {
+                    showBasicInfo = true
+                }
             }
         } catch {
             await MainActor.run {
@@ -232,4 +232,5 @@ struct ContentView: View {
             supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
         )
     )
+    .environmentObject(OnboardingViewModel())
 }

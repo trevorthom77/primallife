@@ -23,6 +23,7 @@ struct HomeView: View {
                 BottomBar(selectedTab: $selectedTab)
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
     
     @ViewBuilder

@@ -73,7 +73,7 @@ struct WelcomeProfileView: View {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         
         struct OnboardingPayload: Encodable {
-            let user_id: String
+            let id: String
             let full_name: String
             let birthday: String
             let origin: String?
@@ -93,7 +93,7 @@ struct WelcomeProfileView: View {
         }
         
         let payload = OnboardingPayload(
-            user_id: "\(userID)",
+            id: "\(userID)",
             full_name: onboardingViewModel.name,
             birthday: onboardingViewModel.birthday.ISO8601Format(),
             origin: onboardingViewModel.selectedCountryID,
@@ -115,8 +115,11 @@ struct WelcomeProfileView: View {
         do {
             try await supabase
                 .from("onboarding")
-                .upsert(payload, onConflict: "user_id")
+                .upsert(payload, onConflict: "id")
                 .execute()
+            await MainActor.run {
+                onboardingViewModel.hasCompletedOnboarding = true
+            }
         } catch {
             print("Profile save failed: \(error)")
         }

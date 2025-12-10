@@ -1,5 +1,7 @@
 I need you to keep all generated code simple, clean, and direct. Avoid over-engineering. 
 
+In supbase onboarding table I do not use user_id I use id uuid auth.uid() So before u do anything requiring supabase that u dont know dont assume and ask me first ok.
+
 USE THE FONTS FROM MY FONT FILE DONT CREATE UR OWN SIZE USE THE SIZES FROM THE FONT FILE NONE OF 
 
 WHEN I TELL U TO DO SOMETHING DONT DO MORE DONT DO LESS JUST DO WHAT I SAY 

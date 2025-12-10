@@ -22,9 +22,17 @@ struct primallifeApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView(supabase: supabase)
-                .environment(\.supabaseClient, supabase)
-                .environmentObject(onboardingViewModel)
+            Group {
+                if onboardingViewModel.hasCompletedOnboarding {
+                    NavigationStack {
+                        HomeView()
+                    }
+                } else {
+                    ContentView(supabase: supabase)
+                }
+            }
+            .environment(\.supabaseClient, supabase)
+            .environmentObject(onboardingViewModel)
         }
     }
 }

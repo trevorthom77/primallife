@@ -139,9 +139,23 @@ struct ContentView: View {
             .onAppear {
                 startPopSequence()
             }
+            .task {
+                await restoreSessionIfNeeded()
+            }
             .navigationDestination(isPresented: $showBasicInfo) {
                 BasicInfoView()
             }
+        }
+    }
+    
+    private func restoreSessionIfNeeded() async {
+        do {
+            _ = try await supabase.auth.session
+            if supabase.auth.currentUser != nil {
+                await checkOnboardingCompletion()
+            }
+        } catch {
+            print("Session restore failed: \(error)")
         }
     }
     

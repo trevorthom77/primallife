@@ -9,9 +9,13 @@ import SwiftUI
 
 struct BackButton: View {
     let action: () -> Void
+    @State private var feedbackToggle = false
     
     var body: some View {
-        Button(action: action) {
+        Button {
+            feedbackToggle.toggle()
+            action()
+        } label: {
             Image(systemName: "chevron.left")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Colors.primaryText)
@@ -21,5 +25,6 @@ struct BackButton: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
         }
+        .sensoryFeedback(.impact(weight: .medium), trigger: feedbackToggle)
     }
 }

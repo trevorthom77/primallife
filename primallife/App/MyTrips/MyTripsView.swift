@@ -48,7 +48,6 @@ struct Trip: Decodable, Identifiable {
             )
         }
         returnDate = decodedReturnDate
-
         createdAt = try container.decode(String.self, forKey: .createdAt)
     }
 }
@@ -124,6 +123,7 @@ final class MyTripsViewModel: ObservableObject {
 struct MyTripsView: View {
     @Environment(\.supabaseClient) var supabase
     @StateObject private var viewModel = MyTripsViewModel()
+    @State private var tripImageDetails: [UUID: UnsplashImageDetails] = [:]
     @State private var tribeImageURL: URL?
     @State private var secondTribeImageURL: URL?
     @State private var sunImageURL: URL?
@@ -178,28 +178,70 @@ struct MyTripsView: View {
                                     .foregroundStyle(Colors.accent)
                             }
                             
-                            VStack(spacing: 12) {
-                                ForEach(viewModel.trips) { trip in
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text(trip.destination)
-                                            .font(.travelTitle)
-                                            .foregroundStyle(Colors.primaryText)
-                                        
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Return: \(myTripsDateFormatter.string(from: trip.returnDate))")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
+                            if !viewModel.trips.isEmpty {
+                                TabView(selection: $selectedTripIndex) {
+                                    ForEach(Array(viewModel.trips.enumerated()), id: \.element.id) { index, trip in
+                                        HStack(spacing: 0) {
+                                            TravelCard(
+                                                flag: "",
+                                                location: trip.destination,
+                                                dates: tripDateRange(for: trip),
+                                                imageQuery: trip.destination,
+                                                showsAttribution: true,
+                                                prefetchedDetails: tripImageDetails[trip.id]
+                                            )
                                             
-                                            Text("Check-in: \(myTripsDateFormatter.string(from: trip.checkIn))")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
+                                            Spacer()
+                                        }
+                                        .tag(index)
+                                    }
+                                }
+                                .frame(height: 180)
+                                .tabViewStyle(.page(indexDisplayMode: .never))
+                                .sensoryFeedback(.impact(weight: .medium), trigger: selectedTripIndex)
+                                
+                                if viewModel.trips.count > 1 {
+                                    HStack(spacing: 18) {
+                                        ForEach(0..<indicatorCount(for: viewModel.trips.count), id: \.self) { index in
+                                            Image("airplane")
+                                                .renderingMode(.template)
+                                                .foregroundStyle(
+                                                    activeIndicatorIndex(
+                                                        tripCount: viewModel.trips.count,
+                                                        selectedIndex: selectedTripIndex
+                                                    ) == index ? Colors.accent : Colors.secondaryText
+                                                )
                                         }
                                     }
-                                    .padding(16)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.top, 8)
                                 }
+                            } else {
+                                VStack(spacing: 12) {
+                                    Text("No upcoming trips yet")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                    
+                                    Text("Add your next destination to see it here.")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Button {
+                                        isShowingTrips = true
+                                    } label: {
+                                        Text("Add Trip")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.tertiaryText)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(Colors.accent)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 24)
                             }
                             
                             HStack {
@@ -651,7 +693,59 @@ struct MyTripsView: View {
         }
         .task {
             await viewModel.loadTrips(supabase: supabase)
+            await prefetchTripImages()
         }
+        .task(id: viewModel.trips.count) {
+            await prefetchTripImages()
+        }
+    }
+    
+    private func prefetchTripImages() async {
+        for trip in viewModel.trips where tripImageDetails[trip.id] == nil {
+            if let details = await UnsplashService.fetchImageDetails(for: trip.destination) {
+                await cacheImageIfNeeded(from: details.url)
+                await MainActor.run {
+                    tripImageDetails[trip.id] = details
+                }
+            }
+        }
+    }
+    
+    private func cacheImageIfNeeded(from url: URL) async {
+        let request = URLRequest(url: url)
+        if URLCache.shared.cachedResponse(for: request) != nil { return }
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let cached = CachedURLResponse(response: response, data: data)
+            URLCache.shared.storeCachedResponse(cached, for: request)
+        } catch { }
+    }
+    
+    private func tripDateRange(for trip: Trip) -> String {
+        let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
+        let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
+        return start == end ? start : "\(start)–\(end)"
+    }
+    
+    private func indicatorCount(for tripCount: Int) -> Int {
+        min(tripCount, 3)
+    }
+
+    private func activeIndicatorIndex(tripCount: Int, selectedIndex: Int) -> Int {
+        let count = indicatorCount(for: tripCount)
+        guard count > 0 else { return 0 }
+
+        if count == 3 {
+            if selectedIndex >= tripCount - 1 {
+                return 2
+            } else if selectedIndex <= 0 {
+                return 0
+            } else {
+                return 1
+            }
+        }
+
+        return min(selectedIndex, count - 1)
     }
 }
 

@@ -19,11 +19,21 @@ struct primallifeApp: App {
         supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
     )
     @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @State private var isCheckingSession = true
     
     var body: some Scene {
         WindowGroup {
             Group {
-                if onboardingViewModel.hasCompletedOnboarding {
+                if isCheckingSession {
+                    ZStack {
+                        Colors.background
+                            .ignoresSafeArea()
+                        
+                        Text("Live Life")
+                            .font(.loadingTitle)
+                            .foregroundColor(Colors.primaryText)
+                    }
+                } else if onboardingViewModel.hasCompletedOnboarding {
                     NavigationStack {
                         HomeView()
                     }
@@ -31,8 +41,60 @@ struct primallifeApp: App {
                     ContentView(supabase: supabase)
                 }
             }
+            .task {
+                await initializeSession()
+            }
             .environment(\.supabaseClient, supabase)
             .environmentObject(onboardingViewModel)
+        }
+    }
+    
+    private func initializeSession() async {
+        do {
+            _ = try await supabase.auth.session
+        } catch {
+            await MainActor.run {
+                isCheckingSession = false
+                onboardingViewModel.hasCompletedOnboarding = false
+            }
+            return
+        }
+        
+        guard let userID = supabase.auth.currentUser?.id else {
+            await MainActor.run {
+                isCheckingSession = false
+            }
+            return
+        }
+        
+        do {
+            let response: [OnboardingCompletion] = try await supabase
+                .from("onboarding")
+                .select("completed_at")
+                .eq("id", value: "\(userID)")
+                .limit(1)
+                .execute()
+                .value
+            
+            let completedAt = response.first?.completedAt
+            await MainActor.run {
+                onboardingViewModel.hasCompletedOnboarding = completedAt != nil
+                isCheckingSession = false
+            }
+        } catch {
+            await MainActor.run {
+                onboardingViewModel.hasCompletedOnboarding = false
+                isCheckingSession = false
+            }
+            print("Onboarding status fetch failed: \(error)")
+        }
+    }
+    
+    private struct OnboardingCompletion: Decodable {
+        let completedAt: String?
+        
+        private enum CodingKeys: String, CodingKey {
+            case completedAt = "completed_at"
         }
     }
 }

@@ -37,4 +37,8 @@ extension Font {
         .custom(Fonts.semibold, size: 18)
     }
     
+    static var loadingTitle: Font {
+        .custom(Fonts.semibold, size: 32)
+    }
+    
 }

@@ -17,7 +17,9 @@ struct TravelCard: View {
     var imageQuery: String = "Hawaii"
     var showsParticipants: Bool = true
     var showsAttribution: Bool = false
+    var prefetchedDetails: UnsplashImageDetails? = nil
     var height: CGFloat = 180
+    @State private var didApplyPrefetch = false
     
     var body: some View {
         ZStack {
@@ -27,10 +29,10 @@ struct TravelCard: View {
                         .resizable()
                         .scaledToFill()
                 } placeholder: {
-                    Colors.card
+                    Colors.primaryText
                 }
             } else {
-                Colors.card
+                Colors.primaryText
             }
         }
         .frame(width: 344, height: height)
@@ -131,7 +133,15 @@ struct TravelCard: View {
                     .padding(12)
             }
         }
+        .onAppear {
+            guard !didApplyPrefetch, let prefetchedDetails else { return }
+            imageURL = prefetchedDetails.url
+            photographerName = prefetchedDetails.photographerName
+            photographerProfileURL = prefetchedDetails.photographerProfileURL
+            didApplyPrefetch = true
+        }
         .task {
+            guard imageURL == nil else { return }
             let details = await UnsplashService.fetchImageDetails(for: imageQuery)
             imageURL = details?.url
             photographerName = details?.photographerName

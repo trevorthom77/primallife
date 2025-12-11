@@ -24,10 +24,6 @@ struct TripsView: View {
         !destination.isEmpty && hasCheckInDate && hasReturnDate && !isReturnDateInvalid
     }
     
-    private var minimumDate: Date {
-        Calendar.current.startOfDay(for: Date())
-    }
-    
     private enum DatePickerType {
         case checkIn
         case returnDate
@@ -268,7 +264,6 @@ struct TripsView: View {
                 DatePicker(
                     "",
                     selection: dateBinding(for: type),
-                    in: minimumDate...,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.wheel)

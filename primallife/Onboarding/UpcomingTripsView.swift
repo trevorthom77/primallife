@@ -11,10 +11,6 @@ struct UpcomingTripsView: View {
     @State private var searchResults: [UpcomingMapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
     
-    private var minimumDate: Date {
-        Calendar.current.startOfDay(for: Date())
-    }
-    
     private var isDepartingDateInvalid: Bool {
         onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting && onboardingViewModel.departingDate < onboardingViewModel.arrivalDate
     }
@@ -254,7 +250,7 @@ struct UpcomingTripsView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $onboardingViewModel.arrivalDate, in: minimumDate..., displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.arrivalDate, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)
@@ -284,7 +280,7 @@ struct UpcomingTripsView: View {
                         .foregroundColor(Colors.accent)
                     }
                     
-                    DatePicker("", selection: $onboardingViewModel.departingDate, in: (onboardingViewModel.hasSelectedArrival ? onboardingViewModel.arrivalDate : minimumDate)..., displayedComponents: .date)
+                    DatePicker("", selection: $onboardingViewModel.departingDate, displayedComponents: .date)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)

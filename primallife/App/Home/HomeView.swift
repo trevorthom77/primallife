@@ -28,17 +28,23 @@ struct HomeView: View {
     
     @ViewBuilder
     private var tabContent: some View {
-        switch selectedTab {
-        case "map":
-            MapBoxView(hideChrome: $hideChrome)
-        case "globe":
-            TrendingView()
-        case "airplane":
+        ZStack {
             MyTripsView()
-        case "message":
-            MessagesView()
-        default:
-            Spacer()
+                .opacity(selectedTab == "airplane" ? 1 : 0)
+                .allowsHitTesting(selectedTab == "airplane")
+            
+            switch selectedTab {
+            case "map":
+                MapBoxView(hideChrome: $hideChrome)
+            case "globe":
+                TrendingView()
+            case "airplane":
+                Color.clear
+            case "message":
+                MessagesView()
+            default:
+                Color.clear
+            }
         }
     }
 }

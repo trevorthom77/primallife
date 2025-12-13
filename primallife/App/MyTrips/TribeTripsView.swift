@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 
 struct TribeTripsView: View {
     let trip: Trip
@@ -730,11 +731,12 @@ private struct TribeGenderView: View {
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
-        .navigationDestination(isPresented: $isShowingReview) {
-            TribeReviewView(
-                groupName: groupName,
-                groupPhoto: groupPhoto,
-                aboutText: aboutText,
+            .navigationDestination(isPresented: $isShowingReview) {
+                TribeReviewView(
+                    trip: trip,
+                    groupName: groupName,
+                    groupPhoto: groupPhoto,
+                    aboutText: aboutText,
                 privacy: privacy,
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
@@ -769,7 +771,68 @@ private struct TribeGenderView: View {
     }
 }
 
+private struct NewTribe: Encodable {
+    let ownerID: UUID
+    let locationID: UUID
+    let name: String
+    let description: String?
+    let startDate: Date
+    let endDate: Date
+    let gender: String
+    let privacy: String
+    let interests: [String]
+    let photoURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case ownerID = "owner_id"
+        case locationID = "location_id"
+        case name
+        case description
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case gender
+        case privacy
+        case interests
+        case photoURL = "photo_url"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(ownerID, forKey: .ownerID)
+        try container.encode(locationID, forKey: .locationID)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(Self.dateFormatter.string(from: startDate), forKey: .startDate)
+        try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)
+        try container.encode(gender, forKey: .gender)
+        try container.encode(privacy, forKey: .privacy)
+        try container.encode(interests, forKey: .interests)
+        try container.encode(photoURL, forKey: .photoURL)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+}
+
+private struct CreatedTribeDisplay {
+    let title: String
+    let location: String
+    let flag: String
+    let dateRange: String
+    let about: String?
+    let interests: [String]
+    let placeName: String
+    let imageURL: URL?
+    let creator: String
+}
+
 private struct TribeReviewView: View {
+    let trip: Trip
     let groupName: String
     let groupPhoto: UIImage?
     let aboutText: String
@@ -779,6 +842,11 @@ private struct TribeReviewView: View {
     let checkInDate: Date
     let returnDate: Date
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
+    @State private var isCreating = false
+    @State private var errorMessage: String?
+    @State private var isShowingCreatedTribe = false
+    @State private var createdTribe: CreatedTribeDisplay?
 
     var body: some View {
         ScrollView {
@@ -902,8 +970,20 @@ private struct TribeReviewView: View {
         )
         .navigationBarBackButtonHidden(true)
         .safeAreaInset(edge: .bottom) {
-            VStack {
-                Button(action: { }) {
+            VStack(spacing: 12) {
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+
+                Button(action: {
+                    Task {
+                        await createTribe()
+                    }
+                }) {
                     Text("Create Tribe")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -912,11 +992,28 @@ private struct TribeReviewView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(isCreating)
+                .opacity(isCreating ? 0.7 : 1)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
             .background(Colors.background)
+        }
+        .navigationDestination(isPresented: $isShowingCreatedTribe) {
+            if let createdTribe {
+                TribesSocialView(
+                    imageURL: createdTribe.imageURL,
+                    title: createdTribe.title,
+                    location: createdTribe.location,
+                    flag: createdTribe.flag,
+                    date: createdTribe.dateRange,
+                    aboutText: createdTribe.about,
+                    interests: createdTribe.interests,
+                    placeName: createdTribe.placeName,
+                    createdBy: createdTribe.creator
+                )
+            }
         }
     }
 
@@ -924,6 +1021,63 @@ private struct TribeReviewView: View {
         let start = checkInDate.formatted(date: .abbreviated, time: .omitted)
         let end = returnDate.formatted(date: .abbreviated, time: .omitted)
         return "\(start) - \(end)"
+    }
+
+    @MainActor
+    private func createTribe() async {
+        guard let supabase else {
+            errorMessage = "Unable to connect right now."
+            return
+        }
+
+        guard let userID = supabase.auth.currentUser?.id else {
+            errorMessage = "You need to sign in."
+            return
+        }
+
+        let trimmedName = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = trimmedName.isEmpty ? "Untitled tribe" : trimmedName
+        let trimmedAbout = aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let payload = NewTribe(
+            ownerID: userID,
+            locationID: trip.id,
+            name: resolvedName,
+            description: trimmedAbout.isEmpty ? nil : trimmedAbout,
+            startDate: checkInDate,
+            endDate: returnDate,
+            gender: selectedGender.rawValue,
+            privacy: privacy.rawValue,
+            interests: selectedInterests,
+            photoURL: nil
+        )
+
+        isCreating = true
+        errorMessage = nil
+
+        do {
+            try await supabase
+                .from("tribes")
+                .insert(payload)
+                .execute()
+
+            createdTribe = CreatedTribeDisplay(
+                title: resolvedName,
+                location: trip.destination,
+                flag: "",
+                dateRange: dateRangeText,
+                about: trimmedAbout.isEmpty ? nil : trimmedAbout,
+                interests: selectedInterests,
+                placeName: trip.destination,
+                imageURL: nil,
+                creator: "You"
+            )
+            isShowingCreatedTribe = true
+        } catch {
+            errorMessage = "Unable to create tribe right now."
+        }
+
+        isCreating = false
     }
 }
 

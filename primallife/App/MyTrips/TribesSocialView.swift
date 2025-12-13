@@ -6,7 +6,11 @@ struct TribesSocialView: View {
     let location: String
     let flag: String
     let date: String
-    @State private var santaTeresaImageURL: URL?
+    let aboutText: String?
+    let interests: [String]
+    let placeName: String?
+    let createdBy: String?
+    @State private var placeImageURL: URL?
     @Environment(\.dismiss) private var dismiss
     private let tribeMessages: [ChatMessage] = [
         ChatMessage(text: "Welcome to the Costa Rica crew.", time: "6:10 PM", isUser: false),
@@ -14,6 +18,28 @@ struct TribesSocialView: View {
         ChatMessage(text: "We're meeting at Playa Hermosa night one.", time: "6:14 PM", isUser: false),
         ChatMessage(text: "Count me in for the bonfire.", time: "6:15 PM", isUser: true)
     ]
+
+    init(
+        imageURL: URL?,
+        title: String,
+        location: String,
+        flag: String,
+        date: String,
+        aboutText: String? = nil,
+        interests: [String] = [],
+        placeName: String? = nil,
+        createdBy: String? = nil
+    ) {
+        self.imageURL = imageURL
+        self.title = title
+        self.location = location
+        self.flag = flag
+        self.date = date
+        self.aboutText = aboutText
+        self.interests = interests
+        self.placeName = placeName
+        self.createdBy = createdBy
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -132,7 +158,7 @@ struct TribesSocialView: View {
                             .font(.travelTitle)
                             .foregroundStyle(Colors.primaryText)
 
-                        Text("Late-night bonfires, sunrise surf, and group dinners along the Nicoya coast. Plans stay loose so everyone can drop in when they land.")
+                        Text(resolvedAbout)
                             .font(.travelBody)
                             .foregroundStyle(Colors.secondaryText)
                     }
@@ -142,7 +168,30 @@ struct TribesSocialView: View {
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                    if title == "Party Tonight Costa Rica" {
+                    if !resolvedInterests.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Interests")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                                ForEach(resolvedInterests, id: \.self) { interest in
+                                    Text(interest)
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 12)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Colors.card)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    } else if title == "Party Tonight Costa Rica" {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Interests")
                                 .font(.travelTitle)
@@ -185,9 +234,9 @@ struct TribesSocialView: View {
                                 .foregroundStyle(Colors.accent)
                         }
 
-                        PlaceCard(imageURL: santaTeresaImageURL, name: "Santa Teresa")
+                        PlaceCard(imageURL: placeImageURL, name: resolvedPlaceName)
                             .task {
-                                santaTeresaImageURL = await UnsplashService.fetchImage(for: "Santa Teresa Costa Rica")
+                                placeImageURL = await UnsplashService.fetchImage(for: resolvedPlaceName)
                             }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,7 +261,7 @@ struct TribesSocialView: View {
                                 }
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Camila, San José")
+                                Text(resolvedCreator)
                                     .font(.travelDetail)
                                     .foregroundStyle(Colors.primaryText)
                             }
@@ -234,6 +283,45 @@ struct TribesSocialView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+    }
+}
+
+private extension TribesSocialView {
+    var resolvedAbout: String {
+        let trimmed = aboutText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        return "Late-night bonfires, sunrise surf, and group dinners along the Nicoya coast. Plans stay loose so everyone can drop in when they land."
+    }
+
+    var resolvedInterests: [String] {
+        interests
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    var resolvedPlaceName: String {
+        let trimmedPlace = placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmedPlace.isEmpty {
+            return trimmedPlace
+        }
+
+        let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedLocation.isEmpty ? "Santa Teresa" : trimmedLocation
+    }
+
+    var resolvedCreator: String {
+        if let creator = createdBy?.trimmingCharacters(in: .whitespacesAndNewlines), !creator.isEmpty {
+            return creator
+        }
+
+        if title == "Party Tonight Costa Rica" {
+            return "Camila, San José"
+        }
+
+        return "You"
     }
 }
 

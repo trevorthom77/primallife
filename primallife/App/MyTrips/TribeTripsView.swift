@@ -30,7 +30,7 @@ struct TribeTripsView: View {
                 }
 
                 TravelCard(
-                    flag: "🇨🇷",
+                    flag: "",
                     location: trip.destination,
                     dates: "",
                     imageQuery: trip.destination,
@@ -505,6 +505,10 @@ private struct TribeGenderView: View {
     @State private var hasSelectedCheckIn: Bool
     @State private var hasSelectedReturn: Bool
     @State private var isShowingReview = false
+    
+    private var accentColor: Color {
+        selectedGender == .girlsOnly ? Colors.girlsPink : Colors.accent
+    }
 
     init(
         trip: Trip,
@@ -630,7 +634,7 @@ private struct TribeGenderView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
-                            .background(selectedGender == option ? Colors.accent : Colors.card)
+                            .background(selectedGender == option ? accentColor : Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
@@ -655,7 +659,7 @@ private struct TribeGenderView: View {
                         .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Colors.accent)
+                        .background(accentColor)
                         .cornerRadius(16)
                 }
                 .disabled(!isContinueEnabled)

@@ -10,6 +10,10 @@ struct GenderView: View {
         onboardingViewModel.selectedGender != nil
     }
     
+    private var accentColor: Color {
+        onboardingViewModel.selectedGender == "Female" ? Colors.girlsPink : Colors.accent
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -57,7 +61,7 @@ struct GenderView: View {
                                 .foregroundColor(onboardingViewModel.selectedGender == option ? Colors.tertiaryText : Colors.primaryText)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(onboardingViewModel.selectedGender == option ? Colors.accent : Colors.card)
+                                .background(onboardingViewModel.selectedGender == option ? accentColor : Colors.card)
                                 .cornerRadius(12)
                             }
                         }
@@ -80,7 +84,7 @@ struct GenderView: View {
                         .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Colors.accent)
+                        .background(accentColor)
                         .cornerRadius(16)
                 }
                 .disabled(!isContinueEnabled)

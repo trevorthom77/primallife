@@ -10,6 +10,10 @@ struct MeetingView: View {
         onboardingViewModel.travelCompanionPreference != nil
     }
     
+    private var accentColor: Color {
+        onboardingViewModel.selectedGender == "Female" ? Colors.girlsPink : Colors.accent
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             Colors.background
@@ -53,7 +57,7 @@ struct MeetingView: View {
                                 .foregroundColor(onboardingViewModel.travelCompanionPreference == option ? Colors.tertiaryText : Colors.primaryText)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(onboardingViewModel.travelCompanionPreference == option ? Colors.accent : Colors.card)
+                                .background(onboardingViewModel.travelCompanionPreference == option ? accentColor : Colors.card)
                                 .cornerRadius(12)
                             }
                         }
@@ -76,7 +80,7 @@ struct MeetingView: View {
                         .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Colors.accent)
+                        .background(accentColor)
                         .cornerRadius(16)
                 }
                 .disabled(!isContinueEnabled)

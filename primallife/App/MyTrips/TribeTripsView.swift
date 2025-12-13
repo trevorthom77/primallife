@@ -59,15 +59,15 @@ struct TribeTripsView: View {
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
+                        .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(height: 56)
                         .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
             .background(Colors.background)
         }
@@ -91,9 +91,11 @@ private struct CreateTribeFormView: View {
     @State private var groupPhoto: UIImage?
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isShowingDetails = false
+    @State private var isShowingGender = false
     @State private var isShowingReview = false
     @State private var aboutText: String = ""
     @State private var selectedInterests: Set<String> = []
+    @State private var selectedGender: TribeGender = .everyone
     @Environment(\.dismiss) private var dismiss
     private let nameLimit = 30
 
@@ -212,9 +214,11 @@ private struct CreateTribeFormView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
-            .onTapGesture {
-                isGroupNameFocused = false
-            }
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isGroupNameFocused = false
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -223,18 +227,19 @@ private struct CreateTribeFormView: View {
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
+                        .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(height: 56)
                         .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
             .background(Colors.background)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .background(
             Colors.background
                 .ignoresSafeArea()
@@ -247,6 +252,12 @@ private struct CreateTribeFormView: View {
             TribeDetailsView(
                 aboutText: $aboutText,
                 selectedInterests: $selectedInterests,
+                onContinue: { isShowingGender = true }
+            )
+        }
+        .navigationDestination(isPresented: $isShowingGender) {
+            TribeGenderView(
+                selectedGender: $selectedGender,
                 onContinue: { isShowingReview = true }
             )
         }
@@ -295,6 +306,25 @@ private enum TribePrivacy: String, CaseIterable, Identifiable {
             return "Open to anyone with the link to view and join."
         case .private:
             return "Only invited travelers can see this tribe."
+        }
+    }
+}
+
+private enum TribeGender: String, CaseIterable, Identifiable {
+    case everyone = "Everyone"
+    case girlsOnly = "Girls Only"
+    case boysOnly = "Boys Only"
+
+    var id: String { rawValue }
+    var label: String { rawValue }
+    var description: String {
+        switch self {
+        case .everyone:
+            return "Open to all travelers."
+        case .girlsOnly:
+            return "Only women travelers can join."
+        case .boysOnly:
+            return "Only men travelers can join."
         }
     }
 }
@@ -414,9 +444,11 @@ private struct TribeDetailsView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
-            .onTapGesture {
-                isAboutFocused = false
-            }
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isAboutFocused = false
         }
         .background(
             Colors.background
@@ -430,18 +462,19 @@ private struct TribeDetailsView: View {
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
+                        .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(height: 56)
                         .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
             .background(Colors.background)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     private func toggleInterest(_ interest: String) {
@@ -450,6 +483,93 @@ private struct TribeDetailsView: View {
         } else if selectedInterests.count < interestsLimit {
             selectedInterests.insert(interest)
         }
+    }
+}
+
+private struct TribeGenderView: View {
+    @Binding var selectedGender: TribeGender
+    let onContinue: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Select gender")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("Choose who can join this tribe.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(TribeGender.allCases) { option in
+                        Button {
+                            selectedGender = option
+                        } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(option.label)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(selectedGenderTextColor(for: option))
+
+                                Text(option.description)
+                                    .font(.travelBody)
+                                    .foregroundStyle(selectedGenderSubtextColor(for: option))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(selectedGender == option ? Colors.accent : Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {
+                    onContinue()
+                }) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+    }
+
+    private func selectedGenderTextColor(for option: TribeGender) -> Color {
+        option == selectedGender ? Colors.tertiaryText : Colors.primaryText
+    }
+
+    private func selectedGenderSubtextColor(for option: TribeGender) -> Color {
+        option == selectedGender ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
     }
 }
 

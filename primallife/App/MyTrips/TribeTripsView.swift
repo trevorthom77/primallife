@@ -248,27 +248,8 @@ private struct CreateTribeFormView: View {
         .onChange(of: selectedPhotoItem) { _, newValue in
             loadGroupPhoto(from: newValue)
         }
-        .navigationDestination(isPresented: $isShowingDetails) {
-            TribeDetailsView(
-                aboutText: $aboutText,
-                selectedInterests: $selectedInterests,
-                onContinue: { isShowingGender = true }
-            )
-        }
-        .navigationDestination(isPresented: $isShowingGender) {
-            TribeGenderView(
-                selectedGender: $selectedGender,
-                onContinue: { isShowingReview = true }
-            )
-        }
-        .navigationDestination(isPresented: $isShowingReview) {
-            TribeReviewView(
-                groupName: groupName,
-                groupPhoto: groupPhoto,
-                aboutText: aboutText,
-                privacy: privacy,
-                selectedInterests: Array(selectedInterests)
-            )
+        .overlay(alignment: .topLeading) {
+            navigationLinks
         }
     }
 
@@ -291,6 +272,43 @@ private struct CreateTribeFormView: View {
                 groupPhoto = image
             }
         }
+    }
+
+    private var navigationLinks: some View {
+        Group {
+            NavigationLink(isActive: $isShowingDetails) {
+                TribeDetailsView(
+                    aboutText: $aboutText,
+                    selectedInterests: $selectedInterests,
+                    onContinue: { isShowingGender = true }
+                )
+            } label: {
+                EmptyView()
+            }
+
+            NavigationLink(isActive: $isShowingGender) {
+                TribeGenderView(
+                    selectedGender: $selectedGender,
+                    onContinue: { isShowingReview = true }
+                )
+            } label: {
+                EmptyView()
+            }
+
+            NavigationLink(isActive: $isShowingReview) {
+                TribeReviewView(
+                    groupName: groupName,
+                    groupPhoto: groupPhoto,
+                    aboutText: aboutText,
+                    privacy: privacy,
+                    selectedInterests: Array(selectedInterests)
+                )
+            } label: {
+                EmptyView()
+            }
+        }
+        .frame(width: 0, height: 0)
+        .hidden()
     }
 }
 

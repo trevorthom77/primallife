@@ -128,6 +128,7 @@ struct MyTripsView: View {
     @State private var secondTribeImageURL: URL?
     @State private var sunImageURL: URL?
     @State private var groundingImageURL: URL?
+    @State private var selectedTripForTribe: Trip?
     @State private var isShowingTrips = false
     @State private var isShowingTribeTrips = false
     @State private var selectedTripIndex = 0
@@ -444,7 +445,10 @@ struct MyTripsView: View {
                             }
 
                             Button(action: {
-                                isShowingTribeTrips = true
+                                if viewModel.trips.indices.contains(selectedTripIndex) {
+                                    selectedTripForTribe = viewModel.trips[selectedTripIndex]
+                                    isShowingTribeTrips = true
+                                }
                             }) {
                                 Text("Add Tribe")
                                     .font(.travelDetail)
@@ -688,7 +692,14 @@ struct MyTripsView: View {
                 TripsView(viewModel: viewModel)
             }
             .navigationDestination(isPresented: $isShowingTribeTrips) {
-                TribeTripsView()
+                if let trip = selectedTripForTribe {
+                    TribeTripsView(
+                        trip: trip,
+                        imageDetails: tripImageDetails[trip.id]
+                    )
+                } else {
+                    EmptyView()
+                }
             }
         }
         .task {

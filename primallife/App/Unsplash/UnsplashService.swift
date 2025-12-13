@@ -17,17 +17,20 @@ enum UnsplashService {
     private static let accessKey = "REIL_WOXCjSVDsbIkoexE4MVlGNvLW4SU4twImEclXw"
     private static let utmSource = "primallife"
     
-    static func fetchImage(for query: String) async -> URL? {
-        let details = await fetchImageDetails(for: query)
+    static func fetchImage(for query: String, theme: String? = nil) async -> URL? {
+        let details = await fetchImageDetails(for: query, theme: theme)
         return details?.url
     }
     
-    static func fetchImageDetails(for query: String) async -> UnsplashImageDetails? {
-        guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://api.unsplash.com/search/photos?query=\(encodedQuery)&per_page=1&orientation=landscape")
-        else {
-            return nil
-        }
+    static func fetchImageDetails(for query: String, theme: String? = nil) async -> UnsplashImageDetails? {
+        let searchQuery = "tropical \(query)"
+        
+        var components = URLComponents(string: "https://api.unsplash.com/search/photos")
+        components?.queryItems = [
+            URLQueryItem(name: "query", value: searchQuery)
+        ]
+        
+        guard let url = components?.url else { return nil }
         
         var request = URLRequest(url: url)
         request.setValue("Client-ID \(accessKey)", forHTTPHeaderField: "Authorization")
@@ -35,6 +38,7 @@ enum UnsplashService {
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
             let response = try JSONDecoder().decode(UnsplashSearchResponse.self, from: data)
+            
             guard let photo = response.results.first,
                   let url = URL(string: photo.urls.regular)
             else {
@@ -70,6 +74,8 @@ private struct UnsplashSearchResponse: Decodable {
 private struct UnsplashPhoto: Decodable {
     let urls: UnsplashPhotoURLs
     let user: UnsplashUser?
+    let premium: Bool?
+    let plus: Bool?
 }
 
 private struct UnsplashPhotoURLs: Decodable {

@@ -130,6 +130,7 @@ struct TravelCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .frame(maxWidth: showsParticipants ? 140 : 200, alignment: .trailing)
                     .padding(12)
             }
         }

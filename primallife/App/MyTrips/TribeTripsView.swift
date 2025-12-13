@@ -91,8 +91,6 @@ private struct CreateTribeFormView: View {
     @State private var groupPhoto: UIImage?
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isShowingDetails = false
-    @State private var isShowingGender = false
-    @State private var isShowingReview = false
     @State private var aboutText: String = ""
     @State private var selectedInterests: Set<String> = []
     @State private var selectedGender: TribeGender = .everyone
@@ -248,8 +246,16 @@ private struct CreateTribeFormView: View {
         .onChange(of: selectedPhotoItem) { _, newValue in
             loadGroupPhoto(from: newValue)
         }
-        .overlay(alignment: .topLeading) {
-            navigationLinks
+        .navigationDestination(isPresented: $isShowingDetails) {
+            TribeDetailsView(
+                trip: trip,
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                privacy: privacy,
+                aboutText: $aboutText,
+                selectedInterests: $selectedInterests,
+                selectedGender: $selectedGender
+            )
         }
     }
 
@@ -272,43 +278,6 @@ private struct CreateTribeFormView: View {
                 groupPhoto = image
             }
         }
-    }
-
-    private var navigationLinks: some View {
-        Group {
-            NavigationLink(isActive: $isShowingDetails) {
-                TribeDetailsView(
-                    aboutText: $aboutText,
-                    selectedInterests: $selectedInterests,
-                    onContinue: { isShowingGender = true }
-                )
-            } label: {
-                EmptyView()
-            }
-
-            NavigationLink(isActive: $isShowingGender) {
-                TribeGenderView(
-                    selectedGender: $selectedGender,
-                    onContinue: { isShowingReview = true }
-                )
-            } label: {
-                EmptyView()
-            }
-
-            NavigationLink(isActive: $isShowingReview) {
-                TribeReviewView(
-                    groupName: groupName,
-                    groupPhoto: groupPhoto,
-                    aboutText: aboutText,
-                    privacy: privacy,
-                    selectedInterests: Array(selectedInterests)
-                )
-            } label: {
-                EmptyView()
-            }
-        }
-        .frame(width: 0, height: 0)
-        .hidden()
     }
 }
 
@@ -348,9 +317,14 @@ private enum TribeGender: String, CaseIterable, Identifiable {
 }
 
 private struct TribeDetailsView: View {
+    let trip: Trip
+    let groupName: String
+    let groupPhoto: UIImage?
+    let privacy: TribePrivacy
     @Binding var aboutText: String
     @Binding var selectedInterests: Set<String>
-    let onContinue: () -> Void
+    @Binding var selectedGender: TribeGender
+    @State private var isShowingGender = false
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isAboutFocused: Bool
     private let interestsLimit = 6
@@ -476,7 +450,7 @@ private struct TribeDetailsView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
-                    onContinue()
+                    isShowingGender = true
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
@@ -493,6 +467,17 @@ private struct TribeDetailsView: View {
             .background(Colors.background)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
+        .navigationDestination(isPresented: $isShowingGender) {
+            TribeGenderView(
+                trip: trip,
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                aboutText: aboutText,
+                privacy: privacy,
+                selectedInterests: Array(selectedInterests),
+                selectedGender: $selectedGender
+            )
+        }
     }
 
     private func toggleInterest(_ interest: String) {
@@ -505,9 +490,44 @@ private struct TribeDetailsView: View {
 }
 
 private struct TribeGenderView: View {
+    let trip: Trip
+    let groupName: String
+    let groupPhoto: UIImage?
+    let aboutText: String
+    let privacy: TribePrivacy
+    let selectedInterests: [String]
     @Binding var selectedGender: TribeGender
-    let onContinue: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var showCheckInPicker = false
+    @State private var showReturnPicker = false
+    @State private var checkInDate: Date
+    @State private var returnDate: Date
+    @State private var hasSelectedCheckIn: Bool
+    @State private var hasSelectedReturn: Bool
+    @State private var isShowingReview = false
+
+    init(
+        trip: Trip,
+        groupName: String,
+        groupPhoto: UIImage?,
+        aboutText: String,
+        privacy: TribePrivacy,
+        selectedInterests: [String],
+        selectedGender: Binding<TribeGender>
+    ) {
+        self.trip = trip
+        self.groupName = groupName
+        self.groupPhoto = groupPhoto
+        self.aboutText = aboutText
+        self.privacy = privacy
+        self.selectedInterests = selectedInterests
+        _selectedGender = selectedGender
+        _checkInDate = State(initialValue: trip.checkIn)
+        _returnDate = State(initialValue: trip.returnDate)
+        _hasSelectedCheckIn = State(initialValue: true)
+        _hasSelectedReturn = State(initialValue: true)
+        _isShowingReview = State(initialValue: false)
+    }
 
     var body: some View {
         ScrollView {
@@ -518,6 +538,70 @@ private struct TribeGenderView: View {
                     }
 
                     Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Tribe dates")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("Lock in when this tribe is traveling.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(spacing: 12) {
+                    Button {
+                        showCheckInPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tribe start date")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(hasSelectedCheckIn ? checkInText : "When does the tribe start?")
+                                    .font(.travelBody)
+                                    .foregroundStyle(hasSelectedCheckIn ? Colors.primaryText : Colors.secondaryText)
+
+                                Spacer()
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        showReturnPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tribe end date")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(hasSelectedReturn ? returnDateText : "When does the tribe wrap up?")
+                                    .font(.travelBody)
+                                    .foregroundStyle(hasSelectedReturn ? Colors.primaryText : Colors.secondaryText)
+
+                                Spacer()
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if isReturnDateInvalid {
+                    Text("Return date must be after check-in date.")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -564,7 +648,7 @@ private struct TribeGenderView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
-                    onContinue()
+                    isShowingReview = true
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
@@ -574,11 +658,85 @@ private struct TribeGenderView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
             .background(Colors.background)
+        }
+        .sheet(isPresented: $showCheckInPicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            showCheckInPicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    DatePicker("", selection: $checkInDate, displayedComponents: .date)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .tint(Colors.accent)
+                        .onChange(of: checkInDate) {
+                            hasSelectedCheckIn = true
+                        }
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
+        }
+        .sheet(isPresented: $showReturnPicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            showReturnPicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    DatePicker("", selection: $returnDate, displayedComponents: .date)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .tint(Colors.accent)
+                        .onChange(of: returnDate) {
+                            hasSelectedReturn = true
+                        }
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
+        }
+        .navigationDestination(isPresented: $isShowingReview) {
+            TribeReviewView(
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                aboutText: aboutText,
+                privacy: privacy,
+                selectedInterests: selectedInterests,
+                selectedGender: selectedGender,
+                checkInDate: checkInDate,
+                returnDate: returnDate
+            )
         }
     }
 
@@ -589,6 +747,22 @@ private struct TribeGenderView: View {
     private func selectedGenderSubtextColor(for option: TribeGender) -> Color {
         option == selectedGender ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
     }
+
+    private var checkInText: String {
+        checkInDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var returnDateText: String {
+        returnDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var isReturnDateInvalid: Bool {
+        hasSelectedCheckIn && hasSelectedReturn && returnDate < checkInDate
+    }
+
+    private var isContinueEnabled: Bool {
+        hasSelectedCheckIn && hasSelectedReturn && !isReturnDateInvalid
+    }
 }
 
 private struct TribeReviewView: View {
@@ -597,6 +771,9 @@ private struct TribeReviewView: View {
     let aboutText: String
     let privacy: TribePrivacy
     let selectedInterests: [String]
+    let selectedGender: TribeGender
+    let checkInDate: Date
+    let returnDate: Date
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -654,6 +831,26 @@ private struct TribeReviewView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("Travel dates")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(dateRangeText)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Who can join")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(selectedGender.label)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("About")
                             .font(.travelTitle)
                             .foregroundStyle(Colors.primaryText)
@@ -705,18 +902,24 @@ private struct TribeReviewView: View {
                 Button(action: { }) {
                     Text("Create Tribe")
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
+                        .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(height: 56)
                         .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
             .background(Colors.background)
         }
+    }
+
+    private var dateRangeText: String {
+        let start = checkInDate.formatted(date: .abbreviated, time: .omitted)
+        let end = returnDate.formatted(date: .abbreviated, time: .omitted)
+        return "\(start) - \(end)"
     }
 }
 

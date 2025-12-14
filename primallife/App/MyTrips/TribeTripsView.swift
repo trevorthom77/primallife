@@ -90,6 +90,7 @@ private struct CreateTribeFormView: View {
     @State private var privacy: TribePrivacy = .public
     @FocusState private var isGroupNameFocused: Bool
     @State private var groupPhoto: UIImage?
+    @State private var groupPhotoData: Data?
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isShowingDetails = false
     @State private var aboutText: String = ""
@@ -252,6 +253,7 @@ private struct CreateTribeFormView: View {
                 trip: trip,
                 groupName: groupName,
                 groupPhoto: groupPhoto,
+                groupPhotoData: groupPhotoData,
                 privacy: privacy,
                 aboutText: $aboutText,
                 selectedInterests: $selectedInterests,
@@ -277,6 +279,7 @@ private struct CreateTribeFormView: View {
 
             await MainActor.run {
                 groupPhoto = image
+                groupPhotoData = data
             }
         }
     }
@@ -321,6 +324,7 @@ private struct TribeDetailsView: View {
     let trip: Trip
     let groupName: String
     let groupPhoto: UIImage?
+    let groupPhotoData: Data?
     let privacy: TribePrivacy
     @Binding var aboutText: String
     @Binding var selectedInterests: Set<String>
@@ -473,6 +477,7 @@ private struct TribeDetailsView: View {
                 trip: trip,
                 groupName: groupName,
                 groupPhoto: groupPhoto,
+                groupPhotoData: groupPhotoData,
                 aboutText: aboutText,
                 privacy: privacy,
                 selectedInterests: Array(selectedInterests),
@@ -494,6 +499,7 @@ private struct TribeGenderView: View {
     let trip: Trip
     let groupName: String
     let groupPhoto: UIImage?
+    let groupPhotoData: Data?
     let aboutText: String
     let privacy: TribePrivacy
     let selectedInterests: [String]
@@ -515,6 +521,7 @@ private struct TribeGenderView: View {
         trip: Trip,
         groupName: String,
         groupPhoto: UIImage?,
+        groupPhotoData: Data?,
         aboutText: String,
         privacy: TribePrivacy,
         selectedInterests: [String],
@@ -523,6 +530,7 @@ private struct TribeGenderView: View {
         self.trip = trip
         self.groupName = groupName
         self.groupPhoto = groupPhoto
+        self.groupPhotoData = groupPhotoData
         self.aboutText = aboutText
         self.privacy = privacy
         self.selectedInterests = selectedInterests
@@ -736,6 +744,7 @@ private struct TribeGenderView: View {
                     trip: trip,
                     groupName: groupName,
                     groupPhoto: groupPhoto,
+                    groupPhotoData: groupPhotoData,
                     aboutText: aboutText,
                 privacy: privacy,
                 selectedInterests: selectedInterests,
@@ -835,6 +844,7 @@ private struct TribeReviewView: View {
     let trip: Trip
     let groupName: String
     let groupPhoto: UIImage?
+    let groupPhotoData: Data?
     let aboutText: String
     let privacy: TribePrivacy
     let selectedInterests: [String]
@@ -1018,9 +1028,45 @@ private struct TribeReviewView: View {
     }
 
     private var dateRangeText: String {
-        let start = checkInDate.formatted(date: .abbreviated, time: .omitted)
-        let end = returnDate.formatted(date: .abbreviated, time: .omitted)
-        return "\(start) - \(end)"
+        let calendar = Calendar(identifier: .gregorian)
+        let startYear = calendar.component(.year, from: checkInDate)
+        let endYear = calendar.component(.year, from: returnDate)
+
+        let shortFormatter = DateFormatter()
+        shortFormatter.calendar = calendar
+        shortFormatter.locale = Locale(identifier: "en_US_POSIX")
+        shortFormatter.dateFormat = "MMM d"
+
+        let fullFormatter = DateFormatter()
+        fullFormatter.calendar = calendar
+        fullFormatter.locale = Locale(identifier: "en_US_POSIX")
+        fullFormatter.dateFormat = "MMM d, yyyy"
+
+        if startYear == endYear {
+            return "\(shortFormatter.string(from: checkInDate)) - \(fullFormatter.string(from: returnDate))"
+        } else {
+            return "\(fullFormatter.string(from: checkInDate)) - \(fullFormatter.string(from: returnDate))"
+        }
+    }
+
+    private func uploadGroupPhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> URL? {
+        guard let imageData = groupPhotoData else { return nil }
+
+        let path = "\(userID)/tribes/\(UUID().uuidString).jpg"
+
+        try await supabase.storage
+            .from("tribe-photos")
+            .upload(
+                path,
+                data: imageData,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+
+        let signedURL = try await supabase.storage
+            .from("tribe-photos")
+            .createSignedURL(path: path, expiresIn: 3600)
+
+        return signedURL
     }
 
     @MainActor
@@ -1039,23 +1085,26 @@ private struct TribeReviewView: View {
         let resolvedName = trimmedName.isEmpty ? "Untitled tribe" : trimmedName
         let trimmedAbout = aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let payload = NewTribe(
-            ownerID: userID,
-            locationID: trip.id,
-            name: resolvedName,
-            description: trimmedAbout.isEmpty ? nil : trimmedAbout,
-            startDate: checkInDate,
-            endDate: returnDate,
-            gender: selectedGender.rawValue,
-            privacy: privacy.rawValue,
-            interests: selectedInterests,
-            photoURL: nil
-        )
-
         isCreating = true
         errorMessage = nil
+        defer { isCreating = false }
 
         do {
+            let photoURL = try await uploadGroupPhotoIfNeeded(supabase: supabase, userID: userID)
+
+            let payload = NewTribe(
+                ownerID: userID,
+                locationID: trip.id,
+                name: resolvedName,
+                description: trimmedAbout.isEmpty ? nil : trimmedAbout,
+                startDate: checkInDate,
+                endDate: returnDate,
+                gender: selectedGender.rawValue,
+                privacy: privacy.rawValue,
+                interests: selectedInterests,
+                photoURL: photoURL?.absoluteString
+            )
+
             try await supabase
                 .from("tribes")
                 .insert(payload)
@@ -1069,15 +1118,13 @@ private struct TribeReviewView: View {
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 interests: selectedInterests,
                 placeName: trip.destination,
-                imageURL: nil,
+                imageURL: photoURL,
                 creator: "You"
             )
             isShowingCreatedTribe = true
         } catch {
             errorMessage = "Unable to create tribe right now."
         }
-
-        isCreating = false
     }
 }
 

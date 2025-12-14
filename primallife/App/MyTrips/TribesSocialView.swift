@@ -70,6 +70,7 @@ struct TribesSocialView: View {
                             } placeholder: {
                                 Colors.card
                             }
+                            .allowsHitTesting(false)
                         }
                         .overlay(alignment: .bottomLeading) {
                             HStack(spacing: -8) {

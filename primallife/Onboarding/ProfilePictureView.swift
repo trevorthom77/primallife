@@ -109,12 +109,7 @@ struct ProfilePictureView: View {
             }
 
             if let path = onboardingViewModel.avatarPath {
-                Task {
-                    let signedURL = await generateSignedAvatarURL(for: path)
-                    await MainActor.run {
-                        avatarURL = signedURL
-                    }
-                }
+                avatarURL = makePublicAvatarURL(for: path)
             }
         }
         .navigationDestination(isPresented: $showLocationPermission) {
@@ -147,27 +142,27 @@ struct ProfilePictureView: View {
             try await supabase.storage
                 .from("profile-photos")
                 .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
-            
-            guard let signedURL = await generateSignedAvatarURL(for: path) else { return }
+
+            let publicURL = makePublicAvatarURL(for: path)
             
             await MainActor.run {
                 onboardingViewModel.avatarPath = path
-                avatarURL = signedURL
+                avatarURL = publicURL
             }
         } catch {
             print("Avatar upload failed: \(error)")
         }
     }
     
-    private func generateSignedAvatarURL(for path: String) async -> URL? {
+    private func makePublicAvatarURL(for path: String) -> URL? {
         guard let supabase else { return nil }
-        
+
         do {
-            return try await supabase.storage
+            return try supabase.storage
                 .from("profile-photos")
-                .createSignedURL(path: path, expiresIn: 3600)
+                .getPublicURL(path: path)
         } catch {
-            print("Failed to create signed URL: \(error)")
+            print("Failed to create public URL: \(error)")
             return nil
         }
     }

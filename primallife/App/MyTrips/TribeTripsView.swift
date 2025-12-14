@@ -155,31 +155,32 @@ private struct CreateTribeFormView: View {
                         .foregroundStyle(Colors.primaryText)
 
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        ZStack {
-                            if let image = groupPhoto {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            } else {
-                                VStack(spacing: 8) {
-                                    Text("Add photo")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Colors.card)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .overlay {
+                                if let image = groupPhoto {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .clipped()
+                                } else {
+                                    VStack(spacing: 8) {
+                                        Text("Add photo")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
 
-                                    Text("Tap to upload a cover for this tribe.")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.secondaryText)
+                                        Text("Tap to upload a cover for this tribe.")
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+                                    .padding(.horizontal, 16)
                                 }
-                                .padding(.horizontal, 16)
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 220)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .contentShape(RoundedRectangle(cornerRadius: 14))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .contentShape(RoundedRectangle(cornerRadius: 14))
                     }
                 }
 
@@ -880,23 +881,24 @@ private struct TribeReviewView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 16) {
-                    ZStack {
-                        if let image = groupPhoto {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Colors.card
-                                .overlay {
-                                    Text("No photo added")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.secondaryText)
-                                }
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Colors.card)
+                        .frame(height: 200)
+                        .frame(maxWidth: .infinity)
+                        .overlay {
+                            if let image = groupPhoto {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            } else {
+                                Text("No photo added")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
                         }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(groupName.isEmpty ? "Untitled tribe" : groupName)
@@ -1062,11 +1064,9 @@ private struct TribeReviewView: View {
                 options: FileOptions(contentType: "image/jpeg", upsert: true)
             )
 
-        let signedURL = try await supabase.storage
+        return try supabase.storage
             .from("tribe-photos")
-            .createSignedURL(path: path, expiresIn: 3600)
-
-        return signedURL
+            .getPublicURL(path: path)
     }
 
     @MainActor

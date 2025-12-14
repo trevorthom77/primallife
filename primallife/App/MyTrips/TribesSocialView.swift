@@ -56,65 +56,71 @@ struct TribesSocialView: View {
                         Spacer()
                     }
 
-                    AsyncImage(url: imageURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Colors.card
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(alignment: .bottomLeading) {
-                        HStack(spacing: -8) {
-                            Image("profile1")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 36, height: 36)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            Image("profile2")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 36, height: 36)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            Image("profile3")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 36, height: 36)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle()
-                                        .stroke(Colors.card, lineWidth: 3)
-                                }
-
-                            ZStack {
-                                Circle()
-                                    .fill(Colors.background)
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Colors.card)
+                        .frame(height: 220)
+                        .frame(maxWidth: .infinity)
+                        .overlay {
+                            AsyncImage(url: imageURL) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            } placeholder: {
+                                Colors.card
+                            }
+                        }
+                        .overlay(alignment: .bottomLeading) {
+                            HStack(spacing: -8) {
+                                Image("profile1")
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(width: 36, height: 36)
+                                    .clipShape(Circle())
                                     .overlay {
                                         Circle()
                                             .stroke(Colors.card, lineWidth: 3)
                                     }
 
-                                Text("67+")
-                                    .font(.custom(Fonts.semibold, size: 12))
-                                    .foregroundStyle(Colors.primaryText)
+                                Image("profile2")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 36, height: 36)
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+
+                                Image("profile3")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 36, height: 36)
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+
+                                ZStack {
+                                    Circle()
+                                        .fill(Colors.background)
+                                        .frame(width: 36, height: 36)
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    Text("67+")
+                                        .font(.custom(Fonts.semibold, size: 12))
+                                        .foregroundStyle(Colors.primaryText)
+                                }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
-                    }
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(title)

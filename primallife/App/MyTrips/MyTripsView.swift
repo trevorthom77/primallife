@@ -74,10 +74,74 @@ struct NewTrip: Encodable {
     }
 }
 
+struct Tribe: Decodable, Identifiable {
+    let id: UUID
+    let ownerID: UUID
+    let locationID: UUID
+    let name: String
+    let description: String?
+    let startDate: Date
+    let endDate: Date
+    let gender: String
+    let privacy: String
+    let interests: [String]
+    let photoURL: URL?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case ownerID = "owner_id"
+        case locationID = "location_id"
+        case name
+        case description
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case gender
+        case privacy
+        case interests
+        case photoURL = "photo_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        ownerID = try container.decode(UUID.self, forKey: .ownerID)
+        locationID = try container.decode(UUID.self, forKey: .locationID)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+
+        let startDateString = try container.decode(String.self, forKey: .startDate)
+        guard let decodedStartDate = myTripsDateFormatter.date(from: startDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.startDate], debugDescription: "Invalid start date format")
+            )
+        }
+        startDate = decodedStartDate
+
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        guard let decodedEndDate = myTripsDateFormatter.date(from: endDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.endDate], debugDescription: "Invalid end date format")
+            )
+        }
+        endDate = decodedEndDate
+
+        gender = try container.decode(String.self, forKey: .gender)
+        privacy = try container.decode(String.self, forKey: .privacy)
+        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
+
+        if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
+            photoURL = URL(string: photoURLString)
+        } else {
+            photoURL = nil
+        }
+    }
+}
+
 @MainActor
 final class MyTripsViewModel: ObservableObject {
     @Published var trips: [Trip] = []
     @Published var error: String?
+    @Published var tribesByTrip: [UUID: [Tribe]] = [:]
 
     func loadTrips(supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -118,14 +182,29 @@ final class MyTripsViewModel: ObservableObject {
             self.error = "Unable to add trip."
         }
     }
+
+    func loadTribes(for trip: Trip, supabase: SupabaseClient?) async {
+        guard let supabase else { return }
+
+        do {
+            let fetchedTribes: [Tribe] = try await supabase
+                .from("tribes")
+                .select()
+                .eq("location_id", value: "\(trip.id)")
+                .execute()
+                .value
+
+            tribesByTrip[trip.id] = fetchedTribes
+        } catch {
+            tribesByTrip[trip.id] = []
+        }
+    }
 }
 
 struct MyTripsView: View {
     @Environment(\.supabaseClient) var supabase
     @StateObject private var viewModel = MyTripsViewModel()
     @State private var tripImageDetails: [UUID: UnsplashImageDetails] = [:]
-    @State private var tribeImageURL: URL?
-    @State private var secondTribeImageURL: URL?
     @State private var sunImageURL: URL?
     @State private var groundingImageURL: URL?
     @State private var selectedTripForTribe: Trip?
@@ -258,96 +337,110 @@ struct MyTripsView: View {
                             }
                             .padding(.top, 16)
                             
-                            NavigationLink {
-                                TribesSocialView(
-                                    imageURL: tribeImageURL,
-                                    title: "Party Tonight \(selectedTripDestination)",
-                                    location: selectedTripDestination,
-                                    flag: "",
-                                    date: "Dec 5–9, 2025"
-                                )
-                            } label: {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack(spacing: 12) {
-                                        AsyncImage(url: tribeImageURL) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        } placeholder: {
-                                            Colors.card
-                                        }
-                                        .frame(width: 88, height: 72)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                        
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Party Tonight \(selectedTripDestination)")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.primaryText)
-                                            
-                                            HStack(spacing: 6) {
-                                                Text(selectedTripDestination)
-                                                    .font(.travelDetail)
-                                                    .foregroundStyle(Colors.secondaryText)
-                                            }
-                                        }
-                                        
-                                        Spacer()
-                                    }
-                                    .padding(12)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                                    HStack(spacing: -8) {
-                                        Image("profile1")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 32, height: 32)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
-                                        
-                                        Image("profile2")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 32, height: 32)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
-                                        
-                                        Image("profile3")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 32, height: 32)
-                                            .clipShape(Circle())
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
-                                        
-                                        ZStack {
-                                            Circle()
-                                                .fill(Colors.background)
-                                                .frame(width: 32, height: 32)
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
+                            if tribesForSelectedTrip.isEmpty {
+                                Text("No tribes yet for \(selectedTripDestination).")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .padding(.vertical, 4)
+                            } else {
+                                ForEach(tribesForSelectedTrip) { tribe in
+                                    NavigationLink {
+                                        TribesSocialView(
+                                            imageURL: tribe.photoURL,
+                                            title: tribe.name,
+                                            location: selectedTripDestination,
+                                            flag: "",
+                                            date: tribeDateRange(for: tribe),
+                                            aboutText: tribe.description,
+                                            interests: tribe.interests,
+                                            placeName: selectedTripDestination,
+                                            createdBy: nil
+                                        )
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 12) {
+                                            HStack(spacing: 12) {
+                                                AsyncImage(url: tribe.photoURL) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                } placeholder: {
+                                                    Colors.card
                                                 }
-                                            
-                                            Text("67+")
-                                                .font(.custom(Fonts.semibold, size: 12))
-                                                .foregroundStyle(Colors.primaryText)
+                                                .frame(width: 88, height: 72)
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                
+                                                VStack(alignment: .leading, spacing: 6) {
+                                                    Text(tribe.name)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.primaryText)
+                                                    
+                                                    VStack(alignment: .leading, spacing: 2) {
+                                                        Text(selectedTripDestination)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                        
+                                                        Text(tribeDateRange(for: tribe))
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                    }
+                                                }
+                                                
+                                                Spacer()
+                                            }
+                                            .padding(12)
+                                            .background(Colors.card)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                                            HStack(spacing: -8) {
+                                                Image("profile1")
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 32, height: 32)
+                                                    .clipShape(Circle())
+                                                    .overlay {
+                                                        Circle()
+                                                            .stroke(Colors.card, lineWidth: 3)
+                                                    }
+                                                
+                                                Image("profile2")
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 32, height: 32)
+                                                    .clipShape(Circle())
+                                                    .overlay {
+                                                        Circle()
+                                                            .stroke(Colors.card, lineWidth: 3)
+                                                    }
+                                                
+                                                Image("profile3")
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 32, height: 32)
+                                                    .clipShape(Circle())
+                                                    .overlay {
+                                                        Circle()
+                                                            .stroke(Colors.card, lineWidth: 3)
+                                                    }
+                                                
+                                                ZStack {
+                                                    Circle()
+                                                        .fill(Colors.background)
+                                                        .frame(width: 32, height: 32)
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+                                                    
+                                                    Text("67+")
+                                                        .font(.custom(Fonts.semibold, size: 12))
+                                                        .foregroundStyle(Colors.primaryText)
+                                                }
+                                            }
+                                            .padding(.horizontal, 12)
                                         }
                                     }
-                                    .padding(.horizontal, 12)
+                                    .buttonStyle(.plain)
                                 }
-                            }
-                            .buttonStyle(.plain)
-                            .task(id: selectedTripDestination) {
-                                tribeImageURL = await UnsplashService.fetchImage(for: "\(selectedTripDestination) beach")
                             }
 
                             Button(action: {
@@ -611,9 +704,21 @@ struct MyTripsView: View {
         .task {
             await viewModel.loadTrips(supabase: supabase)
             await prefetchTripImages()
+            await loadTribesForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             await prefetchTripImages()
+            await loadTribesForSelectedTrip(force: true)
+        }
+        .task(id: selectedTripIndex) {
+            await loadTribesForSelectedTrip()
+        }
+        .onChange(of: isShowingTribeTrips) { _, newValue in
+            if !newValue {
+                Task {
+                    await loadTribesForSelectedTrip(force: true)
+                }
+            }
         }
     }
     
@@ -637,11 +742,34 @@ struct MyTripsView: View {
             URLCache.shared.storeCachedResponse(cached, for: request)
         } catch { }
     }
+
+    @MainActor
+    private func loadTribesForSelectedTrip(force: Bool = false) async {
+        guard let trip = selectedTrip else { return }
+        if !force, viewModel.tribesByTrip[trip.id] != nil { return }
+        await viewModel.loadTribes(for: trip, supabase: supabase)
+    }
+    
+    private var selectedTrip: Trip? {
+        guard viewModel.trips.indices.contains(selectedTripIndex) else { return nil }
+        return viewModel.trips[selectedTripIndex]
+    }
+
+    private var tribesForSelectedTrip: [Tribe] {
+        guard let trip = selectedTrip else { return [] }
+        return viewModel.tribesByTrip[trip.id] ?? []
+    }
     
     private func tripDateRange(for trip: Trip) -> String {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func tribeDateRange(for tribe: Tribe) -> String {
+        let start = tribe.startDate.formatted(.dateTime.month(.abbreviated).day())
+        let end = tribe.endDate.formatted(.dateTime.month(.abbreviated).day().year())
+        return "\(start)–\(end)"
     }
     
     private func indicatorCount(for tripCount: Int) -> Int {
@@ -666,11 +794,7 @@ struct MyTripsView: View {
     }
 
     private var selectedTripDestination: String {
-        guard viewModel.trips.indices.contains(selectedTripIndex) else {
-            return "Costa Rica"
-        }
-
-        return viewModel.trips[selectedTripIndex].destination
+        selectedTrip?.destination ?? "Costa Rica"
     }
 }
 

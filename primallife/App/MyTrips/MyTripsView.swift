@@ -338,7 +338,7 @@ struct MyTripsView: View {
                             .padding(.top, 16)
                             
                             if tribesForSelectedTrip.isEmpty {
-                                Text("No tribes yet for \(selectedTripDestination).")
+                                Text("No tribes yet.")
                                     .font(.travelDetail)
                                     .foregroundStyle(Colors.secondaryText)
                                     .padding(.vertical, 4)

@@ -246,7 +246,7 @@ struct MyTripsView: View {
                             }
                             
                             HStack {
-                                Text("Costa Rica Tribes")
+                                Text("\(selectedTripDestination) Tribes")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
                                 
@@ -261,9 +261,9 @@ struct MyTripsView: View {
                             NavigationLink {
                                 TribesSocialView(
                                     imageURL: tribeImageURL,
-                                    title: "Party Tonight Costa Rica",
-                                    location: "Costa Rica",
-                                    flag: "🇨🇷",
+                                    title: "Party Tonight \(selectedTripDestination)",
+                                    location: selectedTripDestination,
+                                    flag: "",
                                     date: "Dec 5–9, 2025"
                                 )
                             } label: {
@@ -280,13 +280,12 @@ struct MyTripsView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                         
                                         VStack(alignment: .leading, spacing: 6) {
-                                            Text("Party Tonight Costa Rica")
+                                            Text("Party Tonight \(selectedTripDestination)")
                                                 .font(.travelDetail)
                                                 .foregroundStyle(Colors.primaryText)
                                             
                                             HStack(spacing: 6) {
-                                                Text("🇨🇷")
-                                                Text("Costa Rica")
+                                                Text(selectedTripDestination)
                                                     .font(.travelDetail)
                                                     .foregroundStyle(Colors.secondaryText)
                                             }
@@ -347,8 +346,8 @@ struct MyTripsView: View {
                                 }
                             }
                             .buttonStyle(.plain)
-                            .task {
-                                tribeImageURL = await UnsplashService.fetchImage(for: "Costa Rica beach")
+                            .task(id: selectedTripDestination) {
+                                tribeImageURL = await UnsplashService.fetchImage(for: "\(selectedTripDestination) beach")
                             }
 
                             Button(action: {
@@ -664,6 +663,14 @@ struct MyTripsView: View {
         }
 
         return min(selectedIndex, count - 1)
+    }
+
+    private var selectedTripDestination: String {
+        guard viewModel.trips.indices.contains(selectedTripIndex) else {
+            return "Costa Rica"
+        }
+
+        return viewModel.trips[selectedTripIndex].destination
     }
 }
 

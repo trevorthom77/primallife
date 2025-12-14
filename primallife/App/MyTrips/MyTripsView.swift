@@ -343,7 +343,7 @@ struct MyTripsView: View {
                                     .foregroundStyle(Colors.secondaryText)
                                     .padding(.vertical, 4)
                             } else {
-                                ForEach(tribesForSelectedTrip) { tribe in
+                                ForEach(tribesForSelectedTrip.prefix(2)) { tribe in
                                     NavigationLink {
                                         TribesSocialView(
                                             imageURL: tribe.photoURL,

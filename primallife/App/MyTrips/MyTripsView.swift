@@ -142,6 +142,7 @@ final class MyTripsViewModel: ObservableObject {
     @Published var trips: [Trip] = []
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
+    @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
 
     func loadTrips(supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -184,7 +185,9 @@ final class MyTripsViewModel: ObservableObject {
     }
 
     func loadTribes(for trip: Trip, supabase: SupabaseClient?) async {
-        guard let supabase else { return }
+        guard let supabase, !loadingTribeTripIDs.contains(trip.id) else { return }
+
+        loadingTribeTripIDs.insert(trip.id)
 
         do {
             let fetchedTribes: [Tribe] = try await supabase
@@ -198,6 +201,12 @@ final class MyTripsViewModel: ObservableObject {
         } catch {
             tribesByTrip[trip.id] = []
         }
+
+        loadingTribeTripIDs.remove(trip.id)
+    }
+
+    func isLoadingTribes(tripID: UUID) -> Bool {
+        loadingTribeTripIDs.contains(tripID)
     }
 }
 
@@ -211,6 +220,7 @@ struct MyTripsView: View {
     @State private var isShowingTrips = false
     @State private var isShowingTribeTrips = false
     @State private var selectedTripIndex = 0
+    @State private var tribeImageCache: [UUID: Image] = [:]
     
     var body: some View {
         NavigationStack {
@@ -337,105 +347,105 @@ struct MyTripsView: View {
                             }
                             .padding(.top, 16)
                             
-                            if tribesForSelectedTrip.isEmpty {
-                                Text("No tribes yet.")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.secondaryText)
-                                    .padding(.vertical, 4)
-                            } else {
-                                ForEach(tribesForSelectedTrip.prefix(2)) { tribe in
-                                    NavigationLink {
-                                        TribesSocialView(
-                                            imageURL: tribe.photoURL,
-                                            title: tribe.name,
-                                            location: selectedTripDestination,
-                                            flag: "",
-                                            date: tribeDateRange(for: tribe),
-                                            gender: tribe.gender,
-                                            aboutText: tribe.description,
-                                            interests: tribe.interests,
-                                            placeName: selectedTripDestination,
-                                            createdBy: nil
-                                        )
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 12) {
-                                            HStack(spacing: 12) {
-                                                AsyncImage(url: tribe.photoURL) { image in
-                                                    image
+                            if let tribes = tribesForSelectedTrip {
+                                if tribes.isEmpty {
+                                    Text("No tribes yet.")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.secondaryText)
+                                        .padding(.vertical, 4)
+                                } else {
+                                    ForEach(tribes.prefix(2)) { tribe in
+                                        NavigationLink {
+                                            TribesSocialView(
+                                                imageURL: tribe.photoURL,
+                                                title: tribe.name,
+                                                location: selectedTripDestination,
+                                                flag: "",
+                                                date: tribeDateRange(for: tribe),
+                                                gender: tribe.gender,
+                                                aboutText: tribe.description,
+                                                interests: tribe.interests,
+                                                placeName: selectedTripDestination,
+                                                createdBy: nil
+                                            )
+                                        } label: {
+                                            VStack(alignment: .leading, spacing: 12) {
+                                                HStack(spacing: 12) {
+                                                    tribeImage(for: tribe)
+                                                        .frame(width: 88, height: 72)
+                                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                    
+                                                    VStack(alignment: .leading, spacing: 6) {
+                                                        Text(tribe.name)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.primaryText)
+                                                        
+                                                        Text(selectedTripDestination)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                    }
+                                                    
+                                                    Spacer()
+                                                }
+                                                .padding(12)
+                                                .background(Colors.card)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                                                HStack(spacing: -8) {
+                                                    Image("profile1")
                                                         .resizable()
                                                         .scaledToFill()
-                                                } placeholder: {
-                                                    Colors.card
-                                                }
-                                                .frame(width: 88, height: 72)
-                                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                
-                                                VStack(alignment: .leading, spacing: 6) {
-                                                    Text(tribe.name)
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.primaryText)
-                                                    
-                                                    Text(selectedTripDestination)
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.secondaryText)
-                                                }
-                                                
-                                                Spacer()
-                                            }
-                                            .padding(12)
-                                            .background(Colors.card)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                                            HStack(spacing: -8) {
-                                                Image("profile1")
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 32, height: 32)
-                                                    .clipShape(Circle())
-                                                    .overlay {
-                                                        Circle()
-                                                            .stroke(Colors.card, lineWidth: 3)
-                                                    }
-                                                
-                                                Image("profile2")
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 32, height: 32)
-                                                    .clipShape(Circle())
-                                                    .overlay {
-                                                        Circle()
-                                                            .stroke(Colors.card, lineWidth: 3)
-                                                    }
-                                                
-                                                Image("profile3")
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 32, height: 32)
-                                                    .clipShape(Circle())
-                                                    .overlay {
-                                                        Circle()
-                                                            .stroke(Colors.card, lineWidth: 3)
-                                                    }
-                                                
-                                                ZStack {
-                                                    Circle()
-                                                        .fill(Colors.background)
                                                         .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
                                                         .overlay {
                                                             Circle()
                                                                 .stroke(Colors.card, lineWidth: 3)
                                                         }
                                                     
-                                                    Text("67+")
-                                                        .font(.custom(Fonts.semibold, size: 12))
-                                                        .foregroundStyle(Colors.primaryText)
+                                                    Image("profile2")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+                                                    
+                                                    Image("profile3")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+                                                    
+                                                    ZStack {
+                                                        Circle()
+                                                            .fill(Colors.background)
+                                                            .frame(width: 32, height: 32)
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+                                                        
+                                                        Text("67+")
+                                                            .font(.custom(Fonts.semibold, size: 12))
+                                                            .foregroundStyle(Colors.primaryText)
+                                                    }
                                                 }
+                                                .padding(.horizontal, 12)
                                             }
-                                            .padding(.horizontal, 12)
                                         }
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
                                 }
+                            } else if isLoadingTribesForSelectedTrip {
+                                ProgressView()
+                                    .tint(Colors.accent)
+                                    .padding(.vertical, 4)
                             }
 
                             Button(action: {
@@ -744,6 +754,7 @@ struct MyTripsView: View {
     @MainActor
     private func loadTribesForSelectedTrip(force: Bool = false) async {
         guard let trip = selectedTrip else { return }
+        if viewModel.isLoadingTribes(tripID: trip.id) { return }
         if !force, viewModel.tribesByTrip[trip.id] != nil { return }
         await viewModel.loadTribes(for: trip, supabase: supabase)
     }
@@ -753,9 +764,41 @@ struct MyTripsView: View {
         return viewModel.trips[selectedTripIndex]
     }
 
-    private var tribesForSelectedTrip: [Tribe] {
-        guard let trip = selectedTrip else { return [] }
-        return viewModel.tribesByTrip[trip.id] ?? []
+    private var tribesForSelectedTrip: [Tribe]? {
+        guard let trip = selectedTrip else { return nil }
+        return viewModel.tribesByTrip[trip.id]
+    }
+
+    private var isLoadingTribesForSelectedTrip: Bool {
+        guard let trip = selectedTrip else { return false }
+        return viewModel.isLoadingTribes(tripID: trip.id)
+    }
+
+    @ViewBuilder
+    private func tribeImage(for tribe: Tribe) -> some View {
+        if let cachedImage = tribeImageCache[tribe.id] {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let url = tribe.photoURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .onAppear {
+                            tribeImageCache[tribe.id] = image
+                        }
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
+                }
+            }
+        } else {
+            Colors.card
+        }
     }
     
     private func tripDateRange(for trip: Trip) -> String {

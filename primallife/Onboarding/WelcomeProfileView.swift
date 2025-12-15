@@ -12,6 +12,7 @@ struct WelcomeProfileView: View {
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject private var profileStore: ProfileStore
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -117,6 +118,7 @@ struct WelcomeProfileView: View {
                 .from("onboarding")
                 .upsert(payload, onConflict: "id")
                 .execute()
+            await profileStore.loadProfile(for: userID, supabase: supabase)
             await MainActor.run {
                 onboardingViewModel.hasCompletedOnboarding = true
             }
@@ -372,4 +374,5 @@ private struct ProfilePreviewCard: View {
 #Preview {
     WelcomeProfileView()
         .environmentObject(OnboardingViewModel())
+        .environmentObject(ProfileStore())
 }

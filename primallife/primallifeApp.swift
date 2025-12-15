@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import Combine
 
 private struct SupabaseClientKey: EnvironmentKey {
     static let defaultValue: SupabaseClient? = nil
@@ -12,6 +13,41 @@ extension EnvironmentValues {
     }
 }
 
+@MainActor
+final class ProfileStore: ObservableObject {
+    @Published var profile: UserProfile?
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    func loadProfile(for userID: UUID, supabase: SupabaseClient?) async {
+        guard let supabase else { return }
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .eq("id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            
+            profile = profiles.first
+            isLoading = false
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+        }
+    }
+    
+    func clear() {
+        profile = nil
+        isLoading = false
+        errorMessage = nil
+    }
+}
+
 @main
 struct primallifeApp: App {
     private let supabase = SupabaseClient(
@@ -19,6 +55,7 @@ struct primallifeApp: App {
         supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
     )
     @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @StateObject private var profileStore = ProfileStore()
     @State private var isAuthenticated = false
     @State private var isCheckingSession = true
     
@@ -50,6 +87,7 @@ struct primallifeApp: App {
             }
             .environment(\.supabaseClient, supabase)
             .environmentObject(onboardingViewModel)
+            .environmentObject(profileStore)
         }
     }
     
@@ -61,6 +99,7 @@ struct primallifeApp: App {
                 isCheckingSession = false
                 isAuthenticated = false
                 onboardingViewModel.hasCompletedOnboarding = false
+                profileStore.clear()
             }
             return
         }
@@ -70,6 +109,7 @@ struct primallifeApp: App {
                 isCheckingSession = false
                 isAuthenticated = false
                 onboardingViewModel.hasCompletedOnboarding = false
+                profileStore.clear()
             }
             return
         }
@@ -83,6 +123,8 @@ struct primallifeApp: App {
                 .execute()
                 .value
             
+            await profileStore.loadProfile(for: userID, supabase: supabase)
+            
             let completedAt = response.first?.completedAt
             await MainActor.run {
                 onboardingViewModel.hasCompletedOnboarding = completedAt != nil
@@ -94,6 +136,7 @@ struct primallifeApp: App {
                 onboardingViewModel.hasCompletedOnboarding = false
                 isAuthenticated = false
                 isCheckingSession = false
+                profileStore.clear()
             }
             print("Onboarding status fetch failed: \(error)")
         }
@@ -102,12 +145,18 @@ struct primallifeApp: App {
     private func observeAuthChanges() async {
         for await state in supabase.auth.authStateChanges {
             let hasSession = state.session != nil
+            let userID = state.session?.user.id
             
             await MainActor.run {
                 isAuthenticated = hasSession
                 if !hasSession {
                     onboardingViewModel.hasCompletedOnboarding = false
+                    profileStore.clear()
                 }
+            }
+            
+            if let userID, hasSession {
+                await profileStore.loadProfile(for: userID, supabase: supabase)
             }
         }
     }

@@ -193,7 +193,7 @@ final class MyTripsViewModel: ObservableObject {
             let fetchedTribes: [Tribe] = try await supabase
                 .from("tribes")
                 .select()
-                .eq("location_id", value: "\(trip.id)")
+                .eq("destination", value: trip.destination)
                 .execute()
                 .value
 

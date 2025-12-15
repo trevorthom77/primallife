@@ -6,6 +6,87 @@
 //
 
 import SwiftUI
+import Supabase
+
+struct UserProfile: Decodable, Identifiable {
+    let id: UUID
+    let fullName: String
+    let origin: String?
+    let gender: String?
+    let bio: String
+    let avatarPath: String?
+    let meetingPreference: String?
+    let meetingUpPreference: String?
+    let splitExpensesPreference: String?
+    let travelDescription: String?
+    let upcomingDestination: String
+    let upcomingArrivalDate: String?
+    let upcomingDepartingDate: String?
+    let languages: [String]
+    let interests: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullName = "full_name"
+        case origin
+        case gender
+        case bio
+        case avatarPath = "avatar_url"
+        case meetingPreference = "meeting_preference"
+        case meetingUpPreference = "meeting_up_preference"
+        case splitExpensesPreference = "split_expenses_preference"
+        case travelDescription = "travel_description"
+        case upcomingDestination = "upcoming_destination"
+        case upcomingArrivalDate = "upcoming_arrival_date"
+        case upcomingDepartingDate = "upcoming_departing_date"
+        case languages
+        case interests
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        fullName = try container.decode(String.self, forKey: .fullName)
+        origin = try container.decodeIfPresent(String.self, forKey: .origin)
+        gender = try container.decodeIfPresent(String.self, forKey: .gender)
+        bio = try container.decode(String.self, forKey: .bio)
+        avatarPath = try container.decodeIfPresent(String.self, forKey: .avatarPath)
+        meetingPreference = try container.decodeIfPresent(String.self, forKey: .meetingPreference)
+        meetingUpPreference = try container.decodeIfPresent(String.self, forKey: .meetingUpPreference)
+        splitExpensesPreference = try container.decodeIfPresent(String.self, forKey: .splitExpensesPreference)
+        travelDescription = try container.decodeIfPresent(String.self, forKey: .travelDescription)
+        upcomingDestination = try container.decode(String.self, forKey: .upcomingDestination)
+        upcomingArrivalDate = try container.decodeIfPresent(String.self, forKey: .upcomingArrivalDate)
+        upcomingDepartingDate = try container.decodeIfPresent(String.self, forKey: .upcomingDepartingDate)
+        languages = try container.decodeIfPresent([String].self, forKey: .languages) ?? []
+        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
+    }
+    
+    var originCountry: Country? {
+        guard let origin else { return nil }
+        return CountryDatabase.all.first(where: { $0.id == origin })
+    }
+    
+    var originFlag: String? {
+        originCountry?.flag
+    }
+    
+    var originName: String? {
+        originCountry?.name
+    }
+    
+    func avatarURL(using supabase: SupabaseClient?) -> URL? {
+        guard let supabase, let avatarPath else { return nil }
+        
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: avatarPath)
+        } catch {
+            return nil
+        }
+    }
+}
 
 struct ProfileView: View {
     let name: String

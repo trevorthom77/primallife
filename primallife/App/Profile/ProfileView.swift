@@ -88,6 +88,25 @@ struct UserProfile: Decodable, Identifiable {
     }
 }
 
+func loadUserProfile(id: UUID, supabase: SupabaseClient?) async -> UserProfile? {
+    guard let supabase else { return nil }
+    
+    do {
+        let profiles: [UserProfile] = try await supabase
+            .from("onboarding")
+            .select()
+            .eq("id", value: id.uuidString)
+            .limit(1)
+            .execute()
+            .value
+        
+        return profiles.first
+    } catch {
+        print("Failed to load user profile: \(error)")
+        return nil
+    }
+}
+
 struct ProfileView: View {
     let name: String
     let homeCountry: String

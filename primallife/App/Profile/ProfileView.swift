@@ -100,9 +100,27 @@ struct ProfileView: View {
     let tribes: [ProfileTribe]
     let friends: [ProfileFriend]
     
+    @EnvironmentObject private var profileStore: ProfileStore
+    @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     
     private let avatarSize: CGFloat = 140
+    
+    private var profile: UserProfile? {
+        profileStore.profile
+    }
+    
+    private var originDisplay: String? {
+        guard
+            let profile,
+            let flag = profile.originFlag,
+            let name = profile.originName
+        else {
+            return nil
+        }
+        
+        return "\(flag) \(name)"
+    }
     
     var body: some View {
         ZStack {
@@ -139,10 +157,8 @@ struct ProfileView: View {
                             .foregroundStyle(Colors.accent)
                             .padding(.horizontal, 16)
                     }
-                    
-                    Image("profile1")
-                        .resizable()
-                        .scaledToFill()
+
+                    avatarView
                         .frame(width: avatarSize, height: avatarSize)
                         .clipShape(Circle())
                         .overlay {
@@ -151,7 +167,7 @@ struct ProfileView: View {
                         }
                     
                     HStack(spacing: 8) {
-                        Text(name)
+                        Text(profile?.fullName ?? name)
                             .font(.customTitle)
                             .foregroundStyle(Colors.primaryText)
                         
@@ -160,9 +176,11 @@ struct ProfileView: View {
                             .foregroundStyle(Colors.accent)
                     }
                     
-                    Text("\(countryFlag) \(homeCountry)")
-                        .font(.custom(Fonts.regular, size: 16))
-                        .foregroundStyle(Colors.secondaryText)
+                    if let originDisplay {
+                        Text(originDisplay)
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                    }
                     
                     HStack(spacing: 12) {
                         counterCard(title: "Trips", value: "\(tripsCount)")
@@ -310,6 +328,30 @@ struct ProfileView: View {
     }
 }
 
+private extension ProfileView {
+    @ViewBuilder
+    var avatarView: some View {
+        if let url = profile?.avatarURL(using: supabase) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    placeholderAvatar
+                }
+            }
+        } else {
+            placeholderAvatar
+        }
+    }
+    
+    var placeholderAvatar: some View {
+        Color.clear
+    }
+}
+
 private func tribeRow(_ tribe: ProfileTribe) -> some View {
     HStack(spacing: 12) {
         Image(tribe.imageName)
@@ -441,4 +483,5 @@ struct ProfileTrip: Identifiable {
             ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
         ]
     )
+    .environmentObject(ProfileStore())
 }

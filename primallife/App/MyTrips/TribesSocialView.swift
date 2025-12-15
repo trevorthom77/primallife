@@ -6,6 +6,7 @@ struct TribesSocialView: View {
     let location: String
     let flag: String
     let date: String
+    let gender: String?
     let aboutText: String?
     let interests: [String]
     let placeName: String?
@@ -26,6 +27,7 @@ struct TribesSocialView: View {
         location: String,
         flag: String,
         date: String,
+        gender: String? = nil,
         aboutText: String? = nil,
         interests: [String] = [],
         placeName: String? = nil,
@@ -37,6 +39,7 @@ struct TribesSocialView: View {
         self.location = location
         self.flag = flag
         self.date = date
+        self.gender = gender
         self.aboutText = aboutText
         self.interests = interests
         self.placeName = placeName
@@ -182,6 +185,24 @@ struct TribesSocialView: View {
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Who can join")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(resolvedGender)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(genderAccentColor)
+                            .clipShape(Capsule())
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
                     if !resolvedInterests.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Interests")
@@ -308,6 +329,15 @@ private extension TribesSocialView {
         }
 
         return "Late-night bonfires, sunrise surf, and group dinners along the Nicoya coast. Plans stay loose so everyone can drop in when they land."
+    }
+
+    var resolvedGender: String {
+        let trimmed = gender?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "Everyone" : trimmed
+    }
+
+    var genderAccentColor: Color {
+        resolvedGender.lowercased().contains("girl") ? Colors.girlsPink : Colors.accent
     }
 
     var resolvedInterests: [String] {

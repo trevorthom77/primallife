@@ -247,6 +247,8 @@ private struct CreateTribeFormView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -283,6 +285,10 @@ private struct CreateTribeFormView: View {
 
     private func selectedSubtextColor(for option: TribePrivacy) -> Color {
         option == privacy ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
+    }
+
+    private var isContinueEnabled: Bool {
+        !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && groupPhoto != nil
     }
 
     private func loadGroupPhoto(from item: PhotosPickerItem?) {
@@ -481,6 +487,8 @@ private struct TribeDetailsView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -509,6 +517,10 @@ private struct TribeDetailsView: View {
         } else if selectedInterests.count < interestsLimit {
             selectedInterests.insert(interest)
         }
+    }
+
+    private var isContinueEnabled: Bool {
+        !aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedInterests.isEmpty
     }
 }
 
@@ -854,6 +866,7 @@ private struct CreatedTribeDisplay {
     let location: String
     let flag: String
     let dateRange: String
+    let gender: String
     let about: String?
     let interests: [String]
     let placeName: String
@@ -1035,17 +1048,18 @@ private struct TribeReviewView: View {
         }
         .navigationDestination(isPresented: $isShowingCreatedTribe) {
             if let createdTribe {
-                TribesSocialView(
-                    imageURL: createdTribe.imageURL,
-                    title: createdTribe.title,
-                    location: createdTribe.location,
-                    flag: createdTribe.flag,
-                    date: createdTribe.dateRange,
-                    aboutText: createdTribe.about,
-                    interests: createdTribe.interests,
-                    placeName: createdTribe.placeName,
-                    createdBy: createdTribe.creator,
-                    onBack: {
+                    TribesSocialView(
+                        imageURL: createdTribe.imageURL,
+                        title: createdTribe.title,
+                        location: createdTribe.location,
+                        flag: createdTribe.flag,
+                        date: createdTribe.dateRange,
+                        gender: createdTribe.gender,
+                        aboutText: createdTribe.about,
+                        interests: createdTribe.interests,
+                        placeName: createdTribe.placeName,
+                        createdBy: createdTribe.creator,
+                        onBack: {
                         onFinish()
                     }
                 )
@@ -1139,6 +1153,7 @@ private struct TribeReviewView: View {
                 location: trip.destination,
                 flag: "",
                 dateRange: dateRangeText,
+                gender: selectedGender.rawValue,
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 interests: selectedInterests,
                 placeName: trip.destination,

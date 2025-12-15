@@ -325,7 +325,7 @@ struct MyTripsView: View {
                             }
                             
                             HStack {
-                                Text("\(selectedTripDestination) Tribes")
+                                Text("\(selectedTripTitle) Tribes")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
                                 
@@ -351,6 +351,7 @@ struct MyTripsView: View {
                                             location: selectedTripDestination,
                                             flag: "",
                                             date: tribeDateRange(for: tribe),
+                                            gender: tribe.gender,
                                             aboutText: tribe.description,
                                             interests: tribe.interests,
                                             placeName: selectedTripDestination,
@@ -374,15 +375,9 @@ struct MyTripsView: View {
                                                         .font(.travelDetail)
                                                         .foregroundStyle(Colors.primaryText)
                                                     
-                                                    VStack(alignment: .leading, spacing: 2) {
-                                                        Text(selectedTripDestination)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.secondaryText)
-                                                        
-                                                        Text(tribeDateRange(for: tribe))
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.secondaryText)
-                                                    }
+                                                    Text(selectedTripDestination)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.secondaryText)
                                                 }
                                                 
                                                 Spacer()
@@ -798,6 +793,14 @@ struct MyTripsView: View {
 
     private var selectedTripDestination: String {
         selectedTrip?.destination ?? "Costa Rica"
+    }
+
+    private var selectedTripTitle: String {
+        let filteredScalars = selectedTripDestination
+            .unicodeScalars
+            .filter { !$0.properties.isEmoji }
+        return String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespaces)
     }
 }
 

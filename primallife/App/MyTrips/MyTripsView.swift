@@ -358,17 +358,18 @@ struct MyTripsView: View {
                                         NavigationLink {
                                             TribesSocialView(
                                                 imageURL: tribe.photoURL,
-                                                title: tribe.name,
-                                                location: selectedTripDestination,
-                                                flag: "",
-                                                date: tribeDateRange(for: tribe),
-                                                gender: tribe.gender,
-                                                aboutText: tribe.description,
-                                                interests: tribe.interests,
-                                                placeName: selectedTripDestination,
-                                                createdBy: nil
-                                            )
-                                        } label: {
+                                            title: tribe.name,
+                                            location: selectedTripDestination,
+                                            flag: "",
+                                            date: tribeDateRange(for: tribe),
+                                            gender: tribe.gender,
+                                            aboutText: tribe.description,
+                                            interests: tribe.interests,
+                                            placeName: selectedTripDestination,
+                                            createdBy: nil,
+                                            initialHeaderImage: tribeImageCache[tribe.id]
+                                        )
+                                    } label: {
                                             VStack(alignment: .leading, spacing: 12) {
                                                 HStack(spacing: 12) {
                                                     tribeImage(for: tribe)

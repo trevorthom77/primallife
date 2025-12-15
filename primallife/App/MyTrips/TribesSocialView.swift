@@ -12,7 +12,9 @@ struct TribesSocialView: View {
     let placeName: String?
     let createdBy: String?
     let onBack: (() -> Void)?
+    let initialHeaderImage: Image?
     @State private var placeImageURL: URL?
+    @State private var headerImage: Image?
     @Environment(\.dismiss) private var dismiss
     private let tribeMessages: [ChatMessage] = [
         ChatMessage(text: "Welcome to the Costa Rica crew.", time: "6:10 PM", isUser: false),
@@ -32,7 +34,8 @@ struct TribesSocialView: View {
         interests: [String] = [],
         placeName: String? = nil,
         createdBy: String? = nil,
-        onBack: (() -> Void)? = nil
+        onBack: (() -> Void)? = nil,
+        initialHeaderImage: Image? = nil
     ) {
         self.imageURL = imageURL
         self.title = title
@@ -45,6 +48,8 @@ struct TribesSocialView: View {
         self.placeName = placeName
         self.createdBy = createdBy
         self.onBack = onBack
+        self.initialHeaderImage = initialHeaderImage
+        _headerImage = State(initialValue: initialHeaderImage)
     }
 
     var body: some View {
@@ -71,16 +76,10 @@ struct TribesSocialView: View {
                         .frame(height: 220)
                         .frame(maxWidth: .infinity)
                         .overlay {
-                            AsyncImage(url: imageURL) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            } placeholder: {
-                                Colors.card
-                            }
-                            .allowsHitTesting(false)
+                            tribeHeaderImage
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipped()
+                                .allowsHitTesting(false)
                         }
                         .overlay(alignment: .bottomLeading) {
                             HStack(spacing: -8) {
@@ -366,6 +365,33 @@ private extension TribesSocialView {
         }
 
         return "You"
+    }
+
+    @ViewBuilder
+    var tribeHeaderImage: some View {
+        if let headerImage {
+            headerImage
+                .resizable()
+                .scaledToFill()
+        } else if let imageURL {
+            AsyncImage(url: imageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .onAppear {
+                            headerImage = image
+                        }
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
+                }
+            }
+        } else {
+            Colors.card
+        }
     }
 }
 

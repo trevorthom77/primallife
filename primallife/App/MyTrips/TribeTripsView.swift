@@ -5,8 +5,19 @@ import Supabase
 struct TribeTripsView: View {
     let trip: Trip
     let imageDetails: UnsplashImageDetails?
+    let onFinish: () -> Void
     @State private var isShowingCreateForm = false
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        trip: Trip,
+        imageDetails: UnsplashImageDetails?,
+        onFinish: @escaping () -> Void = {}
+    ) {
+        self.trip = trip
+        self.imageDetails = imageDetails
+        self.onFinish = onFinish
+    }
 
     var body: some View {
         ScrollView {
@@ -78,7 +89,7 @@ struct TribeTripsView: View {
         )
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingCreateForm) {
-            CreateTribeFormView(trip: trip)
+            CreateTribeFormView(trip: trip, onFinish: onFinish)
         }
     }
 
@@ -86,6 +97,7 @@ struct TribeTripsView: View {
 
 private struct CreateTribeFormView: View {
     let trip: Trip
+    let onFinish: () -> Void
     @State private var groupName: String = ""
     @State private var privacy: TribePrivacy = .public
     @FocusState private var isGroupNameFocused: Bool
@@ -99,8 +111,9 @@ private struct CreateTribeFormView: View {
     @Environment(\.dismiss) private var dismiss
     private let nameLimit = 30
 
-    init(trip: Trip) {
+    init(trip: Trip, onFinish: @escaping () -> Void) {
         self.trip = trip
+        self.onFinish = onFinish
     }
 
     var body: some View {
@@ -258,7 +271,8 @@ private struct CreateTribeFormView: View {
                 privacy: privacy,
                 aboutText: $aboutText,
                 selectedInterests: $selectedInterests,
-                selectedGender: $selectedGender
+                selectedGender: $selectedGender,
+                onFinish: onFinish
             )
         }
     }
@@ -330,6 +344,7 @@ private struct TribeDetailsView: View {
     @Binding var aboutText: String
     @Binding var selectedInterests: Set<String>
     @Binding var selectedGender: TribeGender
+    let onFinish: () -> Void
     @State private var isShowingGender = false
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isAboutFocused: Bool
@@ -482,7 +497,8 @@ private struct TribeDetailsView: View {
                 aboutText: aboutText,
                 privacy: privacy,
                 selectedInterests: Array(selectedInterests),
-                selectedGender: $selectedGender
+                selectedGender: $selectedGender,
+                onFinish: onFinish
             )
         }
     }
@@ -505,6 +521,7 @@ private struct TribeGenderView: View {
     let privacy: TribePrivacy
     let selectedInterests: [String]
     @Binding var selectedGender: TribeGender
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var showCheckInPicker = false
     @State private var showReturnPicker = false
@@ -526,7 +543,8 @@ private struct TribeGenderView: View {
         aboutText: String,
         privacy: TribePrivacy,
         selectedInterests: [String],
-        selectedGender: Binding<TribeGender>
+        selectedGender: Binding<TribeGender>,
+        onFinish: @escaping () -> Void
     ) {
         self.trip = trip
         self.groupName = groupName
@@ -535,6 +553,7 @@ private struct TribeGenderView: View {
         self.aboutText = aboutText
         self.privacy = privacy
         self.selectedInterests = selectedInterests
+        self.onFinish = onFinish
         _selectedGender = selectedGender
         _checkInDate = State(initialValue: trip.checkIn)
         _returnDate = State(initialValue: trip.returnDate)
@@ -740,18 +759,19 @@ private struct TribeGenderView: View {
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
-            .navigationDestination(isPresented: $isShowingReview) {
-                TribeReviewView(
-                    trip: trip,
-                    groupName: groupName,
-                    groupPhoto: groupPhoto,
-                    groupPhotoData: groupPhotoData,
-                    aboutText: aboutText,
+        .navigationDestination(isPresented: $isShowingReview) {
+            TribeReviewView(
+                trip: trip,
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                groupPhotoData: groupPhotoData,
+                aboutText: aboutText,
                 privacy: privacy,
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
                 checkInDate: checkInDate,
-                returnDate: returnDate
+                returnDate: returnDate,
+                onFinish: onFinish
             )
         }
     }
@@ -852,6 +872,7 @@ private struct TribeReviewView: View {
     let selectedGender: TribeGender
     let checkInDate: Date
     let returnDate: Date
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
     @State private var isCreating = false
@@ -1023,7 +1044,10 @@ private struct TribeReviewView: View {
                     aboutText: createdTribe.about,
                     interests: createdTribe.interests,
                     placeName: createdTribe.placeName,
-                    createdBy: createdTribe.creator
+                    createdBy: createdTribe.creator,
+                    onBack: {
+                        onFinish()
+                    }
                 )
             }
         }

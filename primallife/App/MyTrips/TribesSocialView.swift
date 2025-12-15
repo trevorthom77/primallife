@@ -10,6 +10,7 @@ struct TribesSocialView: View {
     let interests: [String]
     let placeName: String?
     let createdBy: String?
+    let onBack: (() -> Void)?
     @State private var placeImageURL: URL?
     @Environment(\.dismiss) private var dismiss
     private let tribeMessages: [ChatMessage] = [
@@ -28,7 +29,8 @@ struct TribesSocialView: View {
         aboutText: String? = nil,
         interests: [String] = [],
         placeName: String? = nil,
-        createdBy: String? = nil
+        createdBy: String? = nil,
+        onBack: (() -> Void)? = nil
     ) {
         self.imageURL = imageURL
         self.title = title
@@ -39,6 +41,7 @@ struct TribesSocialView: View {
         self.interests = interests
         self.placeName = placeName
         self.createdBy = createdBy
+        self.onBack = onBack
     }
 
     var body: some View {
@@ -50,7 +53,11 @@ struct TribesSocialView: View {
                 VStack(spacing: 16) {
                     HStack {
                         BackButton {
-                            dismiss()
+                            if let onBack {
+                                onBack()
+                            } else {
+                                dismiss()
+                            }
                         }
 
                         Spacer()

@@ -694,7 +694,10 @@ struct MyTripsView: View {
                 if let trip = selectedTripForTribe {
                     TribeTripsView(
                         trip: trip,
-                        imageDetails: tripImageDetails[trip.id]
+                        imageDetails: tripImageDetails[trip.id],
+                        onFinish: {
+                            isShowingTribeTrips = false
+                        }
                     )
                 } else {
                     EmptyView()

@@ -19,7 +19,9 @@ struct MessagesView: View {
                 ChatMessage(text: "I can be there by 8.", time: "7:42 PM", isUser: true),
                 ChatMessage(text: "Perfect—bring boards?", time: "7:44 PM", isUser: false),
                 ChatMessage(text: "Already packed.", time: "7:45 PM", isUser: true)
-            ]
+            ],
+            imageName: "profile1",
+            memberCount: 6
         ),
         ChatPreview(
             name: "Coastal Crew",
@@ -29,7 +31,9 @@ struct MessagesView: View {
                 ChatMessage(text: "Let’s roll at sunrise.", time: "6:21 PM", isUser: true),
                 ChatMessage(text: "Meet at the north lot?", time: "6:26 PM", isUser: false),
                 ChatMessage(text: "North lot works. I’ll bring extra wax.", time: "6:30 PM", isUser: true)
-            ]
+            ],
+            imageName: "profile2",
+            memberCount: 4
         ),
         ChatPreview(
             name: "Sierra Pack",
@@ -39,7 +43,9 @@ struct MessagesView: View {
                 ChatMessage(text: "Layer up—trail will be cold.", time: "5:05 PM", isUser: false),
                 ChatMessage(text: "Packing headlamps now.", time: "5:08 PM", isUser: true),
                 ChatMessage(text: "See you at the trailhead.", time: "5:10 PM", isUser: true)
-            ]
+            ],
+            imageName: "profile3",
+            memberCount: 5
         )
     ]
     
@@ -209,9 +215,11 @@ struct MessagesView: View {
     
     private func chatRow(_ chat: ChatPreview) -> some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(Colors.accent)
+            Image(chat.imageName)
+                .resizable()
+                .scaledToFill()
                 .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             
             VStack(alignment: .leading, spacing: 6) {
                 Text(chat.name)
@@ -221,6 +229,7 @@ struct MessagesView: View {
                 Text(chat.message)
                     .font(.travelBody)
                     .foregroundStyle(Colors.secondaryText)
+                    .lineLimit(1)
             }
             
             Spacer()
@@ -297,24 +306,29 @@ struct ChatDetailView: View {
     let chat: ChatPreview
     @State private var draft = ""
     @FocusState private var isInputFocused: Bool
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
             Colors.background.ignoresSafeArea()
             
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack(spacing: 14) {
-                        ForEach(chat.messages) { message in
-                            messageBubble(message)
+            VStack(spacing: 0) {
+                header
+
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            ForEach(chat.messages) { message in
+                                messageBubble(message)
+                            }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: proxy.size.height, alignment: .bottom)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: proxy.size.height, alignment: .bottom)
+                    .scrollIndicators(.hidden)
                 }
-                .scrollIndicators(.hidden)
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -326,10 +340,75 @@ struct ChatDetailView: View {
         .onTapGesture {
             isInputFocused = false
         }
-        .navigationTitle(chat.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
     }
     
+    private var header: some View {
+        HStack(spacing: 12) {
+            BackButton {
+                dismiss()
+            }
+
+            Image(chat.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(chat.name)
+                    .font(.custom(Fonts.semibold, size: 18))
+                    .foregroundStyle(Colors.primaryText)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    HStack(spacing: -8) {
+                        Image("profile1")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+
+                        Image("profile2")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+
+                        Image("profile3")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+                    }
+
+                    Text("\(chat.memberCount) members")
+                        .font(.custom(Fonts.regular, size: 14))
+                        .foregroundStyle(Colors.secondaryText)
+                        .lineLimit(1)
+                }
+            }
+            .frame(height: 48, alignment: .leading)
+
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Colors.background)
+    }
+
     private var typeBar: some View {
         HStack(spacing: 12) {
             ZStack(alignment: .leading) {
@@ -363,7 +442,7 @@ struct ChatDetailView: View {
     }
     
     private func messageBubble(_ message: ChatMessage) -> some View {
-        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 6) {
+        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             Text(message.text)
                 .font(.custom(Fonts.regular, size: 16))
                 .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
@@ -386,14 +465,18 @@ struct ChatPreview: Identifiable {
     let messages: [ChatMessage]
     let message: String
     let time: String
+    let imageName: String
+    let memberCount: Int
     
-    init(name: String, unreadCount: Int, messages: [ChatMessage]) {
+    init(name: String, unreadCount: Int, messages: [ChatMessage], imageName: String, memberCount: Int) {
         self.name = name
         self.unreadCount = unreadCount
         self.messages = messages
         let last = messages.last
         self.message = last?.text ?? ""
         self.time = last?.time ?? ""
+        self.imageName = imageName
+        self.memberCount = memberCount
     }
 }
 

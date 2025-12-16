@@ -13,6 +13,7 @@ import MapboxMaps
 
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
+    @EnvironmentObject private var profileStore: ProfileStore
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
@@ -30,17 +31,6 @@ struct MapBoxView: View {
     private let profileTribes = [
         ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
         ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
-    ]
-    
-    private let profileTrips = [
-        ProfileTrip(flag: "🇮🇩", location: "Bali", dates: "May 12–18", imageQuery: "Bali beach"),
-        ProfileTrip(flag: "🇺🇸", location: "Big Sur", dates: "Jun 18–20", imageQuery: "Big Sur coast"),
-        ProfileTrip(flag: "🇨🇭", location: "Swiss Alps", dates: "Jul 8–15", imageQuery: "Swiss Alps mountains")
-    ]
-
-    private let profileCountries = [
-        ProfileCountry(flag: "🇯🇵", name: "Japan", note: "May 12–18", imageQuery: "Japan skyline"),
-        ProfileCountry(flag: "🇮🇹", name: "Italy", note: "Jun 18–20", imageQuery: "Italy coast")
     ]
     
     private let profileFriends = [
@@ -365,18 +355,7 @@ struct MapBoxView: View {
                     }
             }
             .navigationDestination(isPresented: $isShowingProfile) {
-                ProfileView(
-                    name: "Mia",
-                    homeCountry: "Australia",
-                    countryFlag: "🇦🇺",
-                    tripsCount: 14,
-                    countriesCount: 9,
-                    worldPercent: 8,
-                    trips: profileTrips,
-                    countries: profileCountries,
-                    tribes: profileTribes,
-                    friends: profileFriends
-                )
+                profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
                 FiltersView()
@@ -385,6 +364,59 @@ struct MapBoxView: View {
                 TribesView()
             }
         }
+    }
+    
+    @ViewBuilder
+    private var profileDestination: some View {
+        if let profile = profileStore.profile {
+            ProfileView(
+                name: profile.fullName,
+                homeCountry: profile.originName ?? "",
+                countryFlag: profile.originFlag ?? "",
+                tripsCount: 0,
+                countriesCount: 0,
+                worldPercent: 0,
+                trips: [],
+                countries: [],
+                tribes: [],
+                friends: []
+            )
+        } else if profileStore.isLoading {
+            profileLoadingView
+        } else if let errorMessage = profileStore.errorMessage {
+            profileErrorView(message: errorMessage)
+        } else {
+            profileLoadingView
+        }
+    }
+    
+    private var profileLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .tint(Colors.primaryText)
+            
+            Text("Loading profile...")
+                .font(.travelBody)
+                .foregroundStyle(Colors.primaryText)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Colors.background)
+    }
+    
+    private func profileErrorView(message: String) -> some View {
+        VStack(spacing: 12) {
+            Text("Couldn't load profile")
+                .font(.travelTitle)
+                .foregroundStyle(Colors.primaryText)
+            
+            Text(message)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+        .background(Colors.background)
     }
     
     private func loadImage(for place: MapboxPlace) {
@@ -541,6 +573,7 @@ private final class UserLocationManager: NSObject, ObservableObject, CLLocationM
 }
 #Preview("Map") {
     MapBoxView(hideChrome: .constant(false))
+        .environmentObject(ProfileStore())
 }
 
 private struct MapSearchSheet: View {

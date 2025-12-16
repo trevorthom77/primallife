@@ -296,28 +296,35 @@ struct MessagesView: View {
 struct ChatDetailView: View {
     let chat: ChatPreview
     @State private var draft = ""
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         ZStack {
             Colors.background.ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 16) {
-                    ForEach(chat.messages) { message in
-                        messageBubble(message)
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 14) {
+                        ForEach(chat.messages) { message in
+                            messageBubble(message)
+                        }
                     }
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-            }
-            .scrollIndicators(.hidden)
-            .safeAreaInset(edge: .bottom) {
-                typeBar
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 16)
-                    .padding(.bottom, 70)
-                    .background(Colors.background)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: proxy.size.height, alignment: .bottom)
+                }
+                .scrollIndicators(.hidden)
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            typeBar
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Colors.background)
+        }
+        .onTapGesture {
+            isInputFocused = false
         }
         .navigationTitle(chat.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -325,11 +332,22 @@ struct ChatDetailView: View {
     
     private var typeBar: some View {
         HStack(spacing: 12) {
-            TextField("Message", text: $draft, axis: .vertical)
-                .font(.custom(Fonts.regular, size: 16))
-                .padding(16)
-                .background(Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            ZStack(alignment: .leading) {
+                if draft.isEmpty {
+                    Text("Message...")
+                        .font(.custom(Fonts.regular, size: 16))
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                TextField("", text: $draft, axis: .vertical)
+                    .font(.custom(Fonts.regular, size: 16))
+                    .foregroundStyle(Colors.primaryText)
+                    .tint(Colors.primaryText)
+                    .focused($isInputFocused)
+            }
+            .padding(16)
+            .background(Colors.contentview)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             
             Button(action: {}) {
                 Text("Send")

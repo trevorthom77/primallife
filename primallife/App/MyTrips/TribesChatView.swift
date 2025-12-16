@@ -7,45 +7,63 @@ struct TribesChatView: View {
     let totalTravelers: Int
     let messages: [ChatMessage]
     @State private var draft = ""
+    @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             Colors.background
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
 
-                ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(messages) { message in
-                            messageBubble(message)
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            ForEach(messages) { message in
+                                messageBubble(message)
+                            }
                         }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
-                }
-                .scrollIndicators(.hidden)
-                .safeAreaInset(edge: .bottom) {
-                    typeBar
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 20)
                         .padding(.vertical, 16)
-                        .padding(.bottom, 70)
-                        .background(Colors.background)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: proxy.size.height, alignment: .bottom)
+                    }
+                    .scrollIndicators(.hidden)
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                typeBar
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Colors.background)
+            }
+        }
+        .onTapGesture {
+            isInputFocused = false
         }
         .navigationBarBackButtonHidden(true)
     }
 
     private var typeBar: some View {
         HStack(spacing: 12) {
-            TextField("Message", text: $draft, axis: .vertical)
-                .font(.custom(Fonts.regular, size: 16))
-                .padding(16)
-                .background(Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            ZStack(alignment: .leading) {
+                if draft.isEmpty {
+                    Text("Message...")
+                        .font(.custom(Fonts.regular, size: 16))
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                TextField("", text: $draft, axis: .vertical)
+                    .font(.custom(Fonts.regular, size: 16))
+                    .foregroundStyle(Colors.primaryText)
+                    .tint(Colors.primaryText)
+                    .focused($isInputFocused)
+            }
+            .padding(16)
+            .background(Colors.contentview)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button(action: {}) {
                 Text("Send")
@@ -61,7 +79,7 @@ struct TribesChatView: View {
     }
 
     private func messageBubble(_ message: ChatMessage) -> some View {
-        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 6) {
+        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             Text(message.text)
                 .font(.custom(Fonts.regular, size: 16))
                 .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
@@ -92,13 +110,11 @@ struct TribesChatView: View {
             .frame(width: 48, height: 48)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.custom(Fonts.semibold, size: 18))
                     .foregroundStyle(Colors.primaryText)
                     .lineLimit(1)
-
-                Spacer()
 
                 HStack(spacing: 8) {
                     HStack(spacing: -8) {
@@ -143,9 +159,8 @@ struct TribesChatView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
         .background(Colors.background)
     }
 }

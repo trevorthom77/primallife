@@ -10,10 +10,12 @@ import Foundation
 import Combine
 import CoreLocation
 import MapboxMaps
+import Supabase
 
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @EnvironmentObject private var profileStore: ProfileStore
+    @Environment(\.supabaseClient) private var supabase
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
@@ -72,9 +74,7 @@ struct MapBoxView: View {
                                     Button(action: {
                                         isShowingProfile = true
                                     }) {
-                                        Image("profile1")
-                                            .resizable()
-                                            .scaledToFill()
+                                        avatarButtonImage
                                             .frame(width: 44, height: 44)
                                             .clipShape(Circle())
                                             .overlay {
@@ -364,6 +364,27 @@ struct MapBoxView: View {
                 TribesView()
             }
         }
+    }
+
+    @ViewBuilder
+    private var avatarButtonImage: some View {
+        if let url = profileStore.profile?.avatarURL(using: supabase) {
+            AsyncImage(url: url) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    placeholderAvatar
+                }
+            }
+        } else {
+            placeholderAvatar
+        }
+    }
+    
+    private var placeholderAvatar: some View {
+        Color.clear
     }
     
     @ViewBuilder

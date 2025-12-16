@@ -16,6 +16,9 @@ struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
+    @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
+    @AppStorage("mapSavedDestinationLongitude") private var savedDestinationLongitude: Double = 0
+    @AppStorage("mapHasSavedDestination") private var hasSavedDestination = false
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
@@ -26,6 +29,7 @@ struct MapBoxView: View {
     @State private var photoTask: Task<Void, Never>?
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     @State private var communityTab: CommunityTab = .tribes
@@ -295,7 +299,9 @@ struct MapBoxView: View {
                                         .font(.travelBody)
                                         .foregroundStyle(Colors.primaryText)
                                     
-                                    Button(action: {}) {
+                                    Button(action: {
+                                        handleFly(to: place, camera: proxy.camera)
+                                    }) {
                                         Text("Fly")
                                             .font(.travelDetail)
                                             .foregroundStyle(Colors.tertiaryText)
@@ -328,9 +334,11 @@ struct MapBoxView: View {
                     }
                     .ignoresSafeArea()
                     .onAppear {
+                        applySavedDestination(using: proxy.camera)
                         locationManager.requestPermission()
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
+                        guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
                         
                         guard !hasCenteredOnUser, let coordinate else { return }
@@ -463,6 +471,81 @@ struct MapBoxView: View {
             await MainActor.run {
                 placeImageURL = url
             }
+        }
+    }
+    
+    private func applyDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
+        isUsingSelectedDestination = true
+        userCoordinate = coordinate
+        viewport = .camera(
+            center: coordinate,
+            zoom: 10,
+            bearing: 0,
+            pitch: 0
+        )
+        hasCenteredOnUser = true
+        cacheDestinationCoordinate(coordinate)
+    }
+    
+    private func applySavedDestination(using camera: CameraAnimationsManager?) {
+        guard hasSavedDestination else { return }
+        let coordinate = CLLocationCoordinate2D(
+            latitude: savedDestinationLatitude,
+            longitude: savedDestinationLongitude
+        )
+        applyDestinationCoordinate(coordinate)
+        camera?.fly(
+            to: CameraOptions(
+                center: coordinate,
+                zoom: 10,
+                pitch: 0
+            ),
+            duration: 0
+        )
+    }
+    
+    private func cacheDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
+        hasSavedDestination = true
+        savedDestinationLatitude = coordinate.latitude
+        savedDestinationLongitude = coordinate.longitude
+    }
+    
+    private func handleFly(to place: MapboxPlace, camera: CameraAnimationsManager?) {
+        guard let coordinate = place.coordinate else { return }
+        
+        applyDestinationCoordinate(coordinate)
+        
+        camera?.fly(
+            to: CameraOptions(
+                center: coordinate,
+                zoom: 10,
+                pitch: 0
+            ),
+            duration: 2
+        )
+        
+        Task {
+            await updateDestination(to: place.title)
+        }
+    }
+    
+    private func updateDestination(to destination: String) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        
+        struct DestinationUpdate: Encodable {
+            let upcoming_destination: String
+        }
+        
+        do {
+            try await supabase
+                .from("onboarding")
+                .update(DestinationUpdate(upcoming_destination: destination))
+                .eq("id", value: userID.uuidString)
+                .execute()
+            
+            await profileStore.loadProfile(for: userID, supabase: supabase)
+        } catch {
+            print("Failed to update destination: \(error.localizedDescription)")
         }
     }
     

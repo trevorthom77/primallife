@@ -40,11 +40,21 @@ struct MapBoxView: View {
         ProfileFriend(imageName: "profile2", name: "Maya", status: "Planning"),
         ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
     ]
+
+    private var userAvatarURL: URL? {
+        profileStore.profile?.avatarURL(using: supabase)
+    }
     
     var body: some View {
         NavigationStack {
             MapReader { proxy in
-                Map(viewport: $viewport)
+                Map(viewport: $viewport) {
+                    if let coordinate = userCoordinate {
+                        MapViewAnnotation(coordinate: coordinate) {
+                            userLocationAnnotation
+                        }
+                    }
+                }
                     .ornamentOptions(
                         OrnamentOptions(
                             scaleBar: ScaleBarViewOptions(
@@ -452,6 +462,30 @@ struct MapBoxView: View {
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 placeImageURL = url
+            }
+        }
+    }
+    
+    private var userLocationAnnotation: some View {
+        ZStack {
+            Circle()
+                .fill(Colors.card)
+                .frame(width: 60, height: 60)
+            
+            AsyncImage(url: userAvatarURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: 4)
             }
         }
     }

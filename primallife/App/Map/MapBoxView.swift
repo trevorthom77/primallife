@@ -513,6 +513,11 @@ struct MapBoxView: View {
     private func handleFly(to place: MapboxPlace, camera: CameraAnimationsManager?) {
         guard let coordinate = place.coordinate else { return }
         
+        selectedPlace = nil
+        placeImageURL = nil
+        photoTask?.cancel()
+        hideChrome = false
+        
         applyDestinationCoordinate(coordinate)
         
         camera?.fly(

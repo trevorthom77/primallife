@@ -33,7 +33,7 @@ struct MapBoxView: View {
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     @State private var flyFeedbackToggle = false
-    @State private var otherUserLocations: [UserLocation] = []
+    @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     
@@ -64,7 +64,7 @@ struct MapBoxView: View {
                     
                     ForEvery(otherUserLocations) { location in
                         MapViewAnnotation(coordinate: location.coordinate) {
-                            otherUserAnnotation
+                            otherUserAnnotation(for: location)
                         }
                     }
                 }
@@ -612,8 +612,33 @@ struct MapBoxView: View {
                 .execute()
                 .value
             
+            guard !rows.isEmpty else {
+                await MainActor.run {
+                    otherUserLocations = []
+                }
+                return
+            }
+            
+            let ids = rows.map { $0.id }
+            
+            let avatars: [UserAvatar] = try await supabase
+                .from("onboarding")
+                .select("id, avatar_url")
+                .in("id", values: ids)
+                .execute()
+                .value
+            
+            let avatarLookup = Dictionary(uniqueKeysWithValues: avatars.map { ($0.id, $0.avatarPath) })
+            
             await MainActor.run {
-                otherUserLocations = rows
+                otherUserLocations = rows.map { row in
+                    OtherUserLocation(
+                        id: row.id,
+                        latitude: row.latitude,
+                        longitude: row.longitude,
+                        avatarPath: avatarLookup[row.id] ?? nil
+                    )
+                }
             }
         } catch {
             print("Failed to fetch other locations: \(error.localizedDescription)")
@@ -661,14 +686,28 @@ struct MapBoxView: View {
         }
     }
     
-    private var otherUserAnnotation: some View {
-        Circle()
-            .fill(Colors.accent)
-            .frame(width: 16, height: 16)
+    private func otherUserAnnotation(for location: OtherUserLocation) -> some View {
+        ZStack {
+            Circle()
+                .fill(Colors.card)
+                .frame(width: 48, height: 48)
+            
+            AsyncImage(url: location.avatarURL(using: supabase)) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
             .overlay {
                 Circle()
-                    .stroke(Colors.card, lineWidth: 2)
+                    .stroke(Colors.card, lineWidth: 3)
             }
+        }
     }
 }
 
@@ -679,6 +718,39 @@ private struct UserLocation: Identifiable, Decodable {
     
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+private struct UserAvatar: Decodable {
+    let id: String
+    let avatarPath: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case avatarPath = "avatar_url"
+    }
+}
+
+private struct OtherUserLocation: Identifiable {
+    let id: String
+    let latitude: Double
+    let longitude: Double
+    let avatarPath: String?
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    func avatarURL(using supabase: SupabaseClient?) -> URL? {
+        guard let supabase, let avatarPath else { return nil }
+        
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: avatarPath)
+        } catch {
+            return nil
+        }
     }
 }
 

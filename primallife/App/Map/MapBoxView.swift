@@ -36,6 +36,7 @@ struct MapBoxView: View {
     @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
+    private let locationQueryRadius: CLLocationDistance = 50_000
     
     private let profileTribes = [
         ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
@@ -359,6 +360,12 @@ struct MapBoxView: View {
                         guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
                         
+                        if coordinate != nil {
+                            Task {
+                                await fetchOtherLocations()
+                            }
+                        }
+                        
                         guard !hasCenteredOnUser, let coordinate else { return }
                         viewport = .camera(
                             center: coordinate,
@@ -506,6 +513,10 @@ struct MapBoxView: View {
         )
         hasCenteredOnUser = true
         cacheDestinationCoordinate(coordinate)
+        
+        Task {
+            await fetchOtherLocations()
+        }
     }
     
     private func applySavedDestination(using camera: CameraAnimationsManager?) {
@@ -603,23 +614,36 @@ struct MapBoxView: View {
 
     private func fetchOtherLocations() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        guard let coordinate = userCoordinate else { return }
+        
+        let bounds = nearbyBounds(around: coordinate, radius: locationQueryRadius)
+        let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         
         do {
             let rows: [UserLocation] = try await supabase
                 .from("locations")
                 .select()
                 .neq("id", value: userID.uuidString)
+                .gte("latitude", value: bounds.minLatitude)
+                .lte("latitude", value: bounds.maxLatitude)
+                .gte("longitude", value: bounds.minLongitude)
+                .lte("longitude", value: bounds.maxLongitude)
                 .execute()
                 .value
             
-            guard !rows.isEmpty else {
+            let nearbyRows = rows.filter { row in
+                let location = CLLocation(latitude: row.latitude, longitude: row.longitude)
+                return location.distance(from: originLocation) <= locationQueryRadius
+            }
+            
+            guard !nearbyRows.isEmpty else {
                 await MainActor.run {
                     otherUserLocations = []
                 }
                 return
             }
             
-            let ids = rows.map { $0.id }
+            let ids = nearbyRows.map { $0.id }
             
             let avatars: [UserAvatar] = try await supabase
                 .from("onboarding")
@@ -631,7 +655,7 @@ struct MapBoxView: View {
             let avatarLookup = Dictionary(uniqueKeysWithValues: avatars.map { ($0.id, $0.avatarPath) })
             
             await MainActor.run {
-                otherUserLocations = rows.map { row in
+                otherUserLocations = nearbyRows.map { row in
                     OtherUserLocation(
                         id: row.id,
                         latitude: row.latitude,
@@ -643,6 +667,20 @@ struct MapBoxView: View {
         } catch {
             print("Failed to fetch other locations: \(error.localizedDescription)")
         }
+    }
+    
+    private func nearbyBounds(around coordinate: CLLocationCoordinate2D, radius: CLLocationDistance) -> (minLatitude: Double, maxLatitude: Double, minLongitude: Double, maxLongitude: Double) {
+        let metersPerDegreeLatitude: Double = 111_000
+        let latDelta = radius / metersPerDegreeLatitude
+        let longitudeScale = max(0.0001, abs(cos(coordinate.latitude * .pi / 180)))
+        let lonDelta = radius / (metersPerDegreeLatitude * longitudeScale)
+        
+        let minLatitude = max(-90, coordinate.latitude - latDelta)
+        let maxLatitude = min(90, coordinate.latitude + latDelta)
+        let minLongitude = max(-180, coordinate.longitude - lonDelta)
+        let maxLongitude = min(180, coordinate.longitude + lonDelta)
+        
+        return (minLatitude, maxLatitude, minLongitude, maxLongitude)
     }
     
     private func startLocationsRefresh() {

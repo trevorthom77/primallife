@@ -32,6 +32,9 @@ struct MapBoxView: View {
     @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
+    @State private var flyFeedbackToggle = false
+    @State private var otherUserLocations: [UserLocation] = []
+    @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     
     private let profileTribes = [
@@ -56,6 +59,12 @@ struct MapBoxView: View {
                     if let coordinate = userCoordinate {
                         MapViewAnnotation(coordinate: coordinate) {
                             userLocationAnnotation
+                        }
+                    }
+                    
+                    ForEvery(otherUserLocations) { location in
+                        MapViewAnnotation(coordinate: location.coordinate) {
+                            otherUserAnnotation
                         }
                     }
                 }
@@ -300,6 +309,7 @@ struct MapBoxView: View {
                                         .foregroundStyle(Colors.primaryText)
                                     
                                     Button(action: {
+                                        flyFeedbackToggle.toggle()
                                         handleFly(to: place, camera: proxy.camera)
                                     }) {
                                         Text("Fly")
@@ -308,6 +318,7 @@ struct MapBoxView: View {
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 18)
                                     }
+                                    .sensoryFeedback(.impact(weight: .medium), trigger: flyFeedbackToggle)
                                     .background(Colors.accent)
                                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 }
@@ -336,8 +347,15 @@ struct MapBoxView: View {
                     .onAppear {
                         applySavedDestination(using: proxy.camera)
                         locationManager.requestPermission()
+                        startLocationsRefresh()
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
+                        if let coordinate {
+                            Task {
+                                await upsertUserLocation(coordinate)
+                            }
+                        }
+                        
                         guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
                         
@@ -370,6 +388,9 @@ struct MapBoxView: View {
                                 duration: 5
                             )
                         }
+                    }
+                    .onDisappear {
+                        stopLocationsRefresh()
                     }
             }
             .navigationDestination(isPresented: $isShowingProfile) {
@@ -554,6 +575,68 @@ struct MapBoxView: View {
         }
     }
     
+    private func upsertUserLocation(_ coordinate: CLLocationCoordinate2D) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        
+        struct LocationUpsert: Encodable {
+            let id: String
+            let latitude: Double
+            let longitude: Double
+        }
+        
+        do {
+            try await supabase
+                .from("locations")
+                .upsert(
+                    LocationUpsert(
+                        id: userID.uuidString,
+                        latitude: coordinate.latitude,
+                        longitude: coordinate.longitude
+                    ),
+                    onConflict: "id"
+                )
+                .execute()
+        } catch {
+            print("Failed to upsert location: \(error.localizedDescription)")
+        }
+    }
+
+    private func fetchOtherLocations() async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        
+        do {
+            let rows: [UserLocation] = try await supabase
+                .from("locations")
+                .select()
+                .neq("id", value: userID.uuidString)
+                .execute()
+                .value
+            
+            await MainActor.run {
+                otherUserLocations = rows
+            }
+        } catch {
+            print("Failed to fetch other locations: \(error.localizedDescription)")
+        }
+    }
+    
+    private func startLocationsRefresh() {
+        locationsRefreshTask?.cancel()
+        locationsRefreshTask = Task {
+            await fetchOtherLocations()
+            
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15 * 1_000_000_000)
+                await fetchOtherLocations()
+            }
+        }
+    }
+    
+    private func stopLocationsRefresh() {
+        locationsRefreshTask?.cancel()
+        locationsRefreshTask = nil
+    }
+    
     private var userLocationAnnotation: some View {
         ZStack {
             Circle()
@@ -576,6 +659,26 @@ struct MapBoxView: View {
                     .stroke(Colors.card, lineWidth: 4)
             }
         }
+    }
+    
+    private var otherUserAnnotation: some View {
+        Circle()
+            .fill(Colors.accent)
+            .frame(width: 16, height: 16)
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: 2)
+            }
+    }
+}
+
+private struct UserLocation: Identifiable, Decodable {
+    let id: String
+    let latitude: Double
+    let longitude: Double
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 

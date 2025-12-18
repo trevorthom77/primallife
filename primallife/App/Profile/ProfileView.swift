@@ -331,13 +331,24 @@ struct ProfileView: View {
 private extension ProfileView {
     @ViewBuilder
     var avatarView: some View {
-        if let url = profile?.avatarURL(using: supabase) {
-            AsyncImage(url: url) { phase in
+        let avatarURL = profile?.avatarURL(using: supabase)
+        
+        if let avatarURL,
+           let cachedImage = profileStore.cachedAvatarImage,
+           profileStore.cachedAvatarURL == avatarURL {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL {
+            AsyncImage(url: avatarURL) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
+                        .onAppear {
+                            profileStore.cacheAvatar(image, url: avatarURL)
+                        }
                 default:
                     placeholderAvatar
                 }

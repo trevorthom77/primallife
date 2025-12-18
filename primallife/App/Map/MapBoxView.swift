@@ -414,12 +414,23 @@ struct MapBoxView: View {
 
     @ViewBuilder
     private var avatarButtonImage: some View {
-        if let url = profileStore.profile?.avatarURL(using: supabase) {
-            AsyncImage(url: url) { phase in
+        let avatarURL = profileStore.profile?.avatarURL(using: supabase)
+        
+        if let avatarURL,
+           let cachedImage = profileStore.cachedAvatarImage,
+           profileStore.cachedAvatarURL == avatarURL {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL {
+            AsyncImage(url: avatarURL) { phase in
                 if let image = phase.image {
                     image
                         .resizable()
                         .scaledToFill()
+                        .onAppear {
+                            profileStore.cacheAvatar(image, url: avatarURL)
+                        }
                 } else {
                     placeholderAvatar
                 }
@@ -706,11 +717,28 @@ struct MapBoxView: View {
                 .fill(Colors.card)
                 .frame(width: 60, height: 60)
             
-            AsyncImage(url: userAvatarURL) { phase in
-                if let image = phase.image {
-                    image
+            let avatarURL = userAvatarURL
+            
+            Group {
+                if let avatarURL,
+                   let cachedImage = profileStore.cachedAvatarImage,
+                   profileStore.cachedAvatarURL == avatarURL {
+                    cachedImage
                         .resizable()
                         .scaledToFill()
+                } else if let avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .onAppear {
+                                    profileStore.cacheAvatar(image, url: avatarURL)
+                                }
+                        } else {
+                            Colors.secondaryText.opacity(0.3)
+                        }
+                    }
                 } else {
                     Colors.secondaryText.opacity(0.3)
                 }

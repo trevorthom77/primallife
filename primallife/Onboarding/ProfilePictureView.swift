@@ -10,9 +10,10 @@ struct ProfilePictureView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var showLocationPermission = false
     @State private var avatarURL: URL?
+    @State private var isUploading = false
     
     private var isContinueEnabled: Bool {
-        profileImage != nil
+        onboardingViewModel.avatarPath != nil
     }
     
     var body: some View {
@@ -75,13 +76,20 @@ struct ProfilePictureView: View {
                 Button {
                     showLocationPermission = true
                 } label: {
-                    Text("Continue")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+                    HStack(spacing: 8) {
+                        Text("Continue")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+                        
+                        if isUploading {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
                 .disabled(!isContinueEnabled)
                 .opacity(isContinueEnabled ? 1 : 0.6)
@@ -135,6 +143,18 @@ struct ProfilePictureView: View {
     }
     
     private func uploadAvatar(_ data: Data) async {
+        await MainActor.run {
+            isUploading = true
+        }
+
+        defer {
+            Task {
+                await MainActor.run {
+                    isUploading = false
+                }
+            }
+        }
+
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         let path = "\(userID)/avatar.jpg"
         

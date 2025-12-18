@@ -13,6 +13,7 @@ struct WelcomeProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @EnvironmentObject private var profileStore: ProfileStore
+    @State private var isSaving = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -41,17 +42,29 @@ struct WelcomeProfileView: View {
             
             VStack(spacing: 16) {
                 Button {
+                    guard !isSaving else { return }
+                    isSaving = true
                     Task {
                         await saveProfile()
+                        await MainActor.run {
+                            isSaving = false
+                        }
                     }
                 } label: {
-                    Text("Continue")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+                    HStack(spacing: 8) {
+                        Text("Continue")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+                        
+                        if isSaving {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
                 
                 Button {

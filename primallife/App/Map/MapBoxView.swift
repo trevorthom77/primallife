@@ -61,12 +61,14 @@ struct MapBoxView: View {
                         MapViewAnnotation(coordinate: coordinate) {
                             userLocationAnnotation
                         }
+                        .priority(1)
                     }
                     
                     ForEvery(otherUserLocations) { location in
                         MapViewAnnotation(coordinate: location.coordinate) {
                             otherUserAnnotation(for: location)
                         }
+                        .allowOverlap(true)
                     }
                 }
                     .ornamentOptions(
@@ -756,7 +758,7 @@ struct MapBoxView: View {
         ZStack {
             Circle()
                 .fill(Colors.card)
-                .frame(width: 48, height: 48)
+                .frame(width: 66, height: 66)
             
             AsyncImage(url: location.avatarURL(using: supabase)) { phase in
                 if let image = phase.image {
@@ -767,11 +769,11 @@ struct MapBoxView: View {
                     Colors.secondaryText.opacity(0.3)
                 }
             }
-            .frame(width: 40, height: 40)
+            .frame(width: 58, height: 58)
             .clipShape(Circle())
             .overlay {
                 Circle()
-                    .stroke(Colors.card, lineWidth: 3)
+                    .stroke(Colors.card, lineWidth: 4)
             }
         }
     }

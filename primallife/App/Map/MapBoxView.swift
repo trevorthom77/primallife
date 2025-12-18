@@ -715,7 +715,7 @@ struct MapBoxView: View {
         ZStack {
             Circle()
                 .fill(Colors.card)
-                .frame(width: 60, height: 60)
+                .frame(width: 66, height: 66)
             
             let avatarURL = userAvatarURL
             
@@ -743,7 +743,7 @@ struct MapBoxView: View {
                     Colors.secondaryText.opacity(0.3)
                 }
             }
-            .frame(width: 52, height: 52)
+            .frame(width: 58, height: 58)
             .clipShape(Circle())
             .overlay {
                 Circle()

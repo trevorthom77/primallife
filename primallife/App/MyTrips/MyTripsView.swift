@@ -335,9 +335,15 @@ struct MyTripsView: View {
                             }
                             
                             HStack {
-                                Text("\(selectedTripTitle) Tribes")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
+                                if selectedTrip == nil {
+                                    Text("No tribes")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+                                } else {
+                                    Text("\(selectedTripTitle) Tribes")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+                                }
                                 
                                 Spacer()
                                 

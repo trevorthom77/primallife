@@ -214,8 +214,6 @@ struct MyTripsView: View {
     @Environment(\.supabaseClient) var supabase
     @StateObject private var viewModel = MyTripsViewModel()
     @State private var tripImageDetails: [UUID: UnsplashImageDetails] = [:]
-    @State private var sunImageURL: URL?
-    @State private var groundingImageURL: URL?
     @State private var selectedTripForTribe: Trip?
     @State private var isShowingTrips = false
     @State private var isShowingTribeTrips = false
@@ -470,103 +468,6 @@ struct MyTripsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
                             .buttonStyle(.plain)
-                            
-                            HStack {
-                                Text("Adventures")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
-                                
-                                Spacer()
-                                
-                                Button("See All") { }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                            }
-                            .padding(.top, 24)
-                            
-                            HStack(spacing: 12) {
-                                AsyncImage(url: sunImageURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    Colors.card
-                                }
-                                .frame(width: 88, height: 72)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Sun")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-                                    
-                                    Text("Rare")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Colors.accent.opacity(0.6))
-                                        )
-                                }
-                                
-                                Spacer()
-                                
-                                Image("boat")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 32, height: 32)
-                            }
-                            .padding(12)
-                            .frame(height: 96)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .task {
-                                sunImageURL = await UnsplashService.fetchImage(for: "sunset beach")
-                            }
-
-                            HStack(spacing: 12) {
-                                AsyncImage(url: groundingImageURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    Colors.card
-                                }
-                                .frame(width: 88, height: 72)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Grounding")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    Text("Legendary")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Colors.legendary)
-                                        )
-                                }
-
-                                Spacer()
-
-                                Image("boat")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 32, height: 32)
-                            }
-                            .padding(12)
-                            .frame(height: 96)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .task {
-                                groundingImageURL = await UnsplashService.fetchImage(for: "forest trail")
-                            }
 
                             HStack {
                                 Text("Travelers going")

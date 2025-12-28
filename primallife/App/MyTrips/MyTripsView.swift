@@ -268,7 +268,7 @@ struct MyTripsView: View {
                             
                             if !viewModel.trips.isEmpty {
                                 TabView(selection: $selectedTripIndex) {
-                                    ForEach(Array(viewModel.trips.enumerated()), id: \.element.id) { index, trip in
+                                    ForEach(Array(displayedTrips.enumerated()), id: \.element.id) { index, trip in
                                         HStack(spacing: 0) {
                                             TravelCard(
                                                 flag: "",
@@ -278,7 +278,7 @@ struct MyTripsView: View {
                                                 showsAttribution: true,
                                                 prefetchedDetails: tripImageDetails[trip.id]
                                             )
-                                            
+
                                             Spacer()
                                         }
                                         .tag(index)
@@ -287,17 +287,14 @@ struct MyTripsView: View {
                                 .frame(height: 180)
                                 .tabViewStyle(.page(indexDisplayMode: .never))
                                 .sensoryFeedback(.impact(weight: .medium), trigger: selectedTripIndex)
-                                
-                                if viewModel.trips.count > 1 {
+
+                                if displayedTrips.count > 1 {
                                     HStack(spacing: 18) {
-                                        ForEach(0..<indicatorCount(for: viewModel.trips.count), id: \.self) { index in
+                                        ForEach(0..<displayedTrips.count, id: \.self) { index in
                                             Image("airplane")
                                                 .renderingMode(.template)
                                                 .foregroundStyle(
-                                                    activeIndicatorIndex(
-                                                        tripCount: viewModel.trips.count,
-                                                        selectedIndex: selectedTripIndex
-                                                    ) == index ? Colors.accent : Colors.secondaryText
+                                                    selectedTripIndex == index ? Colors.accent : Colors.secondaryText
                                                 )
                                         }
                                     }
@@ -454,8 +451,8 @@ struct MyTripsView: View {
                             }
 
                             Button(action: {
-                                if viewModel.trips.indices.contains(selectedTripIndex) {
-                                    selectedTripForTribe = viewModel.trips[selectedTripIndex]
+                                if let trip = selectedTrip {
+                                    selectedTripForTribe = trip
                                     isShowingTribeTrips = true
                                 }
                             }) {
@@ -623,6 +620,7 @@ struct MyTripsView: View {
             await loadTribesForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
+            clampSelectedTripIndex()
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
         }
@@ -639,7 +637,7 @@ struct MyTripsView: View {
     }
     
     private func prefetchTripImages() async {
-        for trip in viewModel.trips where tripImageDetails[trip.id] == nil {
+        for trip in displayedTrips where tripImageDetails[trip.id] == nil {
             if let details = await UnsplashService.fetchImageDetails(for: trip.destination) {
                 await cacheImageIfNeeded(from: details.url)
                 await MainActor.run {
@@ -666,10 +664,21 @@ struct MyTripsView: View {
         if !force, viewModel.tribesByTrip[trip.id] != nil { return }
         await viewModel.loadTribes(for: trip, supabase: supabase)
     }
+
+    private func clampSelectedTripIndex() {
+        let maxIndex = max(0, min(viewModel.trips.count, 3) - 1)
+        if selectedTripIndex > maxIndex {
+            selectedTripIndex = maxIndex
+        }
+    }
+
+    private var displayedTrips: [Trip] {
+        Array(viewModel.trips.prefix(3))
+    }
     
     private var selectedTrip: Trip? {
-        guard viewModel.trips.indices.contains(selectedTripIndex) else { return nil }
-        return viewModel.trips[selectedTripIndex]
+        guard displayedTrips.indices.contains(selectedTripIndex) else { return nil }
+        return displayedTrips[selectedTripIndex]
     }
 
     private var tribesForSelectedTrip: [Tribe]? {
@@ -721,27 +730,6 @@ struct MyTripsView: View {
         return "\(start)–\(end)"
     }
     
-    private func indicatorCount(for tripCount: Int) -> Int {
-        min(tripCount, 3)
-    }
-
-    private func activeIndicatorIndex(tripCount: Int, selectedIndex: Int) -> Int {
-        let count = indicatorCount(for: tripCount)
-        guard count > 0 else { return 0 }
-
-        if count == 3 {
-            if selectedIndex >= tripCount - 1 {
-                return 2
-            } else if selectedIndex <= 0 {
-                return 0
-            } else {
-                return 1
-            }
-        }
-
-        return min(selectedIndex, count - 1)
-    }
-
     private var selectedTripDestination: String {
         selectedTrip?.destination ?? "Costa Rica"
     }

@@ -137,47 +137,6 @@ struct Tribe: Decodable, Identifiable {
     }
 }
 
-private struct INatAnimalCard: Identifiable {
-    let id: Int
-    let name: String
-    let imageName: String
-}
-
-private struct INatPlaceResponse: Decodable {
-    let results: [INatPlace]
-}
-
-private struct INatPlace: Decodable {
-    let id: Int
-}
-
-private struct INatTaxaResponse: Decodable {
-    let results: [INatTaxon]
-}
-
-private struct INatTaxon: Decodable {
-    let id: Int
-}
-
-private struct INatObservationResponse: Decodable {
-    let results: [INatObservation]
-}
-
-private struct INatObservation: Decodable {
-    let id: Int
-    let taxon: INatObservationTaxon?
-}
-
-private struct INatObservationTaxon: Decodable {
-    let preferredCommonName: String?
-    let name: String?
-
-    enum CodingKeys: String, CodingKey {
-        case preferredCommonName = "preferred_common_name"
-        case name
-    }
-}
-
 @MainActor
 final class MyTripsViewModel: ObservableObject {
     @Published var trips: [Trip] = []
@@ -260,7 +219,6 @@ struct MyTripsView: View {
     @State private var isShowingTribeTrips = false
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
-    @State private var animalCards: [INatAnimalCard] = []
     
     var body: some View {
         NavigationStack {
@@ -512,38 +470,6 @@ struct MyTripsView: View {
                             .buttonStyle(.plain)
 
                             HStack {
-                                Text("Cool Animals in the Area")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
-
-                                Spacer()
-                            }
-                            .padding(.top, 16)
-
-                            if !animalCards.isEmpty {
-                                VStack(spacing: 12) {
-                                    ForEach(animalCards) { animal in
-                                        HStack(spacing: 12) {
-                                            Image(animal.imageName)
-                                                .resizable()
-                                                .scaledToFill()
-                                            .frame(width: 88, height: 72)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                                            Text(animal.name)
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.primaryText)
-
-                                            Spacer()
-                                        }
-                                        .padding()
-                                        .background(Colors.card)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    }
-                                }
-                            }
-
-                            HStack {
                                 Text("Travelers going")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
@@ -699,11 +625,9 @@ struct MyTripsView: View {
         .task(id: viewModel.trips.count) {
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
-            await loadAnimalsForSelectedTrip()
         }
         .task(id: selectedTripIndex) {
             await loadTribesForSelectedTrip()
-            await loadAnimalsForSelectedTrip()
         }
         .onChange(of: isShowingTribeTrips) { _, newValue in
             if !newValue {
@@ -816,142 +740,6 @@ struct MyTripsView: View {
         }
 
         return min(selectedIndex, count - 1)
-    }
-
-    private func loadAnimalsForSelectedTrip() async {
-        guard selectedTrip != nil else {
-            await MainActor.run {
-                animalCards = []
-            }
-            return
-        }
-
-        let placeQuery = selectedTripTitle
-        guard !placeQuery.isEmpty,
-              let placeID = await fetchINatPlaceID(for: placeQuery)
-        else {
-            await MainActor.run {
-                animalCards = []
-            }
-            return
-        }
-
-        let animalQueries = [
-            (query: "great white shark", imageName: "great white", fallbackName: "Great White"),
-            (query: "tiger shark", imageName: "tiger shark", fallbackName: "Tiger Shark"),
-            (query: "bull shark", imageName: "bull shark", fallbackName: "Bull Shark"),
-            (query: "great hammerhead shark", imageName: "great hammerhead shark", fallbackName: "Great Hammerhead"),
-            (query: "whale shark", imageName: "whale shark", fallbackName: "Whale Shark"),
-            (query: "mako shark", imageName: "mako shark", fallbackName: "Mako Shark"),
-            (query: "nurse shark", imageName: "nurse shark", fallbackName: "Nurse Shark"),
-            (query: "lemon shark", imageName: "lemon shark", fallbackName: "Lemon Shark"),
-            (query: "blacktip reef shark", imageName: "blacktip reef shark", fallbackName: "Blacktip Reef Shark"),
-            (query: "whitetip reef shark", imageName: "whitetip reef shark", fallbackName: "Whitetip Reef Shark"),
-            (query: "oceanic whitetip shark", imageName: "oceanic whitetip shark", fallbackName: "Oceanic Whitetip Shark"),
-            (query: "thresher shark", imageName: "thresher shark", fallbackName: "Thresher Shark"),
-            (query: "blue shark", imageName: "blue shark", fallbackName: "Blue Shark"),
-            (query: "basking shark", imageName: "basking shark", fallbackName: "Basking Shark"),
-            (query: "goblin shark", imageName: "goblin shark", fallbackName: "Goblin Shark"),
-            (query: "sand tiger shark", imageName: "sand tiger shark", fallbackName: "Sand Tiger Shark"),
-            (query: "scalloped hammerhead", imageName: "scalloped hammerhead", fallbackName: "Scalloped Hammerhead"),
-            (query: "silky shark", imageName: "silky shark", fallbackName: "Silky Shark"),
-            (query: "caribbean reef shark", imageName: "caribbean reef shark", fallbackName: "Caribbean Reef Shark"),
-            (query: "grey reef shark", imageName: "grey reef shark", fallbackName: "Grey Reef Shark"),
-            (query: "galapagos shark", imageName: "galapagos shark", fallbackName: "Galapagos Shark"),
-            (query: "porbeagle shark", imageName: "porbeagle shark", fallbackName: "Porbeagle Shark"),
-            (query: "spiny dogfish", imageName: "spiny dogfish", fallbackName: "Spiny Dogfish"),
-            (query: "epaulette shark", imageName: "epaulette shark", fallbackName: "Epaulette Shark"),
-            (query: "zebra shark", imageName: "zebra shark", fallbackName: "Zebra Shark"),
-            (query: "wobbegong", imageName: "wobbegong", fallbackName: "Wobbegong"),
-            (query: "megamouth shark", imageName: "megamouth shark", fallbackName: "Megamouth Shark"),
-            (query: "sea turtle", imageName: "sea turtle", fallbackName: "Sea Turtle")
-        ]
-        var cards: [INatAnimalCard] = []
-
-        for animalQuery in animalQueries {
-            if let card = await fetchINatAnimalCard(
-                named: animalQuery.query,
-                placeID: placeID,
-                fallbackName: animalQuery.fallbackName,
-                imageName: animalQuery.imageName
-            ) {
-                cards.append(card)
-            }
-        }
-
-        await MainActor.run {
-            animalCards = cards
-        }
-    }
-
-    private func fetchINatPlaceID(for query: String) async -> Int? {
-        var components = URLComponents(string: "https://api.inaturalist.org/v1/places/autocomplete")
-        components?.queryItems = [
-            URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "per_page", value: "1")
-        ]
-
-        guard let url = components?.url else { return nil }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(INatPlaceResponse.self, from: data)
-            return response.results.first?.id
-        } catch {
-            return nil
-        }
-    }
-
-    private func fetchINatTaxonID(for query: String) async -> Int? {
-        var components = URLComponents(string: "https://api.inaturalist.org/v1/taxa")
-        components?.queryItems = [
-            URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "per_page", value: "1")
-        ]
-
-        guard let url = components?.url else { return nil }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(INatTaxaResponse.self, from: data)
-            return response.results.first?.id
-        } catch {
-            return nil
-        }
-    }
-
-    private func fetchINatAnimalCard(
-        named name: String,
-        placeID: Int,
-        fallbackName: String,
-        imageName: String
-    ) async -> INatAnimalCard? {
-        guard let taxonID = await fetchINatTaxonID(for: name) else { return nil }
-
-        var components = URLComponents(string: "https://api.inaturalist.org/v1/observations")
-        components?.queryItems = [
-            URLQueryItem(name: "taxon_id", value: "\(taxonID)"),
-            URLQueryItem(name: "place_id", value: "\(placeID)"),
-            URLQueryItem(name: "per_page", value: "1")
-        ]
-
-        guard let url = components?.url else { return nil }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(INatObservationResponse.self, from: data)
-            guard let observation = response.results.first else {
-                return nil
-            }
-
-            let animalName = observation.taxon?.preferredCommonName
-                ?? observation.taxon?.name
-                ?? fallbackName
-
-            return INatAnimalCard(id: observation.id, name: animalName, imageName: imageName)
-        } catch {
-            return nil
-        }
     }
 
     private var selectedTripDestination: String {

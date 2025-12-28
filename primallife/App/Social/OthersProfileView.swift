@@ -11,13 +11,6 @@ struct OthersProfileView: View {
     let friend: Friend
     @Environment(\.dismiss) private var dismiss
     
-    private let galleryImages = ["travel20", "travel21", "travel22", "travel23"]
-    private let profilePhotos = ["profile2", "profile3", "profile4", "profile5"]
-    private let gridColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-    
     var body: some View {
         ZStack {
             Colors.background
@@ -105,38 +98,6 @@ struct OthersProfileView: View {
                     .padding(.top, 8)
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Me")
-                                .font(.custom(Fonts.semibold, size: 18))
-                                .foregroundStyle(Colors.primaryText)
-
-                            Spacer()
-
-                            Button("See All") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
-                                .buttonStyle(.plain)
-                        }
-                        
-                        LazyVGrid(columns: gridColumns, spacing: 12) {
-                            ForEach(profilePhotos, id: \.self) { imageName in
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Colors.card)
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .overlay {
-                                        Image(imageName)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                            }
-                        }
-                    }
-                    .padding(.top, 8)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
                         Text("Upcoming Trips")
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
@@ -151,38 +112,6 @@ struct OthersProfileView: View {
                                 )
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .frame(height: 180)
-                            }
-                        }
-                    }
-                    .padding(.top, 8)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Gallery")
-                                .font(.custom(Fonts.semibold, size: 18))
-                                .foregroundStyle(Colors.primaryText)
-
-                            Spacer()
-
-                            Button("See All") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
-                                .buttonStyle(.plain)
-                        }
-                        
-                        LazyVGrid(columns: gridColumns, spacing: 12) {
-                            ForEach(galleryImages, id: \.self) { imageName in
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Colors.card)
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .overlay {
-                                        Image(imageName)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                         }
                     }

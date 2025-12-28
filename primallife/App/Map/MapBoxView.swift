@@ -48,6 +48,8 @@ struct MapBoxView: View {
         ProfileFriend(imageName: "profile2", name: "Maya", status: "Planning"),
         ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
     ]
+    
+    private let customPlaceImageNames = ["miami", "aruba", "florida", "italy", "hawaii", "greece", "charleston", "california"]
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)
@@ -293,7 +295,11 @@ struct MapBoxView: View {
                                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                                             .fill(Colors.secondaryText.opacity(0.12))
                                         
-                                        if let imageURL = placeImageURL {
+                                        if let customImageName = customImageName(for: place) {
+                                            Image(customImageName)
+                                                .resizable()
+                                                .scaledToFill()
+                                        } else if let imageURL = placeImageURL {
                                             AsyncImage(url: imageURL) { phase in
                                                 if let image = phase.image {
                                                     image
@@ -505,6 +511,7 @@ struct MapBoxView: View {
         
         let query = place.primaryName.isEmpty ? place.countryName : place.primaryName
         guard !query.isEmpty else { return }
+        guard customImageName(for: place) == nil else { return }
         
         photoTask = Task {
             let url = await UnsplashService.fetchImage(for: query)
@@ -513,6 +520,18 @@ struct MapBoxView: View {
                 placeImageURL = url
             }
         }
+    }
+
+    private func customImageName(for place: MapboxPlace) -> String? {
+        let candidates = [place.primaryName, place.placeName]
+        
+        for name in customPlaceImageNames {
+            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
+                return name
+            }
+        }
+        
+        return nil
     }
     
     private func applyDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {

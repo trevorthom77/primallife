@@ -512,7 +512,7 @@ struct MyTripsView: View {
                             .buttonStyle(.plain)
 
                             HStack {
-                                Text("Animals in the Area")
+                                Text("Cool Animals in the Area")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
 

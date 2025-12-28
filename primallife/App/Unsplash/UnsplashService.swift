@@ -17,17 +17,15 @@ enum UnsplashService {
     private static let accessKey = "REIL_WOXCjSVDsbIkoexE4MVlGNvLW4SU4twImEclXw"
     private static let utmSource = "primallife"
     
-    static func fetchImage(for query: String, theme: String? = nil) async -> URL? {
-        let details = await fetchImageDetails(for: query, theme: theme)
+    static func fetchImage(for query: String) async -> URL? {
+        let details = await fetchImageDetails(for: query)
         return details?.url
     }
     
-    static func fetchImageDetails(for query: String, theme: String? = nil) async -> UnsplashImageDetails? {
-        let searchQuery = "tropical \(query)"
-        
+    static func fetchImageDetails(for query: String) async -> UnsplashImageDetails? {
         var components = URLComponents(string: "https://api.unsplash.com/search/photos")
         components?.queryItems = [
-            URLQueryItem(name: "query", value: searchQuery)
+            URLQueryItem(name: "query", value: query)
         ]
         
         guard let url = components?.url else { return nil }

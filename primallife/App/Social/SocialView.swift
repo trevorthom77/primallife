@@ -93,13 +93,13 @@ struct MessagesView: View {
             ]
         )
     ]
-
+    
     private let plans: [Plan] = [
         Plan(title: "Beach Run", detail: "Tomorrow • 7:00 AM"),
         Plan(title: "Sunset Climb", detail: "Friday • 5:30 PM"),
         Plan(title: "Cafe Check-in", detail: "Sunday • 10:00 AM")
     ]
-    
+
     var body: some View {
         NavigationStack {
             ZStack {

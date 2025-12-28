@@ -21,9 +21,30 @@ struct TravelCard: View {
     var height: CGFloat = 180
     @State private var didApplyPrefetch = false
     
+    private let customImageNames = ["miami", "aruba", "florida", "italy", "hawaii", "greece", "charleston", "california"]
+    
+    private var customImageName: String? {
+        let candidates = [
+            location.trimmingCharacters(in: .whitespacesAndNewlines),
+            imageQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        ]
+        
+        for name in customImageNames {
+            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
+                return name
+            }
+        }
+        
+        return nil
+    }
+    
     var body: some View {
         ZStack {
-            if let imageURL {
+            if let customImageName {
+                Image(customImageName)
+                    .resizable()
+                    .scaledToFill()
+            } else if let imageURL {
                 AsyncImage(url: imageURL) { image in
                     image
                         .resizable()
@@ -135,6 +156,7 @@ struct TravelCard: View {
             }
         }
         .onAppear {
+            guard customImageName == nil else { return }
             guard !didApplyPrefetch, let prefetchedDetails else { return }
             imageURL = prefetchedDetails.url
             photographerName = prefetchedDetails.photographerName
@@ -142,6 +164,7 @@ struct TravelCard: View {
             didApplyPrefetch = true
         }
         .task {
+            guard customImageName == nil else { return }
             guard imageURL == nil else { return }
             let details = await UnsplashService.fetchImageDetails(for: imageQuery)
             imageURL = details?.url

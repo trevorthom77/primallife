@@ -21,7 +21,21 @@ struct TravelCard: View {
     var height: CGFloat = 180
     @State private var didApplyPrefetch = false
     
-    private let customImageNames = ["miami", "aruba", "florida", "italy", "hawaii", "greece", "charleston", "california"]
+    private let customImageNames = [
+        "miami",
+        "aruba",
+        "florida",
+        "italy",
+        "hawaii",
+        "greece",
+        "charleston",
+        "california",
+        "bahamas",
+        "puerto rico",
+        "costa rica",
+        "australia",
+        "queensland"
+    ]
     
     private var customImageName: String? {
         let candidates = [

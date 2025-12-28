@@ -838,6 +838,32 @@ struct MyTripsView: View {
 
         let animalQueries = [
             (query: "great white shark", imageName: "great white", fallbackName: "Great White"),
+            (query: "tiger shark", imageName: "tiger shark", fallbackName: "Tiger Shark"),
+            (query: "bull shark", imageName: "bull shark", fallbackName: "Bull Shark"),
+            (query: "great hammerhead shark", imageName: "great hammerhead shark", fallbackName: "Great Hammerhead"),
+            (query: "whale shark", imageName: "whale shark", fallbackName: "Whale Shark"),
+            (query: "mako shark", imageName: "mako shark", fallbackName: "Mako Shark"),
+            (query: "nurse shark", imageName: "nurse shark", fallbackName: "Nurse Shark"),
+            (query: "lemon shark", imageName: "lemon shark", fallbackName: "Lemon Shark"),
+            (query: "blacktip reef shark", imageName: "blacktip reef shark", fallbackName: "Blacktip Reef Shark"),
+            (query: "whitetip reef shark", imageName: "whitetip reef shark", fallbackName: "Whitetip Reef Shark"),
+            (query: "oceanic whitetip shark", imageName: "oceanic whitetip shark", fallbackName: "Oceanic Whitetip Shark"),
+            (query: "thresher shark", imageName: "thresher shark", fallbackName: "Thresher Shark"),
+            (query: "blue shark", imageName: "blue shark", fallbackName: "Blue Shark"),
+            (query: "basking shark", imageName: "basking shark", fallbackName: "Basking Shark"),
+            (query: "goblin shark", imageName: "goblin shark", fallbackName: "Goblin Shark"),
+            (query: "sand tiger shark", imageName: "sand tiger shark", fallbackName: "Sand Tiger Shark"),
+            (query: "scalloped hammerhead", imageName: "scalloped hammerhead", fallbackName: "Scalloped Hammerhead"),
+            (query: "silky shark", imageName: "silky shark", fallbackName: "Silky Shark"),
+            (query: "caribbean reef shark", imageName: "caribbean reef shark", fallbackName: "Caribbean Reef Shark"),
+            (query: "grey reef shark", imageName: "grey reef shark", fallbackName: "Grey Reef Shark"),
+            (query: "galapagos shark", imageName: "galapagos shark", fallbackName: "Galapagos Shark"),
+            (query: "porbeagle shark", imageName: "porbeagle shark", fallbackName: "Porbeagle Shark"),
+            (query: "spiny dogfish", imageName: "spiny dogfish", fallbackName: "Spiny Dogfish"),
+            (query: "epaulette shark", imageName: "epaulette shark", fallbackName: "Epaulette Shark"),
+            (query: "zebra shark", imageName: "zebra shark", fallbackName: "Zebra Shark"),
+            (query: "wobbegong", imageName: "wobbegong", fallbackName: "Wobbegong"),
+            (query: "megamouth shark", imageName: "megamouth shark", fallbackName: "Megamouth Shark"),
             (query: "sea turtle", imageName: "sea turtle", fallbackName: "Sea Turtle")
         ]
         var cards: [INatAnimalCard] = []

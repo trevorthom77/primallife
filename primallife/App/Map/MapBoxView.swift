@@ -49,7 +49,21 @@ struct MapBoxView: View {
         ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
     ]
     
-    private let customPlaceImageNames = ["miami", "aruba", "florida", "italy", "hawaii", "greece", "charleston", "california"]
+    private let customPlaceImageNames = [
+        "miami",
+        "aruba",
+        "florida",
+        "italy",
+        "hawaii",
+        "greece",
+        "charleston",
+        "california",
+        "bahamas",
+        "puerto rico",
+        "costa rica",
+        "australia",
+        "queensland"
+    ]
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)

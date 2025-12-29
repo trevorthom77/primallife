@@ -840,7 +840,6 @@ private struct TribeGenderView: View {
 
 private struct NewTribe: Encodable {
     let ownerID: UUID
-    let locationID: UUID
     let destination: String
     let name: String
     let description: String?
@@ -853,7 +852,6 @@ private struct NewTribe: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case ownerID = "owner_id"
-        case locationID = "location_id"
         case destination
         case name
         case description
@@ -868,7 +866,6 @@ private struct NewTribe: Encodable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(ownerID, forKey: .ownerID)
-        try container.encode(locationID, forKey: .locationID)
         try container.encode(destination, forKey: .destination)
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
@@ -1160,7 +1157,6 @@ private struct TribeReviewView: View {
 
             let payload = NewTribe(
                 ownerID: userID,
-                locationID: trip.id,
                 destination: trip.destination,
                 name: resolvedName,
                 description: trimmedAbout.isEmpty ? nil : trimmedAbout,

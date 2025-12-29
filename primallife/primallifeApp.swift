@@ -76,9 +76,17 @@ struct primallifeApp: App {
                         Colors.background
                             .ignoresSafeArea()
                         
-                        Text("Live Life")
-                            .font(.loadingTitle)
-                            .foregroundColor(Colors.primaryText)
+                        HStack(spacing: 12) {
+                            Image("logo")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 56, height: 56)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            
+                            Text("Live Life")
+                                .font(.loadingTitle)
+                                .foregroundColor(Colors.primaryText)
+                        }
                     }
                 } else if isAuthenticated && onboardingViewModel.hasCompletedOnboarding {
                     NavigationStack {

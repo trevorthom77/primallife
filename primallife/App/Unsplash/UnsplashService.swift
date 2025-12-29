@@ -24,8 +24,10 @@ enum UnsplashService {
     
     static func fetchImageDetails(for query: String) async -> UnsplashImageDetails? {
         var components = URLComponents(string: "https://api.unsplash.com/search/photos")
+        let sanitizedQuery = sanitizedQuery(from: query)
+        guard !sanitizedQuery.isEmpty else { return nil }
         components?.queryItems = [
-            URLQueryItem(name: "query", value: query)
+            URLQueryItem(name: "query", value: sanitizedQuery)
         ]
         
         guard let url = components?.url else { return nil }
@@ -62,6 +64,13 @@ enum UnsplashService {
         queryItems.append(URLQueryItem(name: "utm_medium", value: "referral"))
         components.queryItems = queryItems
         return components.url
+    }
+
+    private static func sanitizedQuery(from query: String) -> String {
+        let filteredScalars = query.unicodeScalars.filter { !$0.properties.isEmoji }
+        let cleaned = String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? query.trimmingCharacters(in: .whitespacesAndNewlines) : cleaned
     }
 }
 

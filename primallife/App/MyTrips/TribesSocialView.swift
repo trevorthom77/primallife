@@ -23,18 +23,12 @@ struct TribesSocialView: View {
         ChatMessage(text: "Count me in for the bonfire.", time: "6:15 PM", isUser: true)
     ]
     private let customPlaceImageNames = [
-        "miami",
-        "aruba",
         "florida",
         "italy",
         "greece",
-        "charleston",
         "california",
-        "bahamas",
         "puerto rico",
-        "costa rica",
-        "australia",
-        "queensland"
+        "costa rica"
     ]
 
     init(

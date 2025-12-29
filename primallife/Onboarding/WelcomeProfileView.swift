@@ -150,18 +150,12 @@ private struct ProfilePreviewCard: View {
     @State private var destinationPhotographerName: String?
     @State private var destinationPhotographerProfileURL: URL?
     private let customDestinationImageNames = [
-        "miami",
-        "aruba",
         "florida",
         "italy",
         "greece",
-        "charleston",
         "california",
-        "bahamas",
         "puerto rico",
-        "costa rica",
-        "australia",
-        "queensland"
+        "costa rica"
     ]
     
     var body: some View {

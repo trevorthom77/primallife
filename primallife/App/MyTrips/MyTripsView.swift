@@ -184,6 +184,23 @@ final class MyTripsViewModel: ObservableObject {
         }
     }
 
+    func deleteTrip(tripID: UUID, supabase: SupabaseClient?) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            try await supabase
+                .from("mytrips")
+                .delete()
+                .eq("id", value: "\(tripID)")
+                .eq("user_id", value: "\(userID)")
+                .execute()
+
+            await loadTrips(supabase: supabase)
+        } catch {
+            self.error = "Unable to delete trip."
+        }
+    }
+
     func loadTribes(for trip: Trip, supabase: SupabaseClient?) async {
         guard let supabase, !loadingTribeTripIDs.contains(trip.id) else { return }
 
@@ -619,7 +636,12 @@ struct MyTripsView: View {
             .sheet(isPresented: $isShowingUpcomingTripsSheet) {
                 UpcomingTripsSheetView(
                     trips: viewModel.trips,
-                    tripImageDetails: tripImageDetails
+                    tripImageDetails: tripImageDetails,
+                    onDeleteTrip: { trip in
+                        Task {
+                            await viewModel.deleteTrip(tripID: trip.id, supabase: supabase)
+                        }
+                    }
                 )
             }
         }

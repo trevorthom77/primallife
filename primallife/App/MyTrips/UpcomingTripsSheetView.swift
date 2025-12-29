@@ -3,7 +3,8 @@ import SwiftUI
 struct UpcomingTripsSheetView: View {
     let trips: [Trip]
     let tripImageDetails: [UUID: UnsplashImageDetails]
-    @State private var isShowingMoreSheet = false
+    let onDeleteTrip: (Trip) -> Void
+    @State private var selectedTrip: Trip?
 
     var body: some View {
         ZStack {
@@ -33,7 +34,7 @@ struct UpcomingTripsSheetView: View {
                                 flag: tripFlag(for: trip),
                                 title: tripTitle(for: trip),
                                 onMoreTapped: {
-                                    isShowingMoreSheet = true
+                                    selectedTrip = trip
                                 }
                             )
                         }
@@ -44,8 +45,13 @@ struct UpcomingTripsSheetView: View {
                 .padding(.bottom, 32)
             }
         }
-        .sheet(isPresented: $isShowingMoreSheet) {
-            UpcomingTripsMoreSheetView()
+        .sheet(item: $selectedTrip) { trip in
+            UpcomingTripsMoreSheetView(
+                trip: trip,
+                onDeleteTrip: {
+                    onDeleteTrip(trip)
+                }
+            )
         }
     }
 
@@ -140,6 +146,9 @@ private struct UpcomingTripPlaceCard: View {
 
 private struct UpcomingTripsMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingDeleteConfirm = false
+    let trip: Trip
+    let onDeleteTrip: () -> Void
 
     var body: some View {
         ZStack {
@@ -157,11 +166,115 @@ private struct UpcomingTripsMoreSheetView: View {
                     .foregroundStyle(Colors.accent)
                 }
 
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Delete Trip")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Text("This removes \(trip.destination) from your upcoming list.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Button(action: {
+                        isShowingDeleteConfirm = true
+                    }) {
+                        HStack {
+                            Text("Delete Trip")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
                 Spacer()
             }
             .padding(20)
         }
+        .overlay {
+            if isShowingDeleteConfirm {
+                confirmationOverlay(
+                    title: "Delete Trip",
+                    message: "This removes \(trip.destination) from your upcoming list.",
+                    confirmTitle: "Delete",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingDeleteConfirm = false
+                        onDeleteTrip()
+                        dismiss()
+                    },
+                    cancelAction: {
+                        isShowingDeleteConfirm = false
+                    }
+                )
+            }
+        }
         .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
         .presentationDragIndicator(.hidden)
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 }

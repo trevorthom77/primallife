@@ -33,7 +33,7 @@ struct InterestView: View {
         "🌲 Off Grid",
         "🎿 Snow and Ski",
         "🏅 Sports",
-        "🐶 Animal Lover",
+        "🐘 Animal Lover",
         "🍽️ Food",
         "🛍️ Shopping",
         "🍻 Bar Hopping",

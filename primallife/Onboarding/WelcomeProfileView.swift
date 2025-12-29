@@ -149,6 +149,20 @@ private struct ProfilePreviewCard: View {
     @State private var destinationImageURL: URL?
     @State private var destinationPhotographerName: String?
     @State private var destinationPhotographerProfileURL: URL?
+    private let customDestinationImageNames = [
+        "miami",
+        "aruba",
+        "florida",
+        "italy",
+        "greece",
+        "charleston",
+        "california",
+        "bahamas",
+        "puerto rico",
+        "costa rica",
+        "australia",
+        "queensland"
+    ]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -236,7 +250,11 @@ private struct ProfilePreviewCard: View {
                             }
                             
                             ZStack {
-                                if let destinationImageURL {
+                                if let customDestinationImageName {
+                                    Image(customDestinationImageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else if let destinationImageURL {
                                     AsyncImage(url: destinationImageURL) { image in
                                         image
                                             .resizable()
@@ -259,7 +277,14 @@ private struct ProfilePreviewCard: View {
                             destinationPhotographerProfileURL = nil
                             return
                         }
-                        
+
+                        if customDestinationImageName != nil {
+                            destinationImageURL = nil
+                            destinationPhotographerName = nil
+                            destinationPhotographerProfileURL = nil
+                            return
+                        }
+
                         let details = await UnsplashService.fetchImageDetails(for: destinationQuery)
                         destinationImageURL = details?.url
                         destinationPhotographerName = details?.photographerName
@@ -313,6 +338,16 @@ private struct ProfilePreviewCard: View {
     private var destinationText: String? {
         let trimmed = onboardingViewModel.upcomingDestination.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private var customDestinationImageName: String? {
+        guard let destinationText else { return nil }
+
+        for name in customDestinationImageNames where destinationText.localizedCaseInsensitiveContains(name) {
+            return name
+        }
+
+        return nil
     }
     
     private var tripDateText: String? {

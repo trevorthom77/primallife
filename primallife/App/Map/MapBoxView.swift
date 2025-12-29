@@ -54,7 +54,6 @@ struct MapBoxView: View {
         "aruba",
         "florida",
         "italy",
-        "hawaii",
         "greece",
         "charleston",
         "california",

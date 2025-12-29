@@ -74,7 +74,6 @@ private struct UpcomingTripPlaceCard: View {
         "aruba",
         "florida",
         "italy",
-        "hawaii",
         "greece",
         "charleston",
         "california",

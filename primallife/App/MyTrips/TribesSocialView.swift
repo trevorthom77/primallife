@@ -22,6 +22,20 @@ struct TribesSocialView: View {
         ChatMessage(text: "We're meeting at Playa Hermosa night one.", time: "6:14 PM", isUser: false),
         ChatMessage(text: "Count me in for the bonfire.", time: "6:15 PM", isUser: true)
     ]
+    private let customPlaceImageNames = [
+        "miami",
+        "aruba",
+        "florida",
+        "italy",
+        "greece",
+        "charleston",
+        "california",
+        "bahamas",
+        "puerto rico",
+        "costa rica",
+        "australia",
+        "queensland"
+    ]
 
     init(
         imageURL: URL?,
@@ -268,8 +282,16 @@ struct TribesSocialView: View {
                                 .foregroundStyle(Colors.accent)
                         }
 
-                        PlaceCard(imageURL: placeImageURL, name: resolvedPlaceName)
+                        PlaceCard(
+                            imageURL: placeImageURL,
+                            customImageName: customPlaceImageName,
+                            name: resolvedPlaceName
+                        )
                             .task {
+                                if customPlaceImageName != nil {
+                                    placeImageURL = nil
+                                    return
+                                }
                                 placeImageURL = await UnsplashService.fetchImage(for: resolvedPlaceName)
                             }
                     }
@@ -367,6 +389,22 @@ private extension TribesSocialView {
         return "You"
     }
 
+    var customPlaceImageName: String? {
+        let candidates = [
+            resolvedPlaceName,
+            location,
+            placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        ]
+
+        for name in customPlaceImageNames {
+            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
+                return name
+            }
+        }
+
+        return nil
+    }
+
     @ViewBuilder
     var tribeHeaderImage: some View {
         if let headerImage {
@@ -397,11 +435,16 @@ private extension TribesSocialView {
 
 private struct PlaceCard: View {
     let imageURL: URL?
+    let customImageName: String?
     let name: String
 
     var body: some View {
         ZStack {
-            if let imageURL {
+            if let customImageName {
+                Image(customImageName)
+                    .resizable()
+                    .scaledToFill()
+            } else if let imageURL {
                 AsyncImage(url: imageURL) { image in
                     image
                         .resizable()

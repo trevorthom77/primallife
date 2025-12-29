@@ -14,7 +14,7 @@ struct TravelCard: View {
     var flag: String = "🇨🇷"
     var location: String = "Costa Rica"
     var dates: String = "Jan 12–20"
-    var imageQuery: String = "Hawaii"
+    var imageQuery: String = "Costa Rica"
     var showsParticipants: Bool = true
     var showsAttribution: Bool = false
     var prefetchedDetails: UnsplashImageDetails? = nil
@@ -26,7 +26,6 @@ struct TravelCard: View {
         "aruba",
         "florida",
         "italy",
-        "hawaii",
         "greece",
         "charleston",
         "california",

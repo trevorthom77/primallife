@@ -277,7 +277,7 @@ struct MyTripsView: View {
                                                 flag: "",
                                                 location: trip.destination,
                                                 dates: tripDateRange(for: trip),
-                                                imageQuery: trip.destination,
+                                                imageQuery: tripImageQuery(for: trip),
                                                 showsAttribution: true,
                                                 prefetchedDetails: tripImageDetails[trip.id]
                                             )
@@ -647,7 +647,8 @@ struct MyTripsView: View {
     
     private func prefetchTripImages() async {
         for trip in displayedTrips where tripImageDetails[trip.id] == nil {
-            if let details = await UnsplashService.fetchImageDetails(for: trip.destination) {
+            let query = tripImageQuery(for: trip)
+            if let details = await UnsplashService.fetchImageDetails(for: query) {
                 await cacheImageIfNeeded(from: details.url)
                 await MainActor.run {
                     tripImageDetails[trip.id] = details
@@ -731,6 +732,13 @@ struct MyTripsView: View {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func tripImageQuery(for trip: Trip) -> String {
+        let filteredScalars = trip.destination.unicodeScalars.filter { !$0.properties.isEmoji }
+        let cleaned = String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? trip.destination : cleaned
     }
 
     private func tribeDateRange(for tribe: Tribe) -> String {

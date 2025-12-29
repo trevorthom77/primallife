@@ -77,7 +77,7 @@ struct NewTrip: Encodable {
 struct Tribe: Decodable, Identifiable {
     let id: UUID
     let ownerID: UUID
-    let locationID: UUID
+    let locationID: UUID?
     let name: String
     let description: String?
     let startDate: Date
@@ -105,7 +105,7 @@ struct Tribe: Decodable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         ownerID = try container.decode(UUID.self, forKey: .ownerID)
-        locationID = try container.decode(UUID.self, forKey: .locationID)
+        locationID = try container.decodeIfPresent(UUID.self, forKey: .locationID)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
 

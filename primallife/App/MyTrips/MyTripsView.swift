@@ -216,6 +216,7 @@ struct MyTripsView: View {
     @State private var tripImageDetails: [UUID: UnsplashImageDetails] = [:]
     @State private var selectedTripForTribe: Trip?
     @State private var isShowingTrips = false
+    @State private var isShowingUpcomingTripsSheet = false
     @State private var isShowingTribeTrips = false
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
@@ -261,7 +262,9 @@ struct MyTripsView: View {
                                 
                                 Spacer()
                                 
-                                Button("See All") { }
+                                Button("See All") {
+                                    isShowingUpcomingTripsSheet = true
+                                }
                                     .font(.travelDetail)
                                     .foregroundStyle(Colors.accent)
                             }
@@ -612,6 +615,12 @@ struct MyTripsView: View {
                 } else {
                     EmptyView()
                 }
+            }
+            .sheet(isPresented: $isShowingUpcomingTripsSheet) {
+                UpcomingTripsSheetView(
+                    trips: viewModel.trips,
+                    tripImageDetails: tripImageDetails
+                )
             }
         }
         .task {

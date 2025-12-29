@@ -665,7 +665,7 @@ struct MyTripsView: View {
     }
     
     private func prefetchTripImages() async {
-        for trip in displayedTrips where tripImageDetails[trip.id] == nil {
+        for trip in viewModel.trips where tripImageDetails[trip.id] == nil {
             let query = tripImageQuery(for: trip)
             if let details = await UnsplashService.fetchImageDetails(for: query) {
                 await cacheImageIfNeeded(from: details.url)

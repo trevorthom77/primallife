@@ -3,6 +3,7 @@ import SwiftUI
 struct UpcomingTripsSheetView: View {
     let trips: [Trip]
     let tripImageDetails: [UUID: UnsplashImageDetails]
+    @State private var isShowingMoreSheet = false
 
     var body: some View {
         ZStack {
@@ -30,7 +31,10 @@ struct UpcomingTripsSheetView: View {
                                 imageURL: tripImageDetails[trip.id]?.url,
                                 location: trip.destination,
                                 flag: tripFlag(for: trip),
-                                title: tripTitle(for: trip)
+                                title: tripTitle(for: trip),
+                                onMoreTapped: {
+                                    isShowingMoreSheet = true
+                                }
                             )
                         }
                     }
@@ -39,6 +43,9 @@ struct UpcomingTripsSheetView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 32)
             }
+        }
+        .sheet(isPresented: $isShowingMoreSheet) {
+            UpcomingTripsMoreSheetView()
         }
     }
 
@@ -60,6 +67,7 @@ private struct UpcomingTripPlaceCard: View {
     let location: String
     let flag: String
     let title: String
+    let onMoreTapped: () -> Void
 
     private let customImageNames = [
         "miami",
@@ -121,7 +129,7 @@ private struct UpcomingTripPlaceCard: View {
             .padding(.horizontal, 16)
         }
         .overlay(alignment: .topTrailing) {
-            Button(action: { }) {
+            Button(action: onMoreTapped) {
                 Image(systemName: "ellipsis")
                     .font(.travelBody)
                     .foregroundStyle(Colors.primaryText)
@@ -134,5 +142,33 @@ private struct UpcomingTripPlaceCard: View {
             .padding(.trailing, 12)
         }
         .clipped()
+    }
+}
+
+private struct UpcomingTripsMoreSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+        }
+        .presentationDetents([.height(320)])
+        .presentationDragIndicator(.hidden)
     }
 }

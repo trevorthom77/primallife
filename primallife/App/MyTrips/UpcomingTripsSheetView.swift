@@ -120,6 +120,19 @@ private struct UpcomingTripPlaceCard: View {
             .padding(.top, 20)
             .padding(.horizontal, 16)
         }
+        .overlay(alignment: .topTrailing) {
+            Button(action: { }) {
+                Image(systemName: "ellipsis")
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                    .frame(width: 36, height: 36)
+                    .background(Colors.card.opacity(0.9))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 12)
+            .padding(.trailing, 12)
+        }
         .clipped()
     }
 }

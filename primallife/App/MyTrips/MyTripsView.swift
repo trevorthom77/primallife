@@ -405,57 +405,56 @@ struct MyTripsView: View {
                                                     }
                                                     
                                                     Spacer()
-                                                }
-                                                .padding(12)
-                                                .background(Colors.card)
-                                                .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                                                HStack(spacing: -8) {
-                                                    Image("profile1")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 32, height: 32)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
                                                     
-                                                    Image("profile2")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 32, height: 32)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
-                                                    
-                                                    Image("profile3")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 32, height: 32)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
-                                                    
-                                                    ZStack {
-                                                        Circle()
-                                                            .fill(Colors.background)
+                                                    HStack(spacing: -8) {
+                                                        Image("profile1")
+                                                            .resizable()
+                                                            .scaledToFill()
                                                             .frame(width: 32, height: 32)
+                                                            .clipShape(Circle())
                                                             .overlay {
                                                                 Circle()
                                                                     .stroke(Colors.card, lineWidth: 3)
                                                             }
                                                         
-                                                        Text("67+")
-                                                            .font(.custom(Fonts.semibold, size: 12))
-                                                            .foregroundStyle(Colors.primaryText)
+                                                        Image("profile2")
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                            .frame(width: 32, height: 32)
+                                                            .clipShape(Circle())
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+                                                        
+                                                        Image("profile3")
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                            .frame(width: 32, height: 32)
+                                                            .clipShape(Circle())
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+                                                        
+                                                        ZStack {
+                                                            Circle()
+                                                                .fill(Colors.background)
+                                                                .frame(width: 32, height: 32)
+                                                                .overlay {
+                                                                    Circle()
+                                                                        .stroke(Colors.card, lineWidth: 3)
+                                                                }
+                                                            
+                                                            Text("67+")
+                                                                .font(.custom(Fonts.semibold, size: 12))
+                                                                .foregroundStyle(Colors.primaryText)
+                                                        }
                                                     }
                                                 }
-                                                .padding(.horizontal, 12)
+                                                .padding(12)
+                                                .background(Colors.card)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
                                             }
                                         }
                                         .buttonStyle(.plain)

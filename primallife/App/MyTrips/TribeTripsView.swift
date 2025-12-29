@@ -1050,22 +1050,31 @@ private struct TribeReviewView: View {
                         .padding(.horizontal, 8)
                 }
 
-                Button(action: {
+                Button {
+                    guard !isCreating else { return }
+                    isCreating = true
                     Task {
                         await createTribe()
+                        await MainActor.run {
+                            isCreating = false
+                        }
                     }
-                }) {
-                    Text("Create Tribe")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Create Tribe")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+
+                        if isCreating {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
-                .disabled(isCreating)
-                .opacity(isCreating ? 0.7 : 1)
-                .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
@@ -1148,9 +1157,7 @@ private struct TribeReviewView: View {
         let resolvedName = trimmedName.isEmpty ? "Untitled tribe" : trimmedName
         let trimmedAbout = aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        isCreating = true
         errorMessage = nil
-        defer { isCreating = false }
 
         do {
             let photoURL = try await uploadGroupPhotoIfNeeded(supabase: supabase, userID: userID)

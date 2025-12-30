@@ -136,11 +136,23 @@ struct Tribe: Decodable, Identifiable {
 
 @MainActor
 final class MyTripsViewModel: ObservableObject {
+    private struct TribeCreator: Decodable {
+        let id: String
+        let fullName: String
+        let avatarPath: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case fullName = "full_name"
+            case avatarPath = "avatar_url"
+        }
+    }
+
     @Published var trips: [Trip] = []
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
-    @Published private var tribeCreatorsByID: [String: String] = [:]
+    @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
 
     func loadTrips(supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -222,7 +234,11 @@ final class MyTripsViewModel: ObservableObject {
     }
 
     func creatorName(for ownerID: UUID) -> String? {
-        tribeCreatorsByID[ownerID.uuidString]
+        tribeCreatorsByID[ownerID.uuidString]?.fullName
+    }
+
+    func creatorAvatarPath(for ownerID: UUID) -> String? {
+        tribeCreatorsByID[ownerID.uuidString]?.avatarPath
     }
 
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
@@ -230,25 +246,15 @@ final class MyTripsViewModel: ObservableObject {
         let missingIDs = ownerIDs.filter { tribeCreatorsByID[$0] == nil }
         guard !missingIDs.isEmpty else { return }
 
-        struct TribeCreator: Decodable {
-            let id: String
-            let fullName: String
-
-            enum CodingKeys: String, CodingKey {
-                case id
-                case fullName = "full_name"
-            }
-        }
-
         do {
             let creators: [TribeCreator] = try await supabase
                 .from("onboarding")
-                .select("id, full_name")
+                .select("id, full_name, avatar_url")
                 .in("id", values: Array(missingIDs))
                 .execute()
                 .value
 
-            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id, $0.fullName) })
+            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id, $0) })
             tribeCreatorsByID.merge(lookup) { _, new in new }
         } catch {
             return
@@ -412,17 +418,18 @@ struct MyTripsView: View {
                                             NavigationLink {
                                                 TribesSocialView(
                                                     imageURL: tribe.photoURL,
-                                                title: tribe.name,
-                                                location: selectedTripDestination,
-                                                flag: "",
-                                                date: tribeDateRange(for: tribe),
-                                                gender: tribe.gender,
-                                                aboutText: tribe.description,
-                                                interests: tribe.interests,
-                                                placeName: selectedTripDestination,
-                                                createdBy: viewModel.creatorName(for: tribe.ownerID),
-                                                isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
-                                                initialHeaderImage: tribeImageCache[tribe.id]
+                                                    title: tribe.name,
+                                                    location: selectedTripDestination,
+                                                    flag: "",
+                                                    date: tribeDateRange(for: tribe),
+                                                    gender: tribe.gender,
+                                                    aboutText: tribe.description,
+                                                    interests: tribe.interests,
+                                                    placeName: selectedTripDestination,
+                                                    createdBy: viewModel.creatorName(for: tribe.ownerID),
+                                                    createdByAvatarPath: viewModel.creatorAvatarPath(for: tribe.ownerID),
+                                                    isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
+                                                    initialHeaderImage: tribeImageCache[tribe.id]
                                             )
                                         } label: {
                                                 VStack(alignment: .leading, spacing: 12) {

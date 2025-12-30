@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct TribesSocialView: View {
     let imageURL: URL?
@@ -11,11 +12,14 @@ struct TribesSocialView: View {
     let interests: [String]
     let placeName: String?
     let createdBy: String?
+    let createdByAvatarPath: String?
     let isCreator: Bool
     let onBack: (() -> Void)?
     let initialHeaderImage: Image?
     @State private var placeImageURL: URL?
     @State private var headerImage: Image?
+    @Environment(\.supabaseClient) private var supabase
+    @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
     private let tribeMessages: [ChatMessage] = [
         ChatMessage(text: "Welcome to the Costa Rica crew.", time: "6:10 PM", isUser: false),
@@ -43,6 +47,7 @@ struct TribesSocialView: View {
         interests: [String] = [],
         placeName: String? = nil,
         createdBy: String? = nil,
+        createdByAvatarPath: String? = nil,
         isCreator: Bool = false,
         onBack: (() -> Void)? = nil,
         initialHeaderImage: Image? = nil
@@ -57,6 +62,7 @@ struct TribesSocialView: View {
         self.interests = interests
         self.placeName = placeName
         self.createdBy = createdBy
+        self.createdByAvatarPath = createdByAvatarPath
         self.isCreator = isCreator
         self.onBack = onBack
         self.initialHeaderImage = initialHeaderImage
@@ -303,9 +309,7 @@ struct TribesSocialView: View {
                             .foregroundStyle(Colors.primaryText)
 
                         HStack(spacing: 12) {
-                            Image("profile2")
-                                .resizable()
-                                .scaledToFill()
+                            creatorAvatarView
                                 .frame(width: 52, height: 52)
                                 .clipShape(Circle())
                                 .overlay {
@@ -340,6 +344,49 @@ struct TribesSocialView: View {
 }
 
 private extension TribesSocialView {
+    var creatorAvatarURL: URL? {
+        if isCreator {
+            return profileStore.profile?.avatarURL(using: supabase)
+        }
+
+        guard let supabase, let createdByAvatarPath else { return nil }
+
+        return try? supabase.storage
+            .from("profile-photos")
+            .getPublicURL(path: createdByAvatarPath)
+    }
+
+    @ViewBuilder
+    var creatorAvatarView: some View {
+        if let creatorAvatarURL,
+           isCreator,
+           let cachedImage = profileStore.cachedAvatarImage,
+           profileStore.cachedAvatarURL == creatorAvatarURL {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let creatorAvatarURL {
+            AsyncImage(url: creatorAvatarURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .onAppear {
+                            if isCreator {
+                                profileStore.cacheAvatar(image, url: creatorAvatarURL)
+                            }
+                        }
+                } else {
+                    Colors.secondaryText.opacity(0.2)
+                }
+            }
+        } else {
+            Image("profile2")
+                .resizable()
+                .scaledToFill()
+        }
+    }
+
     var resolvedAbout: String {
         let trimmed = aboutText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmed.isEmpty {

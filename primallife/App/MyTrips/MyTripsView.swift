@@ -346,262 +346,258 @@ struct MyTripsView: View {
                                 .padding(.vertical, 24)
                             }
                             
-                            HStack {
-                                if selectedTrip == nil {
-                                    Text("No tribes")
-                                        .font(.travelTitle)
-                                        .foregroundStyle(Colors.primaryText)
-                                } else {
+                            if selectedTrip != nil {
+                                HStack {
                                     Text("\(selectedTripTitle) Tribes")
                                         .font(.travelTitle)
                                         .foregroundStyle(Colors.primaryText)
-                                }
-                                
-                                Spacer()
-                                
-                                Button("See All") { }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                            }
-                            .padding(.top, 16)
-                            
-                            if let tribes = tribesForSelectedTrip {
-                                if tribes.isEmpty {
-                                    Text("No tribes yet.")
+                                    
+                                    Spacer()
+                                    
+                                    Button("See All") { }
                                         .font(.travelDetail)
-                                        .foregroundStyle(Colors.secondaryText)
-                                        .padding(.vertical, 4)
-                                } else {
-                                    ForEach(tribes.prefix(2)) { tribe in
-                                        NavigationLink {
-                                            TribesSocialView(
-                                                imageURL: tribe.photoURL,
-                                            title: tribe.name,
-                                            location: selectedTripDestination,
-                                            flag: "",
-                                            date: tribeDateRange(for: tribe),
-                                            gender: tribe.gender,
-                                            aboutText: tribe.description,
-                                            interests: tribe.interests,
-                                            placeName: selectedTripDestination,
-                                            createdBy: nil,
-                                            initialHeaderImage: tribeImageCache[tribe.id]
-                                        )
-                                    } label: {
-                                            VStack(alignment: .leading, spacing: 12) {
-                                                HStack(spacing: 12) {
-                                                    tribeImage(for: tribe)
-                                                        .frame(width: 88, height: 72)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                    
-                                                    VStack(alignment: .leading, spacing: 6) {
-                                                        Text(tribe.name)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.primaryText)
+                                        .foregroundStyle(Colors.accent)
+                                }
+                                .padding(.top, 16)
+                                
+                                if let tribes = tribesForSelectedTrip {
+                                    if tribes.isEmpty {
+                                        Text("No tribes yet.")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.secondaryText)
+                                            .padding(.vertical, 4)
+                                    } else {
+                                        ForEach(tribes.prefix(2)) { tribe in
+                                            NavigationLink {
+                                                TribesSocialView(
+                                                    imageURL: tribe.photoURL,
+                                                title: tribe.name,
+                                                location: selectedTripDestination,
+                                                flag: "",
+                                                date: tribeDateRange(for: tribe),
+                                                gender: tribe.gender,
+                                                aboutText: tribe.description,
+                                                interests: tribe.interests,
+                                                placeName: selectedTripDestination,
+                                                createdBy: nil,
+                                                initialHeaderImage: tribeImageCache[tribe.id]
+                                            )
+                                        } label: {
+                                                VStack(alignment: .leading, spacing: 12) {
+                                                    HStack(spacing: 12) {
+                                                        tribeImage(for: tribe)
+                                                            .frame(width: 88, height: 72)
+                                                            .clipShape(RoundedRectangle(cornerRadius: 12))
                                                         
-                                                        Text(selectedTripDestination)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.secondaryText)
-                                                    }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    HStack(spacing: -8) {
-                                                        Image("profile1")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 32, height: 32)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
+                                                        VStack(alignment: .leading, spacing: 6) {
+                                                            Text(tribe.name)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.primaryText)
+                                                            
+                                                            Text(selectedTripDestination)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.secondaryText)
+                                                        }
                                                         
-                                                        Image("profile2")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 32, height: 32)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
+                                                        Spacer()
                                                         
-                                                        Image("profile3")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 32, height: 32)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
-                                                        
-                                                        ZStack {
-                                                            Circle()
-                                                                .fill(Colors.background)
+                                                        HStack(spacing: -8) {
+                                                            Image("profile1")
+                                                                .resizable()
+                                                                .scaledToFill()
                                                                 .frame(width: 32, height: 32)
+                                                                .clipShape(Circle())
                                                                 .overlay {
                                                                     Circle()
                                                                         .stroke(Colors.card, lineWidth: 3)
                                                                 }
                                                             
-                                                            Text("67+")
-                                                                .font(.custom(Fonts.semibold, size: 12))
-                                                                .foregroundStyle(Colors.primaryText)
+                                                            Image("profile2")
+                                                                .resizable()
+                                                                .scaledToFill()
+                                                                .frame(width: 32, height: 32)
+                                                                .clipShape(Circle())
+                                                                .overlay {
+                                                                    Circle()
+                                                                        .stroke(Colors.card, lineWidth: 3)
+                                                                }
+                                                            
+                                                            Image("profile3")
+                                                                .resizable()
+                                                                .scaledToFill()
+                                                                .frame(width: 32, height: 32)
+                                                                .clipShape(Circle())
+                                                                .overlay {
+                                                                    Circle()
+                                                                        .stroke(Colors.card, lineWidth: 3)
+                                                                }
+                                                            
+                                                            ZStack {
+                                                                Circle()
+                                                                    .fill(Colors.background)
+                                                                    .frame(width: 32, height: 32)
+                                                                    .overlay {
+                                                                        Circle()
+                                                                            .stroke(Colors.card, lineWidth: 3)
+                                                                    }
+                                                                
+                                                                Text("67+")
+                                                                    .font(.custom(Fonts.semibold, size: 12))
+                                                                    .foregroundStyle(Colors.primaryText)
+                                                            }
                                                         }
                                                     }
+                                                    .padding(12)
+                                                    .background(Colors.card)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                                 }
-                                                .padding(12)
-                                                .background(Colors.card)
-                                                .clipShape(RoundedRectangle(cornerRadius: 16))
                                             }
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
                                     }
+                                } else if isLoadingTribesForSelectedTrip {
+                                    ProgressView()
+                                        .tint(Colors.accent)
+                                        .padding(.vertical, 4)
                                 }
-                            } else if isLoadingTribesForSelectedTrip {
-                                ProgressView()
-                                    .tint(Colors.accent)
-                                    .padding(.vertical, 4)
-                            }
 
-                            Button(action: {
-                                if let trip = selectedTrip {
-                                    selectedTripForTribe = trip
-                                    isShowingTribeTrips = true
-                                }
-                            }) {
-                                Text("Add Tribe")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Colors.accent)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                            }
-                            .buttonStyle(.plain)
-
-                            HStack {
-                                Text("Travelers going")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
-                                
-                                Spacer()
-                                
-                                Button("See All") { }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                            }
-                            .padding(.top, 16)
-                            
-                            HStack(spacing: 12) {
-                                Image("profile7")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 48, height: 48)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
+                                Button(action: {
+                                    if let trip = selectedTrip {
+                                        selectedTripForTribe = trip
+                                        isShowingTribeTrips = true
                                     }
+                                }) {
+                                    Text("Add Tribe")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                }
+                                .buttonStyle(.plain)
+
+                                HStack {
+                                    Text("Travelers going")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+                                    
+                                    Spacer()
+                                    
+                                    Button("See All") { }
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
+                                }
+                                .padding(.top, 16)
                                 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack(spacing: 8) {
-                                        Text("Ava")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
+                                HStack(spacing: 12) {
+                                    Image("profile7")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+                                    
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(spacing: 8) {
+                                            Text("Ava")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.primaryText)
+                                            
+                                            Text("27")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
                                         
-                                        Text("27")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
+                                        HStack(spacing: 8) {
+                                            Text("🇲🇽")
+                                            Text("Mexico")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
                                     }
                                     
-                                    HStack(spacing: 8) {
-                                        Text("🇲🇽")
-                                        Text("Mexico")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
-                                    }
+                                    Spacer()
                                 }
-                                
-                                Spacer()
-                            }
-                            .padding()
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .padding()
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                            HStack(spacing: 12) {
-                                Image("profile8")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 48, height: 48)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
+                                HStack(spacing: 12) {
+                                    Image("profile8")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(spacing: 8) {
+                                            Text("Leo")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.primaryText)
+
+                                            Text("25")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
+
+                                        HStack(spacing: 8) {
+                                            Text("🇧🇷")
+                                            Text("Brazil")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
                                     }
 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack(spacing: 8) {
-                                        Text("Leo")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
-
-                                        Text("25")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
-                                    }
-
-                                    HStack(spacing: 8) {
-                                        Text("🇧🇷")
-                                        Text("Brazil")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
-                                    }
+                                    Spacer()
                                 }
+                                .padding()
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                                Spacer()
-                            }
-                            .padding()
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                HStack(spacing: 12) {
+                                    Image("profile9")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
 
-                            HStack(spacing: 12) {
-                                Image("profile9")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 48, height: 48)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(spacing: 8) {
+                                            Text("Maya")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.primaryText)
+
+                                            Text("31")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
+
+                                        HStack(spacing: 8) {
+                                            Text("🇨🇷")
+                                            Text("Costa Rica")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                        }
                                     }
 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack(spacing: 8) {
-                                        Text("Maya")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
-
-                                        Text("31")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
-                                    }
-
-                                    HStack(spacing: 8) {
-                                        Text("🇨🇷")
-                                        Text("Costa Rica")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.secondaryText)
-                                    }
+                                    Spacer()
                                 }
-
-                                Spacer()
+                                .padding()
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .padding()
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                         .padding(.top, 16)
                         .padding(.horizontal, 24)

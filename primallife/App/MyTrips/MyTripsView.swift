@@ -269,21 +269,21 @@ struct MyTripsView: View {
                     
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Upcoming Trips")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
-                                
-                                Spacer()
-                                
-                                Button("See All") {
-                                    isShowingUpcomingTripsSheet = true
-                                }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                            }
-                            
                             if !viewModel.trips.isEmpty {
+                                HStack {
+                                    Text("Upcoming Trips")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+                                    
+                                    Spacer()
+                                    
+                                    Button("See All") {
+                                        isShowingUpcomingTripsSheet = true
+                                    }
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
+                                }
+                                
                                 TabView(selection: $selectedTripIndex) {
                                     ForEach(Array(displayedTrips.enumerated()), id: \.element.id) { index, trip in
                                         HStack(spacing: 0) {
@@ -320,6 +320,11 @@ struct MyTripsView: View {
                                 }
                             } else {
                                 VStack(spacing: 12) {
+                                    Image("australia")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 220, height: 220)
+                                        .padding(.bottom, 4)
                                     Text("No upcoming trips yet")
                                         .font(.travelBody)
                                         .foregroundStyle(Colors.primaryText)

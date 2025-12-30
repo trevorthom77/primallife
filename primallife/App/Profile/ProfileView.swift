@@ -154,8 +154,12 @@ struct ProfileView: View {
 
                         Button("Edit") { }
                             .font(.travelDetail)
-                            .foregroundStyle(Colors.accent)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(.vertical, 12)
                             .padding(.horizontal, 16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                     }
 
                     avatarView

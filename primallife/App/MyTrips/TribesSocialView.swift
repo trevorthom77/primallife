@@ -11,6 +11,7 @@ struct TribesSocialView: View {
     let interests: [String]
     let placeName: String?
     let createdBy: String?
+    let isCreator: Bool
     let onBack: (() -> Void)?
     let initialHeaderImage: Image?
     @State private var placeImageURL: URL?
@@ -42,6 +43,7 @@ struct TribesSocialView: View {
         interests: [String] = [],
         placeName: String? = nil,
         createdBy: String? = nil,
+        isCreator: Bool = false,
         onBack: (() -> Void)? = nil,
         initialHeaderImage: Image? = nil
     ) {
@@ -55,6 +57,7 @@ struct TribesSocialView: View {
         self.interests = interests
         self.placeName = placeName
         self.createdBy = createdBy
+        self.isCreator = isCreator
         self.onBack = onBack
         self.initialHeaderImage = initialHeaderImage
         _headerImage = State(initialValue: initialHeaderImage)
@@ -372,6 +375,10 @@ private extension TribesSocialView {
     }
 
     var resolvedCreator: String {
+        if isCreator {
+            return "You"
+        }
+
         if let creator = createdBy?.trimmingCharacters(in: .whitespacesAndNewlines), !creator.isEmpty {
             return creator
         }
@@ -380,7 +387,7 @@ private extension TribesSocialView {
             return "Camila, San José"
         }
 
-        return "You"
+        return "Creator"
     }
 
     var customPlaceImageName: String? {

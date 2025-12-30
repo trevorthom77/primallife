@@ -140,6 +140,7 @@ final class MyTripsViewModel: ObservableObject {
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
+    @Published private var tribeCreatorsByID: [String: String] = [:]
 
     func loadTrips(supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -212,11 +213,46 @@ final class MyTripsViewModel: ObservableObject {
                 .value
 
             tribesByTrip[trip.id] = fetchedTribes
+            await loadCreators(for: fetchedTribes, supabase: supabase)
         } catch {
             tribesByTrip[trip.id] = []
         }
 
         loadingTribeTripIDs.remove(trip.id)
+    }
+
+    func creatorName(for ownerID: UUID) -> String? {
+        tribeCreatorsByID[ownerID.uuidString]
+    }
+
+    private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
+        let ownerIDs = Set(tribes.map { $0.ownerID.uuidString })
+        let missingIDs = ownerIDs.filter { tribeCreatorsByID[$0] == nil }
+        guard !missingIDs.isEmpty else { return }
+
+        struct TribeCreator: Decodable {
+            let id: String
+            let fullName: String
+
+            enum CodingKeys: String, CodingKey {
+                case id
+                case fullName = "full_name"
+            }
+        }
+
+        do {
+            let creators: [TribeCreator] = try await supabase
+                .from("onboarding")
+                .select("id, full_name")
+                .in("id", values: Array(missingIDs))
+                .execute()
+                .value
+
+            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id, $0.fullName) })
+            tribeCreatorsByID.merge(lookup) { _, new in new }
+        } catch {
+            return
+        }
     }
 
     func isLoadingTribes(tripID: UUID) -> Bool {
@@ -384,7 +420,8 @@ struct MyTripsView: View {
                                                 aboutText: tribe.description,
                                                 interests: tribe.interests,
                                                 placeName: selectedTripDestination,
-                                                createdBy: nil,
+                                                createdBy: viewModel.creatorName(for: tribe.ownerID),
+                                                isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
                                                 initialHeaderImage: tribeImageCache[tribe.id]
                                             )
                                         } label: {

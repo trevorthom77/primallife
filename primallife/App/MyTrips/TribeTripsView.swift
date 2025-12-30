@@ -913,6 +913,7 @@ private struct TribeReviewView: View {
     let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
+    @EnvironmentObject private var profileStore: ProfileStore
     @State private var isCreating = false
     @State private var errorMessage: String?
     @State private var isShowingCreatedTribe = false
@@ -1093,6 +1094,7 @@ private struct TribeReviewView: View {
                         interests: createdTribe.interests,
                         placeName: createdTribe.placeName,
                         createdBy: createdTribe.creator,
+                        isCreator: true,
                         onBack: {
                         onFinish()
                     }
@@ -1121,6 +1123,11 @@ private struct TribeReviewView: View {
         } else {
             return "\(fullFormatter.string(from: checkInDate)) - \(fullFormatter.string(from: returnDate))"
         }
+    }
+
+    private var creatorName: String {
+        let trimmed = profileStore.profile?.fullName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "You" : trimmed
     }
 
     private func uploadGroupPhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> URL? {
@@ -1190,7 +1197,7 @@ private struct TribeReviewView: View {
                 interests: selectedInterests,
                 placeName: trip.destination,
                 imageURL: photoURL,
-                creator: "You"
+                creator: creatorName
             )
             isShowingCreatedTribe = true
         } catch {

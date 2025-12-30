@@ -426,9 +426,15 @@ struct MyTripsView: View {
                                                     aboutText: tribe.description,
                                                     interests: tribe.interests,
                                                     placeName: selectedTripDestination,
+                                                    tribeID: tribe.id,
                                                     createdBy: viewModel.creatorName(for: tribe.ownerID),
                                                     createdByAvatarPath: viewModel.creatorAvatarPath(for: tribe.ownerID),
                                                     isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
+                                                    onDelete: {
+                                                        Task {
+                                                            await loadTribesForSelectedTrip(force: true)
+                                                        }
+                                                    },
                                                     initialHeaderImage: tribeImageCache[tribe.id]
                                             )
                                         } label: {

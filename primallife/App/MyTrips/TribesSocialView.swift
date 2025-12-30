@@ -11,13 +11,16 @@ struct TribesSocialView: View {
     let aboutText: String?
     let interests: [String]
     let placeName: String?
+    let tribeID: UUID?
     let createdBy: String?
     let createdByAvatarPath: String?
     let isCreator: Bool
+    let onDelete: (() -> Void)?
     let onBack: (() -> Void)?
     let initialHeaderImage: Image?
     @State private var placeImageURL: URL?
     @State private var headerImage: Image?
+    @State private var isShowingDeleteConfirm = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -46,9 +49,11 @@ struct TribesSocialView: View {
         aboutText: String? = nil,
         interests: [String] = [],
         placeName: String? = nil,
+        tribeID: UUID? = nil,
         createdBy: String? = nil,
         createdByAvatarPath: String? = nil,
         isCreator: Bool = false,
+        onDelete: (() -> Void)? = nil,
         onBack: (() -> Void)? = nil,
         initialHeaderImage: Image? = nil
     ) {
@@ -61,9 +66,11 @@ struct TribesSocialView: View {
         self.aboutText = aboutText
         self.interests = interests
         self.placeName = placeName
+        self.tribeID = tribeID
         self.createdBy = createdBy
         self.createdByAvatarPath = createdByAvatarPath
         self.isCreator = isCreator
+        self.onDelete = onDelete
         self.onBack = onBack
         self.initialHeaderImage = initialHeaderImage
         _headerImage = State(initialValue: initialHeaderImage)
@@ -325,11 +332,33 @@ struct TribesSocialView: View {
 
                             Spacer()
                         }
+
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    if isCreator, tribeID != nil {
+                        Button(action: {
+                            isShowingDeleteConfirm = true
+                        }) {
+                            HStack {
+                                Text("Delete Tribe")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Color.red)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
                 }
                 .padding(24)
             }
@@ -338,12 +367,110 @@ struct TribesSocialView: View {
                 Color.clear
                     .frame(height: 96)
             }
+
+            if isShowingDeleteConfirm {
+                confirmationOverlay(
+                    title: "Delete Tribe",
+                    message: "This removes \(title) from your tribes.",
+                    confirmTitle: "Delete",
+                    confirmAction: {
+                        isShowingDeleteConfirm = false
+                        Task {
+                            let didDelete = await deleteTribe()
+                            guard didDelete else { return }
+                            if let onBack {
+                                onBack()
+                            } else {
+                                dismiss()
+                            }
+                        }
+                    },
+                    cancelAction: {
+                        isShowingDeleteConfirm = false
+                    }
+                )
+            }
         }
         .navigationBarBackButtonHidden(true)
     }
 }
 
 private extension TribesSocialView {
+    @MainActor
+    func deleteTribe() async -> Bool {
+        guard let supabase,
+              let tribeID,
+              let userID = supabase.auth.currentUser?.id else { return false }
+
+        do {
+            try await supabase
+                .from("tribes")
+                .delete()
+                .eq("id", value: tribeID.uuidString)
+                .eq("owner_id", value: userID.uuidString)
+                .execute()
+            onDelete?()
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.red)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
+    }
+
     var creatorAvatarURL: URL? {
         if isCreator {
             return profileStore.profile?.avatarURL(using: supabase)

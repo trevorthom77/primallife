@@ -887,6 +887,7 @@ private struct NewTribe: Encodable {
 }
 
 private struct CreatedTribeDisplay {
+    let id: UUID
     let title: String
     let location: String
     let flag: String
@@ -1093,6 +1094,7 @@ private struct TribeReviewView: View {
                         aboutText: createdTribe.about,
                         interests: createdTribe.interests,
                         placeName: createdTribe.placeName,
+                        tribeID: createdTribe.id,
                         createdBy: createdTribe.creator,
                         isCreator: true,
                         onBack: {
@@ -1182,12 +1184,16 @@ private struct TribeReviewView: View {
                 photoURL: photoURL?.absoluteString
             )
 
-            try await supabase
+            let createdRecord: Tribe = try await supabase
                 .from("tribes")
                 .insert(payload)
+                .select()
+                .single()
                 .execute()
+                .value
 
             createdTribe = CreatedTribeDisplay(
+                id: createdRecord.id,
                 title: resolvedName,
                 location: trip.destination,
                 flag: "",

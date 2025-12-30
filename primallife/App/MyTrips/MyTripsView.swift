@@ -350,7 +350,7 @@ struct MyTripsView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 24)
                             }
-                            
+
                             if selectedTrip != nil {
                                 HStack {
                                     Text("\(selectedTripTitle) Tribes")
@@ -481,6 +481,27 @@ struct MyTripsView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
                                 .buttonStyle(.plain)
+
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Recommendations")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Snorkeling in Montego Bay")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+
+                                        Text("Secret turtle spot just past the reef. Go early for the clearest water.")
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.secondaryText)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .cornerRadius(12)
+                                }
 
                                 HStack {
                                     Text("Travelers going")

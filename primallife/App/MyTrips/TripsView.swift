@@ -153,7 +153,7 @@ struct TripsView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!isAddTripEnabled)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 24)

@@ -483,9 +483,17 @@ struct MyTripsView: View {
                                 .buttonStyle(.plain)
 
                                 VStack(alignment: .leading, spacing: 12) {
-                                    Text("Recommendations")
-                                        .font(.travelTitle)
-                                        .foregroundStyle(Colors.primaryText)
+                                    HStack {
+                                        Text("Recommendations")
+                                            .font(.travelTitle)
+                                            .foregroundStyle(Colors.primaryText)
+
+                                        Spacer()
+
+                                        Button("See All") { }
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.accent)
+                                    }
 
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Snorkeling in Montego Bay")

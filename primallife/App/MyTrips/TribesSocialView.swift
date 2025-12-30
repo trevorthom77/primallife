@@ -93,6 +93,14 @@ struct TribesSocialView: View {
                         }
 
                         Spacer()
+
+                        Button("Edit") { }
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
 
                     RoundedRectangle(cornerRadius: 16)

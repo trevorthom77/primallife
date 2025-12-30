@@ -435,7 +435,7 @@ struct MyTripsView: View {
                                                 VStack(alignment: .leading, spacing: 12) {
                                                     HStack(spacing: 12) {
                                                         tribeImage(for: tribe)
-                                                            .frame(width: 88, height: 72)
+                                                            .frame(width: 64, height: 64)
                                                             .clipShape(RoundedRectangle(cornerRadius: 12))
                                                         
                                                         VStack(alignment: .leading, spacing: 6) {

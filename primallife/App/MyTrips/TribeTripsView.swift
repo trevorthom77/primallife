@@ -560,11 +560,8 @@ private struct TribeGenderView: View {
     @Binding var selectedGender: TribeGender
     let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var showCheckInPicker = false
     @State private var showReturnPicker = false
-    @State private var checkInDate: Date
     @State private var returnDate: Date
-    @State private var hasSelectedCheckIn: Bool
     @State private var hasSelectedReturn: Bool
     @State private var isShowingReview = false
     
@@ -592,9 +589,7 @@ private struct TribeGenderView: View {
         self.selectedInterests = selectedInterests
         self.onFinish = onFinish
         _selectedGender = selectedGender
-        _checkInDate = State(initialValue: trip.checkIn)
         _returnDate = State(initialValue: trip.returnDate)
-        _hasSelectedCheckIn = State(initialValue: true)
         _hasSelectedReturn = State(initialValue: true)
         _isShowingReview = State(initialValue: false)
     }
@@ -622,29 +617,6 @@ private struct TribeGenderView: View {
 
                 VStack(spacing: 12) {
                     Button {
-                        showCheckInPicker = true
-                    } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Tribe start date")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
-
-                            HStack {
-                                Text(hasSelectedCheckIn ? checkInText : "When does the tribe start?")
-                                    .font(.travelBody)
-                                    .foregroundStyle(hasSelectedCheckIn ? Colors.primaryText : Colors.secondaryText)
-
-                                Spacer()
-                            }
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
                         showReturnPicker = true
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
@@ -666,12 +638,6 @@ private struct TribeGenderView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
-                }
-
-                if isReturnDateInvalid {
-                    Text("Return date must be after check-in date.")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -736,36 +702,6 @@ private struct TribeGenderView: View {
             }
             .background(Colors.background)
         }
-        .sheet(isPresented: $showCheckInPicker) {
-            ZStack {
-                Colors.background
-                    .ignoresSafeArea()
-
-                VStack(spacing: 16) {
-                    HStack {
-                        Spacer()
-
-                        Button("Done") {
-                            showCheckInPicker = false
-                        }
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.accent)
-                    }
-
-                    DatePicker("", selection: $checkInDate, displayedComponents: .date)
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .tint(Colors.accent)
-                        .onChange(of: checkInDate) {
-                            hasSelectedCheckIn = true
-                        }
-                }
-                .padding(20)
-            }
-            .presentationDetents([.height(320)])
-            .presentationDragIndicator(.hidden)
-            .preferredColorScheme(.light)
-        }
         .sheet(isPresented: $showReturnPicker) {
             ZStack {
                 Colors.background
@@ -806,7 +742,6 @@ private struct TribeGenderView: View {
                 privacy: privacy,
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
-                checkInDate: checkInDate,
                 returnDate: returnDate,
                 onFinish: onFinish
             )
@@ -821,20 +756,12 @@ private struct TribeGenderView: View {
         option == selectedGender ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
     }
 
-    private var checkInText: String {
-        checkInDate.formatted(date: .abbreviated, time: .omitted)
-    }
-
     private var returnDateText: String {
         returnDate.formatted(date: .abbreviated, time: .omitted)
     }
 
-    private var isReturnDateInvalid: Bool {
-        hasSelectedCheckIn && hasSelectedReturn && returnDate < checkInDate
-    }
-
     private var isContinueEnabled: Bool {
-        hasSelectedCheckIn && hasSelectedReturn && !isReturnDateInvalid
+        hasSelectedReturn
     }
 }
 
@@ -843,7 +770,6 @@ private struct NewTribe: Encodable {
     let destination: String
     let name: String
     let description: String?
-    let startDate: Date
     let endDate: Date
     let gender: String
     let privacy: String
@@ -855,7 +781,6 @@ private struct NewTribe: Encodable {
         case destination
         case name
         case description
-        case startDate = "start_date"
         case endDate = "end_date"
         case gender
         case privacy
@@ -869,7 +794,6 @@ private struct NewTribe: Encodable {
         try container.encode(destination, forKey: .destination)
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
-        try container.encode(Self.dateFormatter.string(from: startDate), forKey: .startDate)
         try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)
         try container.encode(gender, forKey: .gender)
         try container.encode(privacy, forKey: .privacy)
@@ -891,7 +815,6 @@ private struct CreatedTribeDisplay {
     let title: String
     let location: String
     let flag: String
-    let startDate: Date
     let endDate: Date
     let gender: String
     let about: String?
@@ -910,7 +833,6 @@ private struct TribeReviewView: View {
     let privacy: TribePrivacy
     let selectedInterests: [String]
     let selectedGender: TribeGender
-    let checkInDate: Date
     let returnDate: Date
     let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -1090,7 +1012,6 @@ private struct TribeReviewView: View {
                         title: createdTribe.title,
                         location: createdTribe.location,
                         flag: createdTribe.flag,
-                        startDate: createdTribe.startDate,
                         endDate: createdTribe.endDate,
                         gender: createdTribe.gender,
                         aboutText: createdTribe.about,
@@ -1108,25 +1029,7 @@ private struct TribeReviewView: View {
     }
 
     private var dateRangeText: String {
-        let calendar = Calendar(identifier: .gregorian)
-        let startYear = calendar.component(.year, from: checkInDate)
-        let endYear = calendar.component(.year, from: returnDate)
-
-        let shortFormatter = DateFormatter()
-        shortFormatter.calendar = calendar
-        shortFormatter.locale = Locale(identifier: "en_US_POSIX")
-        shortFormatter.dateFormat = "MMM d"
-
-        let fullFormatter = DateFormatter()
-        fullFormatter.calendar = calendar
-        fullFormatter.locale = Locale(identifier: "en_US_POSIX")
-        fullFormatter.dateFormat = "MMM d, yyyy"
-
-        if startYear == endYear {
-            return "\(shortFormatter.string(from: checkInDate)) - \(fullFormatter.string(from: returnDate))"
-        } else {
-            return "\(fullFormatter.string(from: checkInDate)) - \(fullFormatter.string(from: returnDate))"
-        }
+        returnDate.formatted(date: .abbreviated, time: .omitted)
     }
 
     private var creatorName: String {
@@ -1178,7 +1081,6 @@ private struct TribeReviewView: View {
                 destination: trip.destination,
                 name: resolvedName,
                 description: trimmedAbout.isEmpty ? nil : trimmedAbout,
-                startDate: checkInDate,
                 endDate: returnDate,
                 gender: selectedGender.rawValue,
                 privacy: privacy.rawValue,
@@ -1199,7 +1101,6 @@ private struct TribeReviewView: View {
                 title: resolvedName,
                 location: trip.destination,
                 flag: "",
-                startDate: checkInDate,
                 endDate: returnDate,
                 gender: selectedGender.rawValue,
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,

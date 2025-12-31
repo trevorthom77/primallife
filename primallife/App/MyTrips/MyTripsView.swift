@@ -79,7 +79,6 @@ struct Tribe: Decodable, Identifiable {
     let ownerID: UUID
     let name: String
     let description: String?
-    let startDate: Date
     let endDate: Date
     let gender: String
     let privacy: String
@@ -91,7 +90,6 @@ struct Tribe: Decodable, Identifiable {
         case ownerID = "owner_id"
         case name
         case description
-        case startDate = "start_date"
         case endDate = "end_date"
         case gender
         case privacy
@@ -105,14 +103,6 @@ struct Tribe: Decodable, Identifiable {
         ownerID = try container.decode(UUID.self, forKey: .ownerID)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
-
-        let startDateString = try container.decode(String.self, forKey: .startDate)
-        guard let decodedStartDate = myTripsDateFormatter.date(from: startDateString) else {
-            throw DecodingError.dataCorrupted(
-                .init(codingPath: [CodingKeys.startDate], debugDescription: "Invalid start date format")
-            )
-        }
-        startDate = decodedStartDate
 
         let endDateString = try container.decode(String.self, forKey: .endDate)
         guard let decodedEndDate = myTripsDateFormatter.date(from: endDateString) else {
@@ -421,7 +411,6 @@ struct MyTripsView: View {
                                                     title: tribe.name,
                                                     location: selectedTripDestination,
                                                     flag: "",
-                                                    startDate: tribe.startDate,
                                                     endDate: tribe.endDate,
                                                     gender: tribe.gender,
                                                     aboutText: tribe.description,

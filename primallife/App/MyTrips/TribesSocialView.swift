@@ -8,7 +8,7 @@ struct TribesSocialView: View {
     let flag: String
     let date: String
     let gender: String?
-    let aboutText: String?
+    @State private var aboutText: String?
     let interests: [String]
     let placeName: String?
     let tribeID: UUID?
@@ -63,7 +63,7 @@ struct TribesSocialView: View {
         self.flag = flag
         self.date = date
         self.gender = gender
-        self.aboutText = aboutText
+        _aboutText = State(initialValue: aboutText)
         self.interests = interests
         self.placeName = placeName
         self.tribeID = tribeID
@@ -98,13 +98,15 @@ struct TribesSocialView: View {
                             EditTribeView(
                                 tribeID: tribeID,
                                 currentName: title,
-                                currentImageURL: imageURL
-                            ) { updatedName, updatedImageURL in
+                                currentImageURL: imageURL,
+                                currentAbout: aboutText
+                            ) { updatedName, updatedImageURL, updatedAbout in
                                 title = updatedName
                                 if let updatedImageURL {
                                     imageURL = updatedImageURL
                                     headerImage = nil
                                 }
+                                aboutText = updatedAbout
                             }
                         } label: {
                             Text("Edit")

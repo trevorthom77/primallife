@@ -7,20 +7,30 @@ struct EditTribeView: View {
     @Environment(\.supabaseClient) private var supabase
     let tribeID: UUID?
     private let originalName: String
+    private let originalAbout: String
     private let currentImageURL: URL?
-    private let onUpdate: ((String, URL?) -> Void)?
+    private let onUpdate: ((String, URL?, String?) -> Void)?
     @State private var tribeName: String
+    @State private var aboutText: String
     @State private var isUpdating = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newPhoto: UIImage?
     @State private var newPhotoData: Data?
 
-    init(tribeID: UUID?, currentName: String, currentImageURL: URL?, onUpdate: ((String, URL?) -> Void)? = nil) {
+    init(
+        tribeID: UUID?,
+        currentName: String,
+        currentImageURL: URL?,
+        currentAbout: String?,
+        onUpdate: ((String, URL?, String?) -> Void)? = nil
+    ) {
         self.tribeID = tribeID
         originalName = currentName.trimmingCharacters(in: .whitespacesAndNewlines)
+        originalAbout = currentAbout?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         self.currentImageURL = currentImageURL
         self.onUpdate = onUpdate
         _tribeName = State(initialValue: currentName)
+        _aboutText = State(initialValue: currentAbout ?? "")
     }
 
     var body: some View {
@@ -107,6 +117,21 @@ struct EditTribeView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                         .submitLabel(.done)
                 }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("What?")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    TextEditor(text: $aboutText)
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.primaryText)
+                        .padding(12)
+                        .frame(height: 140)
+                        .scrollContentBackground(.hidden)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -125,8 +150,16 @@ struct EditTribeView: View {
         tribeName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var trimmedAbout: String {
+        aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var hasNameChange: Bool {
         !trimmedName.isEmpty && trimmedName != originalName
+    }
+
+    private var hasAboutChange: Bool {
+        trimmedAbout != originalAbout
     }
 
     private var hasNewPhoto: Bool {
@@ -134,7 +167,7 @@ struct EditTribeView: View {
     }
 
     private var isUpdateEnabled: Bool {
-        !trimmedName.isEmpty && (hasNameChange || hasNewPhoto)
+        !trimmedName.isEmpty && (hasNameChange || hasNewPhoto || hasAboutChange)
     }
 
     private func loadSelectedPhoto(from item: PhotosPickerItem?) {
@@ -181,10 +214,12 @@ struct EditTribeView: View {
 
         struct TribeUpdate: Encodable {
             let name: String?
+            let description: String?
             let photoURL: String?
 
             enum CodingKeys: String, CodingKey {
                 case name
+                case description
                 case photoURL = "photo_url"
             }
 
@@ -192,6 +227,9 @@ struct EditTribeView: View {
                 var container = encoder.container(keyedBy: CodingKeys.self)
                 if let name {
                     try container.encode(name, forKey: .name)
+                }
+                if let description {
+                    try container.encode(description, forKey: .description)
                 }
                 if let photoURL {
                     try container.encode(photoURL, forKey: .photoURL)
@@ -204,13 +242,14 @@ struct EditTribeView: View {
 
         do {
             let uploadedURL = try await uploadTribePhotoIfNeeded(supabase: supabase, userID: userID)
-            guard hasNameChange || uploadedURL != nil else { return }
+            guard hasNameChange || hasAboutChange || uploadedURL != nil else { return }
 
             try await supabase
                 .from("tribes")
                 .update(
                     TribeUpdate(
                         name: hasNameChange ? updatedName : nil,
+                        description: hasAboutChange ? trimmedAbout : nil,
                         photoURL: uploadedURL?.absoluteString
                     )
                 )
@@ -219,7 +258,8 @@ struct EditTribeView: View {
                 .execute()
 
             let resolvedName = hasNameChange ? updatedName : originalName
-            onUpdate?(resolvedName, uploadedURL)
+            let resolvedAbout = hasAboutChange ? trimmedAbout : originalAbout
+            onUpdate?(resolvedName, uploadedURL, resolvedAbout)
             dismiss()
         } catch {
             return

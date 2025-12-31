@@ -119,7 +119,7 @@ struct UpcomingTripsFullView: View {
                                                         .foregroundStyle(Colors.primaryText)
 
                                                     Text(trip.destination)
-                                                        .font(.badgeDetail)
+                                                        .font(.tripsfont)
                                                         .foregroundStyle(Colors.secondaryText)
                                                 }
 

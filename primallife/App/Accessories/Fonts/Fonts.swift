@@ -33,6 +33,10 @@ extension Font {
         .custom(Fonts.semibold, size: 18)
     }
 
+    static var tripsfont: Font {
+        .custom(Fonts.semibold, size: 16)
+    }
+
     static var badgeDetail: Font {
         .custom(Fonts.semibold, size: 12)
     }

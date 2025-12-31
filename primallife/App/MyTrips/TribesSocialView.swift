@@ -278,34 +278,6 @@ struct TribesSocialView: View {
                         .padding()
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                    } else if title == "Party Tonight Costa Rica" {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Interests")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
-
-                            HStack(spacing: 10) {
-                                Text("🦈 Sharks")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                    .background(Colors.accent)
-                                    .clipShape(Capsule())
-
-                                Text("🐟 Jeremy Wade")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.tertiaryText)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                    .background(Colors.accent)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -328,6 +300,10 @@ struct TribesSocialView: View {
                         )
                             .task {
                                 if customPlaceImageName != nil {
+                                    placeImageURL = nil
+                                    return
+                                }
+                                guard !resolvedPlaceName.isEmpty else {
                                     placeImageURL = nil
                                     return
                                 }
@@ -548,17 +524,11 @@ private extension TribesSocialView {
     }
 
     var resolvedAbout: String {
-        let trimmed = aboutText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-
-        return "Late-night bonfires, sunrise surf, and group dinners along the Nicoya coast. Plans stay loose so everyone can drop in when they land."
+        aboutText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     var resolvedGender: String {
-        let trimmed = gender?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "Everyone" : trimmed
+        gender?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     var genderAccentColor: Color {
@@ -572,13 +542,7 @@ private extension TribesSocialView {
     }
 
     var resolvedPlaceName: String {
-        let trimmedPlace = placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmedPlace.isEmpty {
-            return trimmedPlace
-        }
-
-        let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedLocation.isEmpty ? "Santa Teresa" : trimmedLocation
+        placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     var resolvedCreator: String {
@@ -586,22 +550,12 @@ private extension TribesSocialView {
             return "You"
         }
 
-        if let creator = createdBy?.trimmingCharacters(in: .whitespacesAndNewlines), !creator.isEmpty {
-            return creator
-        }
-
-        if title == "Party Tonight Costa Rica" {
-            return "Camila, San José"
-        }
-
-        return "Creator"
+        return createdBy?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     var customPlaceImageName: String? {
         let candidates = [
-            resolvedPlaceName,
-            location,
-            placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            resolvedPlaceName
         ]
 
         for name in customPlaceImageNames {

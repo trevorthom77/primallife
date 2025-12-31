@@ -32,6 +32,10 @@ extension Font {
     static var travelDetail: Font {
         .custom(Fonts.semibold, size: 18)
     }
+
+    static var badgeDetail: Font {
+        .custom(Fonts.semibold, size: 12)
+    }
     
     static var goBackFont: Font {
         .custom(Fonts.semibold, size: 18)

@@ -110,7 +110,7 @@ struct UpcomingTripsFullView: View {
                                         } label: {
                                             HStack(spacing: 12) {
                                                 tribeImage(for: tribe)
-                                                    .frame(width: 64, height: 64)
+                                                    .frame(width: 84, height: 84)
                                                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                                                 VStack(alignment: .leading, spacing: 6) {
@@ -125,8 +125,53 @@ struct UpcomingTripsFullView: View {
 
                                                 Spacer()
 
+                                                HStack(spacing: -8) {
+                                                    Image("profile1")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+
+                                                    Image("profile2")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+
+                                                    Image("profile3")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 32, height: 32)
+                                                        .clipShape(Circle())
+                                                        .overlay {
+                                                            Circle()
+                                                                .stroke(Colors.card, lineWidth: 3)
+                                                        }
+
+                                                    ZStack {
+                                                        Circle()
+                                                            .fill(Colors.background)
+                                                            .frame(width: 32, height: 32)
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+
+                                                        Text("67+")
+                                                            .font(.badgeDetail)
+                                                            .foregroundStyle(Colors.primaryText)
+                                                    }
+                                                }
                                             }
-                                            .padding(12)
+                                            .padding(14)
                                             .background(Colors.card)
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }

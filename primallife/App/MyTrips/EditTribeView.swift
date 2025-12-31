@@ -53,6 +53,8 @@ struct EditTribeView: View {
                     BackButton {
                         dismiss()
                     }
+                    .disabled(isUpdating)
+                    .opacity(isUpdating ? 0.6 : 1)
 
                     Spacer()
 

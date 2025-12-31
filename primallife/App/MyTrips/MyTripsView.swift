@@ -266,6 +266,7 @@ struct MyTripsView: View {
     @State private var isShowingTribeTrips = false
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
+    @State private var tribeImageURLCache: [UUID: URL] = [:]
     
     var body: some View {
         NavigationStack {
@@ -425,7 +426,7 @@ struct MyTripsView: View {
                                                             await loadTribesForSelectedTrip(force: true)
                                                         }
                                                     },
-                                                    initialHeaderImage: tribeImageCache[tribe.id]
+                                                    initialHeaderImage: cachedTribeImage(for: tribe)
                                             )
                                         } label: {
                                                 VStack(alignment: .leading, spacing: 12) {
@@ -731,6 +732,11 @@ struct MyTripsView: View {
                 }
             }
         }
+        .onAppear {
+            Task {
+                await loadTribesForSelectedTrip(force: true)
+            }
+        }
     }
     
     private func prefetchTripImages() async {
@@ -791,7 +797,7 @@ struct MyTripsView: View {
 
     @ViewBuilder
     private func tribeImage(for tribe: Tribe) -> some View {
-        if let cachedImage = tribeImageCache[tribe.id] {
+        if let cachedImage = cachedTribeImage(for: tribe) {
             cachedImage
                 .resizable()
                 .scaledToFill()
@@ -804,6 +810,7 @@ struct MyTripsView: View {
                         .scaledToFill()
                         .onAppear {
                             tribeImageCache[tribe.id] = image
+                            tribeImageURLCache[tribe.id] = url
                         }
                 case .empty:
                     Colors.card
@@ -814,6 +821,14 @@ struct MyTripsView: View {
         } else {
             Colors.card
         }
+    }
+
+    private func cachedTribeImage(for tribe: Tribe) -> Image? {
+        guard let cachedImage = tribeImageCache[tribe.id],
+              tribeImageURLCache[tribe.id] == tribe.photoURL else {
+            return nil
+        }
+        return cachedImage
     }
     
     private func tripDateRange(for trip: Trip) -> String {

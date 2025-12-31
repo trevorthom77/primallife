@@ -4,6 +4,12 @@ struct UpcomingTripsFullView: View {
     @Environment(\.dismiss) private var dismiss
     let trip: Trip
     let prefetchedDetails: UnsplashImageDetails?
+    @State private var selectedTab: UpcomingTripsTab = .travelers
+
+    private enum UpcomingTripsTab: String, CaseIterable {
+        case travelers = "Travelers"
+        case tribes = "Tribes"
+    }
 
     var body: some View {
         ZStack {
@@ -27,6 +33,33 @@ struct UpcomingTripsFullView: View {
                         imageQuery: tripImageQuery(for: trip),
                         prefetchedDetails: prefetchedDetails
                     )
+
+                    Spacer()
+                }
+
+                HStack {
+                    HStack(spacing: 8) {
+                        ForEach(UpcomingTripsTab.allCases, id: \.self) { tab in
+                            Button {
+                                selectedTab = tab
+                            } label: {
+                                Text(tab.rawValue)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(selectedTab == tab ? Colors.tertiaryText : Colors.primaryText)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 14)
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        selectedTab == tab
+                                        ? Colors.accent
+                                        : Colors.secondaryText.opacity(0.18)
+                                    )
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(maxWidth: 280)
 
                     Spacer()
                 }

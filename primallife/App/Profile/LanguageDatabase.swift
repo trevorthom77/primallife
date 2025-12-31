@@ -31,7 +31,7 @@ enum LanguageDatabase {
         Language(name: "Czech", flag: "🇨🇿", isoCode: "cs"),
         Language(name: "Danish", flag: "🇩🇰", isoCode: "da"),
         Language(name: "Dutch", flag: "🇳🇱", isoCode: "nl"),
-        Language(name: "English", flag: "🇬🇧", isoCode: "en"),
+        Language(name: "English", flag: "🇺🇸", isoCode: "en"),
         Language(name: "Estonian", flag: "🇪🇪", isoCode: "et"),
         Language(name: "Finnish", flag: "🇫🇮", isoCode: "fi"),
         Language(name: "French", flag: "🇫🇷", isoCode: "fr"),

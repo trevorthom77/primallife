@@ -121,22 +121,36 @@ struct EditTribeView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    TextField("Enter tribe name", text: $tribeName)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-                        .padding(16)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .focused($focusedField, equals: .name)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            focusedField = nil
-                        }
-                        .onChange(of: tribeName) { _, newValue in
-                            if newValue.count > nameLimit {
-                                tribeName = String(newValue.prefix(nameLimit))
+                    VStack(spacing: 8) {
+                        TextField("Enter tribe name", text: $tribeName)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .focused($focusedField, equals: .name)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
                             }
+                            .onChange(of: tribeName) { _, newValue in
+                                if newValue.count > nameLimit {
+                                    tribeName = String(newValue.prefix(nameLimit))
+                                }
+                            }
+
+                        HStack {
+                            Text("Up to \(nameLimit) characters")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+
+                            Spacer()
+
+                            Text("\(tribeName.count)/\(nameLimit)")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
                         }
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {

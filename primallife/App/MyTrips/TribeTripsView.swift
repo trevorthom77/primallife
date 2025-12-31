@@ -718,7 +718,12 @@ private struct TribeGenderView: View {
                         .foregroundStyle(Colors.accent)
                     }
 
-                    DatePicker("", selection: $returnDate, displayedComponents: .date)
+                    DatePicker(
+                        "",
+                        selection: $returnDate,
+                        in: Calendar.current.startOfDay(for: Date())...,
+                        displayedComponents: .date
+                    )
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)

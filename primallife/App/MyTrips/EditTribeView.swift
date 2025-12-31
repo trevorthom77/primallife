@@ -194,7 +194,12 @@ struct EditTribeView: View {
                         .foregroundStyle(Colors.accent)
                     }
 
-                    DatePicker("", selection: $endDate, displayedComponents: .date)
+                    DatePicker(
+                        "",
+                        selection: $endDate,
+                        in: Calendar.current.startOfDay(for: Date())...,
+                        displayedComponents: .date
+                    )
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .tint(Colors.accent)

@@ -20,6 +20,7 @@ struct EditTribeView: View {
     @State private var newPhotoData: Data?
     @State private var isShowingEndDatePicker = false
     @FocusState private var focusedField: FocusField?
+    private let nameLimit = 60
 
     private enum FocusField {
         case name
@@ -130,6 +131,11 @@ struct EditTribeView: View {
                         .submitLabel(.done)
                         .onSubmit {
                             focusedField = nil
+                        }
+                        .onChange(of: tribeName) { _, newValue in
+                            if newValue.count > nameLimit {
+                                tribeName = String(newValue.prefix(nameLimit))
+                            }
                         }
                 }
 

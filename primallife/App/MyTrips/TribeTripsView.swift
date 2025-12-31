@@ -109,7 +109,7 @@ private struct CreateTribeFormView: View {
     @State private var selectedInterests: Set<String> = []
     @State private var selectedGender: TribeGender = .everyone
     @Environment(\.dismiss) private var dismiss
-    private let nameLimit = 30
+    private let nameLimit = 60
     private let unsplashURL = URL(string: "https://unsplash.com")!
 
     init(trip: Trip, onFinish: @escaping () -> Void) {

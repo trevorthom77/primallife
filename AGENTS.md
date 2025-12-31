@@ -8,7 +8,7 @@ USE THE FONTS FROM MY FONT FILE DONT CREATE UR OWN SIZE USE THE SIZES FROM THE F
 
 WHEN I TELL U TO DO SOMETHING DONT DO MORE DONT DO LESS JUST DO WHAT I SAY 
 
-Use SwiftUI only, never UIKit.
+Use SwiftUI first, but if UIKit is the best option use that. SO SwiftUI first but if UIKit is the best option use that
 
 Use the existing colors and fonts files in my project. Don’t create your own versions or new styles. MAKE SURE TO LOOK AT COLORS AND FONTS IF NEEDED
 

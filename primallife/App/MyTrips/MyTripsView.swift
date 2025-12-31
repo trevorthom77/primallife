@@ -320,14 +320,22 @@ struct MyTripsView: View {
                                 TabView(selection: $selectedTripIndex) {
                                     ForEach(Array(displayedTrips.enumerated()), id: \.element.id) { index, trip in
                                         HStack(spacing: 0) {
-                                            TravelCard(
-                                                flag: "",
-                                                location: trip.destination,
-                                                dates: tripDateRange(for: trip),
-                                                imageQuery: tripImageQuery(for: trip),
-                                                showsAttribution: true,
-                                                prefetchedDetails: tripImageDetails[trip.id]
-                                            )
+                                            NavigationLink {
+                                                UpcomingTripsFullView(
+                                                    trip: trip,
+                                                    prefetchedDetails: tripImageDetails[trip.id]
+                                                )
+                                            } label: {
+                                                TravelCard(
+                                                    flag: "",
+                                                    location: trip.destination,
+                                                    dates: tripDateRange(for: trip),
+                                                    imageQuery: tripImageQuery(for: trip),
+                                                    showsAttribution: true,
+                                                    prefetchedDetails: tripImageDetails[trip.id]
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
 
                                             Spacer()
                                         }

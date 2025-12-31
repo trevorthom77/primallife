@@ -56,21 +56,30 @@ struct EditTribeView: View {
 
                     Spacer()
 
-                    Button("Update") {
+                    Button {
                         guard isUpdateEnabled else { return }
                         Task {
                             await updateTribeName()
                         }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Update")
+
+                            if isUpdating {
+                                ProgressView()
+                                    .tint(Colors.accent)
+                            }
+                        }
                     }
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.accent)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .buttonStyle(.plain)
-                        .disabled(!isUpdateEnabled || isUpdating)
-                        .opacity(isUpdateEnabled && !isUpdating ? 1 : 0.6)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .buttonStyle(.plain)
+                    .disabled(!isUpdateEnabled || isUpdating)
+                    .opacity(isUpdateEnabled && !isUpdating ? 1 : 0.6)
                 }
 
                 Text("Edit Tribe")

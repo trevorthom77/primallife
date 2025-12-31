@@ -891,7 +891,8 @@ private struct CreatedTribeDisplay {
     let title: String
     let location: String
     let flag: String
-    let dateRange: String
+    let startDate: Date
+    let endDate: Date
     let gender: String
     let about: String?
     let interests: [String]
@@ -1089,7 +1090,8 @@ private struct TribeReviewView: View {
                         title: createdTribe.title,
                         location: createdTribe.location,
                         flag: createdTribe.flag,
-                        date: createdTribe.dateRange,
+                        startDate: createdTribe.startDate,
+                        endDate: createdTribe.endDate,
                         gender: createdTribe.gender,
                         aboutText: createdTribe.about,
                         interests: createdTribe.interests,
@@ -1197,7 +1199,8 @@ private struct TribeReviewView: View {
                 title: resolvedName,
                 location: trip.destination,
                 flag: "",
-                dateRange: dateRangeText,
+                startDate: checkInDate,
+                endDate: returnDate,
                 gender: selectedGender.rawValue,
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 interests: selectedInterests,

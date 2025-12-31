@@ -6,7 +6,8 @@ struct TribesSocialView: View {
     @State private var title: String
     let location: String
     let flag: String
-    let date: String
+    let startDate: Date
+    @State private var endDate: Date
     let gender: String?
     @State private var aboutText: String?
     let interests: [String]
@@ -44,7 +45,8 @@ struct TribesSocialView: View {
         title: String,
         location: String,
         flag: String,
-        date: String,
+        startDate: Date,
+        endDate: Date,
         gender: String? = nil,
         aboutText: String? = nil,
         interests: [String] = [],
@@ -61,7 +63,8 @@ struct TribesSocialView: View {
         _title = State(initialValue: title)
         self.location = location
         self.flag = flag
-        self.date = date
+        self.startDate = startDate
+        _endDate = State(initialValue: endDate)
         self.gender = gender
         _aboutText = State(initialValue: aboutText)
         self.interests = interests
@@ -99,14 +102,16 @@ struct TribesSocialView: View {
                                 tribeID: tribeID,
                                 currentName: title,
                                 currentImageURL: imageURL,
-                                currentAbout: aboutText
-                            ) { updatedName, updatedImageURL, updatedAbout in
+                                currentAbout: aboutText,
+                                currentEndDate: endDate
+                            ) { updatedName, updatedImageURL, updatedAbout, updatedEndDate in
                                 title = updatedName
                                 if let updatedImageURL {
                                     imageURL = updatedImageURL
                                     headerImage = nil
                                 }
                                 aboutText = updatedAbout
+                                endDate = updatedEndDate
                             }
                         } label: {
                             Text("Edit")
@@ -193,7 +198,7 @@ struct TribesSocialView: View {
                                 .foregroundStyle(Colors.secondaryText)
                         }
 
-                        Text(date)
+                        Text(dateRangeText)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.secondaryText)
                     }
@@ -421,6 +426,12 @@ struct TribesSocialView: View {
 }
 
 private extension TribesSocialView {
+    var dateRangeText: String {
+        let start = startDate.formatted(.dateTime.month(.abbreviated).day())
+        let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
+        return "\(start)–\(end)"
+    }
+
     @MainActor
     func deleteTribe() async -> Bool {
         guard let supabase,

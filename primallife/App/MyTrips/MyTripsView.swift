@@ -421,7 +421,8 @@ struct MyTripsView: View {
                                                     title: tribe.name,
                                                     location: selectedTripDestination,
                                                     flag: "",
-                                                    date: tribeDateRange(for: tribe),
+                                                    startDate: tribe.startDate,
+                                                    endDate: tribe.endDate,
                                                     gender: tribe.gender,
                                                     aboutText: tribe.description,
                                                     interests: tribe.interests,
@@ -839,12 +840,6 @@ struct MyTripsView: View {
         return cleaned.isEmpty ? trip.destination : cleaned
     }
 
-    private func tribeDateRange(for tribe: Tribe) -> String {
-        let start = tribe.startDate.formatted(.dateTime.month(.abbreviated).day())
-        let end = tribe.endDate.formatted(.dateTime.month(.abbreviated).day().year())
-        return "\(start)–\(end)"
-    }
-    
     private var selectedTripDestination: String {
         selectedTrip?.destination ?? "Costa Rica"
     }

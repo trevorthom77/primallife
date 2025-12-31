@@ -8,29 +8,35 @@ struct EditTribeView: View {
     let tribeID: UUID?
     private let originalName: String
     private let originalAbout: String
+    private let originalEndDate: Date
     private let currentImageURL: URL?
-    private let onUpdate: ((String, URL?, String?) -> Void)?
+    private let onUpdate: ((String, URL?, String?, Date) -> Void)?
     @State private var tribeName: String
     @State private var aboutText: String
+    @State private var endDate: Date
     @State private var isUpdating = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newPhoto: UIImage?
     @State private var newPhotoData: Data?
+    @State private var isShowingEndDatePicker = false
 
     init(
         tribeID: UUID?,
         currentName: String,
         currentImageURL: URL?,
         currentAbout: String?,
-        onUpdate: ((String, URL?, String?) -> Void)? = nil
+        currentEndDate: Date,
+        onUpdate: ((String, URL?, String?, Date) -> Void)? = nil
     ) {
         self.tribeID = tribeID
         originalName = currentName.trimmingCharacters(in: .whitespacesAndNewlines)
         originalAbout = currentAbout?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        originalEndDate = currentEndDate
         self.currentImageURL = currentImageURL
         self.onUpdate = onUpdate
         _tribeName = State(initialValue: currentName)
         _aboutText = State(initialValue: currentAbout ?? "")
+        _endDate = State(initialValue: currentEndDate)
     }
 
     var body: some View {
@@ -132,6 +138,29 @@ struct EditTribeView: View {
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Ending date")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Button {
+                        isShowingEndDatePicker = true
+                    } label: {
+                        HStack {
+                            Text(endDateText)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Spacer()
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -143,6 +172,33 @@ struct EditTribeView: View {
         .navigationBarBackButtonHidden(true)
         .onChange(of: selectedPhotoItem) { _, newValue in
             loadSelectedPhoto(from: newValue)
+        }
+        .sheet(isPresented: $isShowingEndDatePicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            isShowingEndDatePicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    DatePicker("", selection: $endDate, displayedComponents: .date)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .tint(Colors.accent)
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
         }
     }
 
@@ -162,12 +218,20 @@ struct EditTribeView: View {
         trimmedAbout != originalAbout
     }
 
+    private var hasEndDateChange: Bool {
+        !Calendar.current.isDate(originalEndDate, inSameDayAs: endDate)
+    }
+
     private var hasNewPhoto: Bool {
         newPhotoData != nil
     }
 
     private var isUpdateEnabled: Bool {
-        !trimmedName.isEmpty && (hasNameChange || hasNewPhoto || hasAboutChange)
+        !trimmedName.isEmpty && (hasNameChange || hasNewPhoto || hasAboutChange || hasEndDateChange)
+    }
+
+    private var endDateText: String {
+        endDate.formatted(date: .abbreviated, time: .omitted)
     }
 
     private func loadSelectedPhoto(from item: PhotosPickerItem?) {
@@ -215,11 +279,13 @@ struct EditTribeView: View {
         struct TribeUpdate: Encodable {
             let name: String?
             let description: String?
+            let endDate: String?
             let photoURL: String?
 
             enum CodingKeys: String, CodingKey {
                 case name
                 case description
+                case endDate = "end_date"
                 case photoURL = "photo_url"
             }
 
@@ -230,6 +296,9 @@ struct EditTribeView: View {
                 }
                 if let description {
                     try container.encode(description, forKey: .description)
+                }
+                if let endDate {
+                    try container.encode(endDate, forKey: .endDate)
                 }
                 if let photoURL {
                     try container.encode(photoURL, forKey: .photoURL)
@@ -242,7 +311,8 @@ struct EditTribeView: View {
 
         do {
             let uploadedURL = try await uploadTribePhotoIfNeeded(supabase: supabase, userID: userID)
-            guard hasNameChange || hasAboutChange || uploadedURL != nil else { return }
+            guard hasNameChange || hasAboutChange || hasEndDateChange || uploadedURL != nil else { return }
+            let formattedEndDate = Self.dateFormatter.string(from: endDate)
 
             try await supabase
                 .from("tribes")
@@ -250,6 +320,7 @@ struct EditTribeView: View {
                     TribeUpdate(
                         name: hasNameChange ? updatedName : nil,
                         description: hasAboutChange ? trimmedAbout : nil,
+                        endDate: hasEndDateChange ? formattedEndDate : nil,
                         photoURL: uploadedURL?.absoluteString
                     )
                 )
@@ -259,10 +330,19 @@ struct EditTribeView: View {
 
             let resolvedName = hasNameChange ? updatedName : originalName
             let resolvedAbout = hasAboutChange ? trimmedAbout : originalAbout
-            onUpdate?(resolvedName, uploadedURL, resolvedAbout)
+            let resolvedEndDate = hasEndDateChange ? endDate : originalEndDate
+            onUpdate?(resolvedName, uploadedURL, resolvedAbout, resolvedEndDate)
             dismiss()
         } catch {
             return
         }
     }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }

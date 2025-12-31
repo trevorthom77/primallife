@@ -3,7 +3,7 @@ import Supabase
 
 struct TribesSocialView: View {
     let imageURL: URL?
-    let title: String
+    @State private var title: String
     let location: String
     let flag: String
     let date: String
@@ -58,7 +58,7 @@ struct TribesSocialView: View {
         initialHeaderImage: Image? = nil
     ) {
         self.imageURL = imageURL
-        self.title = title
+        _title = State(initialValue: title)
         self.location = location
         self.flag = flag
         self.date = date
@@ -95,7 +95,9 @@ struct TribesSocialView: View {
                         Spacer()
 
                         NavigationLink {
-                            EditTribeView()
+                            EditTribeView(tribeID: tribeID, currentName: title) { updatedName in
+                                title = updatedName
+                            }
                         } label: {
                             Text("Edit")
                                 .font(.travelDetail)

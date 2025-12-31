@@ -1,6 +1,6 @@
 import SwiftUI
-import PhotosUI
 import Supabase
+import UIKit
 
 struct EditTribeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -15,7 +15,7 @@ struct EditTribeView: View {
     @State private var aboutText: String
     @State private var endDate: Date
     @State private var isUpdating = false
-    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isShowingPhotoPicker = false
     @State private var newPhoto: UIImage?
     @State private var newPhotoData: Data?
     @State private var isShowingEndDatePicker = false
@@ -93,7 +93,9 @@ struct EditTribeView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Button {
+                        isShowingPhotoPicker = true
+                    } label: {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Colors.card)
                             .frame(height: 220)
@@ -125,6 +127,13 @@ struct EditTribeView: View {
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
+                    .sheet(isPresented: $isShowingPhotoPicker) {
+                        CroppingImagePicker { image, data in
+                            newPhoto = image
+                            newPhotoData = data
+                        }
+                        .ignoresSafeArea()
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -222,9 +231,6 @@ struct EditTribeView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
-        .onChange(of: selectedPhotoItem) { _, newValue in
-            loadSelectedPhoto(from: newValue)
-        }
         .sheet(isPresented: $isShowingEndDatePicker) {
             ZStack {
                 Colors.background
@@ -291,20 +297,6 @@ struct EditTribeView: View {
 
     private var endDateText: String {
         endDate.formatted(date: .abbreviated, time: .omitted)
-    }
-
-    private func loadSelectedPhoto(from item: PhotosPickerItem?) {
-        guard let item else { return }
-
-        Task {
-            guard let data = try? await item.loadTransferable(type: Data.self),
-                  let image = UIImage(data: data) else { return }
-
-            await MainActor.run {
-                newPhoto = image
-                newPhotoData = data
-            }
-        }
     }
 
     private func uploadTribePhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> URL? {
@@ -404,4 +396,50 @@ struct EditTribeView: View {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+}
+
+private struct CroppingImagePicker: UIViewControllerRepresentable {
+    let onImagePicked: (UIImage, Data) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: CroppingImagePicker
+
+        init(parent: CroppingImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            guard let selectedImage,
+                  let data = selectedImage.jpegData(compressionQuality: 0.9) else {
+                parent.dismiss()
+                return
+            }
+
+            parent.onImagePicked(selectedImage, data)
+            parent.dismiss()
+        }
+    }
 }

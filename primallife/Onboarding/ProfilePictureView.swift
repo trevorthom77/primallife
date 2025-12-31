@@ -1,13 +1,13 @@
 import SwiftUI
-import PhotosUI
 import Supabase
+import UIKit
 
 struct ProfilePictureView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     @State private var profileImage: UIImage?
-    @State private var selectedItem: PhotosPickerItem?
+    @State private var isShowingPhotoPicker = false
     @State private var showLocationPermission = false
     @State private var avatarURL: URL?
     @State private var isUploading = false
@@ -37,7 +37,9 @@ struct ProfilePictureView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
                 
-                PhotosPicker(selection: $selectedItem, matching: .images) {
+                Button {
+                    isShowingPhotoPicker = true
+                } label: {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(Colors.card)
                         .frame(height: 320)
@@ -65,6 +67,17 @@ struct ProfilePictureView: View {
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .contentShape(RoundedRectangle(cornerRadius: 20))
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $isShowingPhotoPicker) {
+                    CroppingImagePicker { image, data in
+                        profileImage = image
+                        onboardingViewModel.profileImageData = data
+                        Task {
+                            await uploadAvatar(data)
+                        }
+                    }
+                    .ignoresSafeArea()
                 }
                 
                 Spacer()
@@ -107,9 +120,6 @@ struct ProfilePictureView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
-        .onChange(of: selectedItem) { _, newValue in
-            loadImage(from: newValue)
-        }
         .onAppear {
             if profileImage == nil,
                let data = onboardingViewModel.profileImageData {
@@ -124,22 +134,6 @@ struct ProfilePictureView: View {
             LocationPermissionView()
         }
         .navigationBarBackButtonHidden(true)
-    }
-    
-    private func loadImage(from item: PhotosPickerItem?) {
-        guard let item else { return }
-        
-        Task {
-            guard let data = try? await item.loadTransferable(type: Data.self),
-                  let uiImage = UIImage(data: data) else { return }
-            
-            await MainActor.run {
-                profileImage = uiImage
-                onboardingViewModel.profileImageData = data
-            }
-            
-            await uploadAvatar(data)
-        }
     }
     
     private func uploadAvatar(_ data: Data) async {
@@ -197,6 +191,52 @@ struct ProfilePictureView: View {
                 .foregroundColor(Colors.secondaryText)
         }
         .padding(.horizontal, 20)
+    }
+}
+
+private struct CroppingImagePicker: UIViewControllerRepresentable {
+    let onImagePicked: (UIImage, Data) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: CroppingImagePicker
+
+        init(parent: CroppingImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            guard let selectedImage,
+                  let data = selectedImage.jpegData(compressionQuality: 0.9) else {
+                parent.dismiss()
+                return
+            }
+
+            parent.onImagePicked(selectedImage, data)
+            parent.dismiss()
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 import SwiftUI
-import PhotosUI
 import Supabase
+import UIKit
 
 struct TribeTripsView: View {
     let trip: Trip
@@ -103,7 +103,7 @@ private struct CreateTribeFormView: View {
     @FocusState private var isGroupNameFocused: Bool
     @State private var groupPhoto: UIImage?
     @State private var groupPhotoData: Data?
-    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isShowingPhotoPicker = false
     @State private var isShowingDetails = false
     @State private var aboutText: String = ""
     @State private var selectedInterests: Set<String> = []
@@ -168,7 +168,9 @@ private struct CreateTribeFormView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Button {
+                        isShowingPhotoPicker = true
+                    } label: {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Colors.card)
                             .frame(height: 220)
@@ -195,6 +197,11 @@ private struct CreateTribeFormView: View {
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                    .sheet(isPresented: $isShowingPhotoPicker) {
+                        CroppingImagePicker(image: $groupPhoto, imageData: $groupPhotoData)
+                            .ignoresSafeArea()
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -286,9 +293,6 @@ private struct CreateTribeFormView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
-        .onChange(of: selectedPhotoItem) { _, newValue in
-            loadGroupPhoto(from: newValue)
-        }
         .navigationDestination(isPresented: $isShowingDetails) {
             TribeDetailsView(
                 trip: trip,
@@ -315,18 +319,51 @@ private struct CreateTribeFormView: View {
     private var isContinueEnabled: Bool {
         !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && groupPhoto != nil
     }
+}
 
-    private func loadGroupPhoto(from item: PhotosPickerItem?) {
-        guard let item else { return }
+private struct CroppingImagePicker: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Binding var imageData: Data?
+    @Environment(\.dismiss) private var dismiss
 
-        Task {
-            guard let data = try? await item.loadTransferable(type: Data.self),
-                  let image = UIImage(data: data) else { return }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
 
-            await MainActor.run {
-                groupPhoto = image
-                groupPhotoData = data
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: CroppingImagePicker
+
+        init(parent: CroppingImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            guard let selectedImage else {
+                parent.dismiss()
+                return
             }
+
+            parent.image = selectedImage
+            parent.imageData = selectedImage.jpegData(compressionQuality: 0.9)
+            parent.dismiss()
         }
     }
 }

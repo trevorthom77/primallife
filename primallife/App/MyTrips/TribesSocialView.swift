@@ -94,32 +94,34 @@ struct TribesSocialView: View {
 
                         Spacer()
 
-                        NavigationLink {
-                            EditTribeView(
-                                tribeID: tribeID,
-                                currentName: title,
-                                currentImageURL: imageURL,
-                                currentAbout: aboutText,
-                                currentEndDate: endDate
-                            ) { updatedName, updatedImageURL, updatedAbout, updatedEndDate in
-                                title = updatedName
-                                if let updatedImageURL {
-                                    imageURL = updatedImageURL
-                                    headerImage = nil
+                        if isCreator {
+                            NavigationLink {
+                                EditTribeView(
+                                    tribeID: tribeID,
+                                    currentName: title,
+                                    currentImageURL: imageURL,
+                                    currentAbout: aboutText,
+                                    currentEndDate: endDate
+                                ) { updatedName, updatedImageURL, updatedAbout, updatedEndDate in
+                                    title = updatedName
+                                    if let updatedImageURL {
+                                        imageURL = updatedImageURL
+                                        headerImage = nil
+                                    }
+                                    aboutText = updatedAbout
+                                    endDate = updatedEndDate
                                 }
-                                aboutText = updatedAbout
-                                endDate = updatedEndDate
+                            } label: {
+                                Text("Edit")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                        } label: {
-                            Text("Edit")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
 
                     RoundedRectangle(cornerRadius: 16)

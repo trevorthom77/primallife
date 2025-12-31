@@ -19,6 +19,12 @@ struct EditTribeView: View {
     @State private var newPhoto: UIImage?
     @State private var newPhotoData: Data?
     @State private var isShowingEndDatePicker = false
+    @FocusState private var focusedField: FocusField?
+
+    private enum FocusField {
+        case name
+        case about
+    }
 
     init(
         tribeID: UUID?,
@@ -120,7 +126,11 @@ struct EditTribeView: View {
                         .padding(16)
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .focused($focusedField, equals: .name)
                         .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -136,6 +146,7 @@ struct EditTribeView: View {
                         .scrollContentBackground(.hidden)
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .focused($focusedField, equals: .about)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -169,6 +180,11 @@ struct EditTribeView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = nil
         }
         .background(
             Colors.background

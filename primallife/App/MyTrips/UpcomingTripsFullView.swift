@@ -110,7 +110,7 @@ struct UpcomingTripsFullView: View {
                                         } label: {
                                             HStack(spacing: 12) {
                                                 tribeImage(for: tribe)
-                                                    .frame(width: 84, height: 84)
+                                                    .frame(width: 96, height: 96)
                                                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                                                 VStack(alignment: .leading, spacing: 6) {
@@ -119,7 +119,7 @@ struct UpcomingTripsFullView: View {
                                                         .foregroundStyle(Colors.primaryText)
 
                                                     Text(trip.destination)
-                                                        .font(.travelDetail)
+                                                        .font(.badgeDetail)
                                                         .foregroundStyle(Colors.secondaryText)
                                                 }
 
@@ -129,7 +129,7 @@ struct UpcomingTripsFullView: View {
                                                     Image("profile1")
                                                         .resizable()
                                                         .scaledToFill()
-                                                        .frame(width: 32, height: 32)
+                                                        .frame(width: 36, height: 36)
                                                         .clipShape(Circle())
                                                         .overlay {
                                                             Circle()
@@ -139,7 +139,7 @@ struct UpcomingTripsFullView: View {
                                                     Image("profile2")
                                                         .resizable()
                                                         .scaledToFill()
-                                                        .frame(width: 32, height: 32)
+                                                        .frame(width: 36, height: 36)
                                                         .clipShape(Circle())
                                                         .overlay {
                                                             Circle()
@@ -149,7 +149,7 @@ struct UpcomingTripsFullView: View {
                                                     Image("profile3")
                                                         .resizable()
                                                         .scaledToFill()
-                                                        .frame(width: 32, height: 32)
+                                                        .frame(width: 36, height: 36)
                                                         .clipShape(Circle())
                                                         .overlay {
                                                             Circle()
@@ -159,7 +159,7 @@ struct UpcomingTripsFullView: View {
                                                     ZStack {
                                                         Circle()
                                                             .fill(Colors.background)
-                                                            .frame(width: 32, height: 32)
+                                                            .frame(width: 36, height: 36)
                                                             .overlay {
                                                                 Circle()
                                                                     .stroke(Colors.card, lineWidth: 3)
@@ -171,7 +171,7 @@ struct UpcomingTripsFullView: View {
                                                     }
                                                 }
                                             }
-                                            .padding(14)
+                                            .padding(18)
                                             .background(Colors.card)
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }

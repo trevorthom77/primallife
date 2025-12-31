@@ -1010,14 +1010,6 @@ private struct TribeReviewView: View {
         .navigationBarBackButtonHidden(true)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 12) {
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 8)
-                }
-
                 Button {
                     guard !isCreating else { return }
                     isCreating = true
@@ -1043,9 +1035,18 @@ private struct TribeReviewView: View {
                     .background(Colors.accent)
                     .cornerRadius(16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 48)
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
             }
+            
+            .padding(.horizontal, 20)
+            .padding(.bottom, 48)
             .background(Colors.background)
         }
         .navigationDestination(isPresented: $isShowingCreatedTribe) {

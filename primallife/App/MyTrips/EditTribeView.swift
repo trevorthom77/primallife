@@ -253,7 +253,9 @@ struct EditTribeView: View {
     }
 
     private var isUpdateEnabled: Bool {
-        !trimmedName.isEmpty && (hasNameChange || hasNewPhoto || hasAboutChange || hasEndDateChange)
+        !trimmedName.isEmpty
+            && (hasNameChange || hasNewPhoto || hasAboutChange || hasEndDateChange)
+            && (!hasAboutChange || !trimmedAbout.isEmpty)
     }
 
     private var endDateText: String {

@@ -2,7 +2,7 @@ import SwiftUI
 import Supabase
 
 struct TribesSocialView: View {
-    let imageURL: URL?
+    @State private var imageURL: URL?
     @State private var title: String
     let location: String
     let flag: String
@@ -57,7 +57,7 @@ struct TribesSocialView: View {
         onBack: (() -> Void)? = nil,
         initialHeaderImage: Image? = nil
     ) {
-        self.imageURL = imageURL
+        _imageURL = State(initialValue: imageURL)
         _title = State(initialValue: title)
         self.location = location
         self.flag = flag
@@ -95,8 +95,16 @@ struct TribesSocialView: View {
                         Spacer()
 
                         NavigationLink {
-                            EditTribeView(tribeID: tribeID, currentName: title) { updatedName in
+                            EditTribeView(
+                                tribeID: tribeID,
+                                currentName: title,
+                                currentImageURL: imageURL
+                            ) { updatedName, updatedImageURL in
                                 title = updatedName
+                                if let updatedImageURL {
+                                    imageURL = updatedImageURL
+                                    headerImage = nil
+                                }
                             }
                         } label: {
                             Text("Edit")

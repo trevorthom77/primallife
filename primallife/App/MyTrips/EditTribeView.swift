@@ -78,7 +78,7 @@ struct EditTribeView: View {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Colors.card)
-                            .frame(height: 200)
+                            .frame(height: 220)
                             .frame(maxWidth: .infinity)
                             .overlay {
                                 if let newPhoto {
@@ -117,8 +117,7 @@ struct EditTribeView: View {
                     TextField("Enter tribe name", text: $tribeName)
                         .font(.travelDetail)
                         .foregroundStyle(Colors.primaryText)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 14)
+                        .padding(16)
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                         .submitLabel(.done)
@@ -147,12 +146,18 @@ struct EditTribeView: View {
                     Button {
                         isShowingEndDatePicker = true
                     } label: {
-                        HStack {
-                            Text(endDateText)
-                                .font(.travelBody)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tribe end date")
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
 
-                            Spacer()
+                            HStack {
+                                Text(endDateText)
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Spacer()
+                            }
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)

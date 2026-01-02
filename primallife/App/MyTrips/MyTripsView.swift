@@ -346,7 +346,9 @@ struct MyTripsView: View {
                                             NavigationLink {
                                                 UpcomingTripsFullView(
                                                     trip: trip,
-                                                    prefetchedDetails: tripImageDetails[trip.id]
+                                                    prefetchedDetails: tripImageDetails[trip.id],
+                                                    tribeImageCache: $tribeImageCache,
+                                                    tribeImageURLCache: $tribeImageURLCache
                                                 )
                                             } label: {
                                                 TravelCard(

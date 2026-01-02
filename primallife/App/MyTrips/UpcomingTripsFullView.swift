@@ -6,10 +6,10 @@ struct UpcomingTripsFullView: View {
     @Environment(\.supabaseClient) private var supabase
     let trip: Trip
     let prefetchedDetails: UnsplashImageDetails?
+    @Binding var tribeImageCache: [UUID: Image]
+    @Binding var tribeImageURLCache: [UUID: URL]
     @State private var selectedTab: UpcomingTripsTab = .travelers
     @StateObject private var viewModel = MyTripsViewModel()
-    @State private var tribeImageCache: [UUID: Image] = [:]
-    @State private var tribeImageURLCache: [UUID: URL] = [:]
 
     private enum UpcomingTripsTab: String, CaseIterable {
         case travelers = "Travelers"

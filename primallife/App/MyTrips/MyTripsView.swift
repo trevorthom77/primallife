@@ -687,7 +687,9 @@ struct MyTripsView: View {
                                 .padding(.top, 16)
 
                                 if let travelers = travelersForSelectedTrip {
-                                    ForEach(travelers.prefix(3), id: \.self) { travelerID in
+                                    let currentUserID = supabase.auth.currentUser?.id
+                                    let visibleTravelers = travelers.filter { $0 != currentUserID }
+                                    ForEach(visibleTravelers.prefix(3), id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {
                                             HStack(spacing: 12) {
                                                 travelerAvatar(for: travelerID)

@@ -164,7 +164,9 @@ final class MyTripsViewModel: ObservableObject {
     @Published var trips: [Trip] = []
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
+    @Published var travelersByTrip: [UUID: [UUID]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
+    @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
 
     func loadTrips(supabase: SupabaseClient?) async {
@@ -246,6 +248,37 @@ final class MyTripsViewModel: ObservableObject {
         loadingTribeTripIDs.remove(trip.id)
     }
 
+    func loadTravelers(for trip: Trip, supabase: SupabaseClient?) async {
+        guard let supabase, !loadingTravelerTripIDs.contains(trip.id) else { return }
+
+        loadingTravelerTripIDs.insert(trip.id)
+
+        struct TripTraveler: Decodable {
+            let userID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case userID = "user_id"
+            }
+        }
+
+        do {
+            let fetchedTravelers: [TripTraveler] = try await supabase
+                .from("mytrips")
+                .select("user_id")
+                .eq("destination", value: trip.destination)
+                .execute()
+                .value
+
+            let uniqueUserIDs = Array(Set(fetchedTravelers.map { $0.userID }))
+            travelersByTrip[trip.id] = uniqueUserIDs
+            await loadCreators(for: uniqueUserIDs, supabase: supabase)
+        } catch {
+            travelersByTrip[trip.id] = []
+        }
+
+        loadingTravelerTripIDs.remove(trip.id)
+    }
+
     func creatorName(for ownerID: UUID) -> String? {
         tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
     }
@@ -255,8 +288,12 @@ final class MyTripsViewModel: ObservableObject {
     }
 
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
-        let ownerIDs = Set(tribes.map { $0.ownerID.uuidString.lowercased() })
-        let missingIDs = ownerIDs.filter { tribeCreatorsByID[$0] == nil }
+        await loadCreators(for: tribes.map { $0.ownerID }, supabase: supabase)
+    }
+
+    private func loadCreators(for userIDs: [UUID], supabase: SupabaseClient) async {
+        let normalizedIDs = Set(userIDs.map { $0.uuidString.lowercased() })
+        let missingIDs = normalizedIDs.filter { tribeCreatorsByID[$0] == nil }
         guard !missingIDs.isEmpty else { return }
 
         do {
@@ -276,6 +313,10 @@ final class MyTripsViewModel: ObservableObject {
 
     func isLoadingTribes(tripID: UUID) -> Bool {
         loadingTribeTripIDs.contains(tripID)
+    }
+
+    func isLoadingTravelers(tripID: UUID) -> Bool {
+        loadingTravelerTripIDs.contains(tripID)
     }
 }
 
@@ -598,114 +639,27 @@ struct MyTripsView: View {
                                         .foregroundStyle(Colors.accent)
                                 }
                                 .padding(.top, 16)
-                                
-                                HStack(spacing: 12) {
-                                    Image("profile7")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 48, height: 48)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-                                    
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(spacing: 8) {
-                                            Text("Ava")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.primaryText)
-                                            
-                                            Text("27")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
-                                        
-                                        HStack(spacing: 8) {
-                                            Text("🇲🇽")
-                                            Text("Mexico")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
+
+                                if let travelers = travelersForSelectedTrip {
+                                    ForEach(travelers, id: \.self) { travelerID in
+                                        if let name = viewModel.creatorName(for: travelerID) {
+                                            HStack {
+                                                Text(name)
+                                                    .font(.travelDetail)
+                                                    .foregroundStyle(Colors.primaryText)
+
+                                                Spacer()
+                                            }
+                                            .padding()
+                                            .background(Colors.card)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }
                                     }
-                                    
-                                    Spacer()
+                                } else if isLoadingTravelersForSelectedTrip {
+                                    ProgressView()
+                                        .tint(Colors.accent)
+                                        .padding(.vertical, 4)
                                 }
-                                .padding()
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                                HStack(spacing: 12) {
-                                    Image("profile8")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 48, height: 48)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(spacing: 8) {
-                                            Text("Leo")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.primaryText)
-
-                                            Text("25")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
-
-                                        HStack(spacing: 8) {
-                                            Text("🇧🇷")
-                                            Text("Brazil")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
-                                    }
-
-                                    Spacer()
-                                }
-                                .padding()
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                                HStack(spacing: 12) {
-                                    Image("profile9")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 48, height: 48)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(spacing: 8) {
-                                            Text("Maya")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.primaryText)
-
-                                            Text("31")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
-
-                                        HStack(spacing: 8) {
-                                            Text("🇨🇷")
-                                            Text("Costa Rica")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                        }
-                                    }
-
-                                    Spacer()
-                                }
-                                .padding()
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
                         }
                         .padding(.vertical, 16)
@@ -750,14 +704,17 @@ struct MyTripsView: View {
             await viewModel.loadTrips(supabase: supabase)
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
+            await loadTravelersForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             clampSelectedTripIndex()
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
+            await loadTravelersForSelectedTrip(force: true)
         }
         .task(id: selectedTripIndex) {
             await loadTribesForSelectedTrip()
+            await loadTravelersForSelectedTrip()
         }
         .onChange(of: isShowingTribeTrips) { _, newValue in
             if !newValue {
@@ -769,6 +726,7 @@ struct MyTripsView: View {
         .onAppear {
             Task {
                 await loadTribesForSelectedTrip(force: true)
+                await loadTravelersForSelectedTrip(force: true)
             }
         }
     }
@@ -803,6 +761,14 @@ struct MyTripsView: View {
         await viewModel.loadTribes(for: trip, supabase: supabase)
     }
 
+    @MainActor
+    private func loadTravelersForSelectedTrip(force: Bool = false) async {
+        guard let trip = selectedTrip else { return }
+        if viewModel.isLoadingTravelers(tripID: trip.id) { return }
+        if !force, viewModel.travelersByTrip[trip.id] != nil { return }
+        await viewModel.loadTravelers(for: trip, supabase: supabase)
+    }
+
     private func clampSelectedTripIndex() {
         let maxIndex = max(0, min(viewModel.trips.count, 3) - 1)
         if selectedTripIndex > maxIndex {
@@ -824,9 +790,19 @@ struct MyTripsView: View {
         return viewModel.tribesByTrip[trip.id]
     }
 
+    private var travelersForSelectedTrip: [UUID]? {
+        guard let trip = selectedTrip else { return nil }
+        return viewModel.travelersByTrip[trip.id]
+    }
+
     private var isLoadingTribesForSelectedTrip: Bool {
         guard let trip = selectedTrip else { return false }
         return viewModel.isLoadingTribes(tripID: trip.id)
+    }
+
+    private var isLoadingTravelersForSelectedTrip: Bool {
+        guard let trip = selectedTrip else { return false }
+        return viewModel.isLoadingTravelers(tripID: trip.id)
     }
 
     @ViewBuilder

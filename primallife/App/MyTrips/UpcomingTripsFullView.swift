@@ -92,6 +92,7 @@ struct UpcomingTripsFullView: View {
                                                 location: trip.destination,
                                                 flag: "",
                                                 endDate: tribe.endDate,
+                                                createdAt: tribe.createdAt,
                                                 gender: tribe.gender,
                                                 aboutText: tribe.description,
                                                 interests: tribe.interests,
@@ -121,6 +122,14 @@ struct UpcomingTripsFullView: View {
                                                     Text(trip.destination)
                                                         .font(.tripsfont)
                                                         .foregroundStyle(Colors.secondaryText)
+
+                                                    HStack(spacing: 6) {
+                                                        Image(systemName: "calendar")
+                                                            .font(.travelDetail)
+                                                        Text(tribeDateRangeText(tribe))
+                                                            .font(.travelDetail)
+                                                    }
+                                                    .foregroundStyle(Colors.secondaryText)
                                                 }
 
                                                 Spacer()
@@ -209,6 +218,12 @@ struct UpcomingTripsFullView: View {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func tribeDateRangeText(_ tribe: Tribe) -> String {
+        let start = tribe.createdAt.formatted(.dateTime.month(.abbreviated).day())
+        let end = tribe.endDate.formatted(.dateTime.month(.abbreviated).day().year())
+        return "\(start) - \(end)"
     }
 
     private func tripImageQuery(for trip: Trip) -> String {

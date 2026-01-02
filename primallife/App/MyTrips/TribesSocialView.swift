@@ -7,6 +7,7 @@ struct TribesSocialView: View {
     let location: String
     let flag: String
     @State private var endDate: Date
+    let createdAt: Date
     let gender: String?
     @State private var aboutText: String?
     let interests: [String]
@@ -45,6 +46,7 @@ struct TribesSocialView: View {
         location: String,
         flag: String,
         endDate: Date,
+        createdAt: Date,
         gender: String? = nil,
         aboutText: String? = nil,
         interests: [String] = [],
@@ -62,6 +64,7 @@ struct TribesSocialView: View {
         self.location = location
         self.flag = flag
         _endDate = State(initialValue: endDate)
+        self.createdAt = createdAt
         self.gender = gender
         _aboutText = State(initialValue: aboutText)
         self.interests = interests
@@ -197,9 +200,13 @@ struct TribesSocialView: View {
                                 .foregroundStyle(Colors.secondaryText)
                         }
 
-                        Text(endDateText)
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.secondaryText)
+                        HStack(spacing: 6) {
+                            Image(systemName: "calendar")
+                                .font(.travelDetail)
+                            Text(dateRangeText)
+                                .font(.travelDetail)
+                        }
+                        .foregroundStyle(Colors.secondaryText)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -401,8 +408,10 @@ struct TribesSocialView: View {
 }
 
 private extension TribesSocialView {
-    var endDateText: String {
-        endDate.formatted(.dateTime.month(.abbreviated).day().year())
+    var dateRangeText: String {
+        let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
+        let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
+        return "\(start) - \(end)"
     }
 
     @MainActor

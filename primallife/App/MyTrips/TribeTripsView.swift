@@ -859,6 +859,7 @@ private struct CreatedTribeDisplay {
     let location: String
     let flag: String
     let endDate: Date
+    let createdAt: Date
     let gender: String
     let about: String?
     let interests: [String]
@@ -1057,6 +1058,7 @@ private struct TribeReviewView: View {
                         location: createdTribe.location,
                         flag: createdTribe.flag,
                         endDate: createdTribe.endDate,
+                        createdAt: createdTribe.createdAt,
                         gender: createdTribe.gender,
                         aboutText: createdTribe.about,
                         interests: createdTribe.interests,
@@ -1146,6 +1148,7 @@ private struct TribeReviewView: View {
                 location: trip.destination,
                 flag: "",
                 endDate: returnDate,
+                createdAt: createdRecord.createdAt,
                 gender: selectedGender.rawValue,
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 interests: selectedInterests,

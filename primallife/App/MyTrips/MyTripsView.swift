@@ -10,6 +10,18 @@ private let myTripsDateFormatter: DateFormatter = {
     return formatter
 }()
 
+private let myTripsTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let myTripsTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 struct Trip: Decodable, Identifiable {
     let id: UUID
     let userID: UUID
@@ -80,6 +92,7 @@ struct Tribe: Decodable, Identifiable {
     let name: String
     let description: String?
     let endDate: Date
+    let createdAt: Date
     let gender: String
     let privacy: String
     let interests: [String]
@@ -91,6 +104,7 @@ struct Tribe: Decodable, Identifiable {
         case name
         case description
         case endDate = "end_date"
+        case createdAt = "created_at"
         case gender
         case privacy
         case interests
@@ -111,6 +125,15 @@ struct Tribe: Decodable, Identifiable {
             )
         }
         endDate = decodedEndDate
+
+        let createdAtString = try container.decode(String.self, forKey: .createdAt)
+        guard let decodedCreatedAt = myTripsTimestampFormatterWithFractional.date(from: createdAtString)
+            ?? myTripsTimestampFormatter.date(from: createdAtString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
+            )
+        }
+        createdAt = decodedCreatedAt
 
         gender = try container.decode(String.self, forKey: .gender)
         privacy = try container.decode(String.self, forKey: .privacy)
@@ -421,6 +444,7 @@ struct MyTripsView: View {
                                                     location: selectedTripDestination,
                                                     flag: "",
                                                     endDate: tribe.endDate,
+                                                    createdAt: tribe.createdAt,
                                                     gender: tribe.gender,
                                                     aboutText: tribe.description,
                                                     interests: tribe.interests,

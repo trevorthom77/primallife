@@ -154,12 +154,14 @@ final class MyTripsViewModel: ObservableObject {
         let fullName: String
         let avatarPath: String?
         let origin: String?
+        let birthday: String?
 
         enum CodingKeys: String, CodingKey {
             case id
             case fullName = "full_name"
             case avatarPath = "avatar_url"
             case origin
+            case birthday
         }
     }
 
@@ -305,6 +307,20 @@ final class MyTripsViewModel: ObservableObject {
         return CountryDatabase.all.first(where: { $0.id == origin })?.name
     }
 
+    func creatorAge(for userID: UUID) -> Int? {
+        guard let birthdayString = tribeCreatorsByID[userID.uuidString.lowercased()]?.birthday,
+              !birthdayString.isEmpty else {
+            return nil
+        }
+
+        let birthDate = myTripsTimestampFormatterWithFractional.date(from: birthdayString)
+            ?? myTripsTimestampFormatter.date(from: birthdayString)
+            ?? myTripsDateFormatter.date(from: birthdayString)
+        guard let birthDate else { return nil }
+
+        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+    }
+
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
         await loadCreators(for: tribes.map { $0.ownerID }, supabase: supabase)
     }
@@ -317,7 +333,7 @@ final class MyTripsViewModel: ObservableObject {
         do {
             let creators: [TribeCreator] = try await supabase
                 .from("onboarding")
-                .select("id, full_name, avatar_url, origin")
+                .select("id, full_name, avatar_url, origin, birthday")
                 .in("id", values: Array(missingIDs))
                 .execute()
                 .value
@@ -663,9 +679,17 @@ struct MyTripsView: View {
                                         if let name = viewModel.creatorName(for: travelerID) {
                                             HStack {
                                                 VStack(alignment: .leading, spacing: 6) {
-                                                    Text(name)
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.primaryText)
+                                                    HStack(spacing: 8) {
+                                                        Text(name)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.primaryText)
+
+                                                        if let age = viewModel.creatorAge(for: travelerID) {
+                                                            Text("\(age)")
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.secondaryText)
+                                                        }
+                                                    }
 
                                                     let originFlag = viewModel.creatorOriginFlag(for: travelerID)
                                                     let originName = viewModel.creatorOriginName(for: travelerID)

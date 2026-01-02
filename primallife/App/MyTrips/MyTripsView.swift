@@ -291,6 +291,18 @@ final class MyTripsViewModel: ObservableObject {
         tribeCreatorsByID[ownerID.uuidString.lowercased()]?.avatarPath
     }
 
+    func creatorAvatarURL(for ownerID: UUID, supabase: SupabaseClient?) -> URL? {
+        guard let supabase, let avatarPath = creatorAvatarPath(for: ownerID) else { return nil }
+
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: avatarPath)
+        } catch {
+            return nil
+        }
+    }
+
     func creatorOriginFlag(for userID: UUID) -> String? {
         guard let origin = tribeCreatorsByID[userID.uuidString.lowercased()]?.origin,
               !origin.isEmpty else {
@@ -675,9 +687,11 @@ struct MyTripsView: View {
                                 .padding(.top, 16)
 
                                 if let travelers = travelersForSelectedTrip {
-                                    ForEach(travelers, id: \.self) { travelerID in
+                                    ForEach(travelers.prefix(3), id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {
-                                            HStack {
+                                            HStack(spacing: 12) {
+                                                travelerAvatar(for: travelerID)
+
                                                 VStack(alignment: .leading, spacing: 6) {
                                                     HStack(spacing: 8) {
                                                         Text(name)
@@ -865,6 +879,33 @@ struct MyTripsView: View {
     private var isLoadingTravelersForSelectedTrip: Bool {
         guard let trip = selectedTrip else { return false }
         return viewModel.isLoadingTravelers(tripID: trip.id)
+    }
+
+    @ViewBuilder
+    private func travelerAvatar(for travelerID: UUID) -> some View {
+        let avatarURL = viewModel.creatorAvatarURL(for: travelerID, supabase: supabase)
+
+        Group {
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.3)
+                    }
+                }
+            } else {
+                Colors.secondaryText.opacity(0.3)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: 3)
+        }
     }
 
     @ViewBuilder

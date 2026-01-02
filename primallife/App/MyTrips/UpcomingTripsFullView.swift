@@ -204,6 +204,10 @@ struct UpcomingTripsFullView: View {
                         .padding(.top, 8)
                     }
                     .scrollIndicators(.hidden)
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear
+                            .frame(height: 96)
+                    }
                 } else {
                     Spacer()
                 }

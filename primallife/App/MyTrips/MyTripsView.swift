@@ -153,11 +153,13 @@ final class MyTripsViewModel: ObservableObject {
         let id: String
         let fullName: String
         let avatarPath: String?
+        let origin: String?
 
         enum CodingKeys: String, CodingKey {
             case id
             case fullName = "full_name"
             case avatarPath = "avatar_url"
+            case origin
         }
     }
 
@@ -287,6 +289,22 @@ final class MyTripsViewModel: ObservableObject {
         tribeCreatorsByID[ownerID.uuidString.lowercased()]?.avatarPath
     }
 
+    func creatorOriginFlag(for userID: UUID) -> String? {
+        guard let origin = tribeCreatorsByID[userID.uuidString.lowercased()]?.origin,
+              !origin.isEmpty else {
+            return nil
+        }
+        return CountryDatabase.all.first(where: { $0.id == origin })?.flag
+    }
+
+    func creatorOriginName(for userID: UUID) -> String? {
+        guard let origin = tribeCreatorsByID[userID.uuidString.lowercased()]?.origin,
+              !origin.isEmpty else {
+            return nil
+        }
+        return CountryDatabase.all.first(where: { $0.id == origin })?.name
+    }
+
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
         await loadCreators(for: tribes.map { $0.ownerID }, supabase: supabase)
     }
@@ -299,7 +317,7 @@ final class MyTripsViewModel: ObservableObject {
         do {
             let creators: [TribeCreator] = try await supabase
                 .from("onboarding")
-                .select("id, full_name, avatar_url")
+                .select("id, full_name, avatar_url, origin")
                 .in("id", values: Array(missingIDs))
                 .execute()
                 .value
@@ -644,9 +662,29 @@ struct MyTripsView: View {
                                     ForEach(travelers, id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {
                                             HStack {
-                                                Text(name)
-                                                    .font(.travelDetail)
-                                                    .foregroundStyle(Colors.primaryText)
+                                                VStack(alignment: .leading, spacing: 6) {
+                                                    Text(name)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.primaryText)
+
+                                                    let originFlag = viewModel.creatorOriginFlag(for: travelerID)
+                                                    let originName = viewModel.creatorOriginName(for: travelerID)
+                                                    if originFlag != nil || originName != nil {
+                                                        HStack(spacing: 8) {
+                                                            if let flag = originFlag {
+                                                                Text(flag)
+                                                                    .font(.travelDetail)
+                                                                    .foregroundStyle(Colors.primaryText)
+                                                            }
+
+                                                            if let countryName = originName {
+                                                                Text(countryName)
+                                                                    .font(.travelDetail)
+                                                                    .foregroundStyle(Colors.secondaryText)
+                                                            }
+                                                        }
+                                                    }
+                                                }
 
                                                 Spacer()
                                             }

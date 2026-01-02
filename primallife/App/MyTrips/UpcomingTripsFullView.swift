@@ -109,79 +109,87 @@ struct UpcomingTripsFullView: View {
                                                 initialHeaderImage: cachedTribeImage(for: tribe)
                                             )
                                         } label: {
-                                            HStack(spacing: 12) {
+                                            VStack(alignment: .leading, spacing: 0) {
                                                 tribeImage(for: tribe)
-                                                    .frame(width: 96, height: 96)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                                                VStack(alignment: .leading, spacing: 6) {
-                                                    Text(tribe.name)
-                                                        .font(.travelDetail)
+                                                    .frame(height: 160)
+                                                    .frame(maxWidth: .infinity)
+                                                    .clipped()
+                                                    .overlay(alignment: .bottomLeading) {
+                                                        HStack(spacing: 6) {
+                                                            Image(systemName: "calendar")
+                                                            Text(tribeDateRangeText(tribe))
+                                                        }
+                                                        .font(.badgeDetail)
                                                         .foregroundStyle(Colors.primaryText)
-
-                                                    Text(trip.destination)
-                                                        .font(.tripsfont)
-                                                        .foregroundStyle(Colors.secondaryText)
-
-                                                    HStack(spacing: 6) {
-                                                        Image(systemName: "calendar")
-                                                            .font(.travelDetail)
-                                                        Text(tribeDateRangeText(tribe))
-                                                            .font(.travelDetail)
+                                                        .padding(.horizontal, 10)
+                                                        .padding(.vertical, 6)
+                                                        .background(Colors.card.opacity(0.9))
+                                                        .clipShape(Capsule())
+                                                        .padding(12)
                                                     }
-                                                    .foregroundStyle(Colors.secondaryText)
-                                                }
 
-                                                Spacer()
+                                                HStack(alignment: .center, spacing: 12) {
+                                                    VStack(alignment: .leading, spacing: 6) {
+                                                        Text(trip.destination)
+                                                            .font(.tripsfont)
+                                                            .foregroundStyle(Colors.secondaryText)
 
-                                                HStack(spacing: -8) {
-                                                    Image("profile1")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 36, height: 36)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
+                                                        Text(tribe.name)
+                                                            .font(.travelTitle)
+                                                            .foregroundStyle(Colors.primaryText)
+                                                    }
 
-                                                    Image("profile2")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 36, height: 36)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
+                                                    Spacer()
 
-                                                    Image("profile3")
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 36, height: 36)
-                                                        .clipShape(Circle())
-                                                        .overlay {
-                                                            Circle()
-                                                                .stroke(Colors.card, lineWidth: 3)
-                                                        }
-
-                                                    ZStack {
-                                                        Circle()
-                                                            .fill(Colors.background)
+                                                    HStack(spacing: -8) {
+                                                        Image("profile1")
+                                                            .resizable()
+                                                            .scaledToFill()
                                                             .frame(width: 36, height: 36)
+                                                            .clipShape(Circle())
                                                             .overlay {
                                                                 Circle()
                                                                     .stroke(Colors.card, lineWidth: 3)
                                                             }
 
-                                                        Text("67+")
-                                                            .font(.badgeDetail)
-                                                            .foregroundStyle(Colors.primaryText)
+                                                        Image("profile2")
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                            .frame(width: 36, height: 36)
+                                                            .clipShape(Circle())
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+
+                                                        Image("profile3")
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                            .frame(width: 36, height: 36)
+                                                            .clipShape(Circle())
+                                                            .overlay {
+                                                                Circle()
+                                                                    .stroke(Colors.card, lineWidth: 3)
+                                                            }
+
+                                                        ZStack {
+                                                            Circle()
+                                                                .fill(Colors.background)
+                                                                .frame(width: 36, height: 36)
+                                                                .overlay {
+                                                                    Circle()
+                                                                        .stroke(Colors.card, lineWidth: 3)
+                                                                }
+
+                                                            Text("67+")
+                                                                .font(.badgeDetail)
+                                                                .foregroundStyle(Colors.primaryText)
+                                                        }
                                                     }
                                                 }
+                                                .padding(16)
+                                                .background(Colors.card)
                                             }
-                                            .padding(18)
-                                            .background(Colors.card)
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }
                                         .buttonStyle(.plain)

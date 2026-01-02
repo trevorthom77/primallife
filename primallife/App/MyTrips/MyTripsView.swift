@@ -224,15 +224,15 @@ final class MyTripsViewModel: ObservableObject {
     }
 
     func creatorName(for ownerID: UUID) -> String? {
-        tribeCreatorsByID[ownerID.uuidString]?.fullName
+        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
     }
 
     func creatorAvatarPath(for ownerID: UUID) -> String? {
-        tribeCreatorsByID[ownerID.uuidString]?.avatarPath
+        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.avatarPath
     }
 
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
-        let ownerIDs = Set(tribes.map { $0.ownerID.uuidString })
+        let ownerIDs = Set(tribes.map { $0.ownerID.uuidString.lowercased() })
         let missingIDs = ownerIDs.filter { tribeCreatorsByID[$0] == nil }
         guard !missingIDs.isEmpty else { return }
 
@@ -244,7 +244,7 @@ final class MyTripsViewModel: ObservableObject {
                 .execute()
                 .value
 
-            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id, $0) })
+            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id.lowercased(), $0) })
             tribeCreatorsByID.merge(lookup) { _, new in new }
         } catch {
             return

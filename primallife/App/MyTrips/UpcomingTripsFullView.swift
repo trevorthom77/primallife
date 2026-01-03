@@ -238,46 +238,51 @@ struct UpcomingTripsFullView: View {
                                 } else {
                                     ForEach(visibleTravelers, id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {
-                                            HStack(spacing: 12) {
-                                                travelerAvatar(for: travelerID)
+                                            NavigationLink {
+                                                OthersProfileView(userID: travelerID)
+                                            } label: {
+                                                HStack(spacing: 12) {
+                                                    travelerAvatar(for: travelerID)
 
-                                                VStack(alignment: .leading, spacing: 6) {
-                                                    HStack(spacing: 8) {
-                                                        Text(name)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.primaryText)
-
-                                                        if let age = viewModel.creatorAge(for: travelerID) {
-                                                            Text("\(age)")
-                                                                .font(.travelDetail)
-                                                                .foregroundStyle(Colors.secondaryText)
-                                                        }
-                                                    }
-
-                                                    let originFlag = viewModel.creatorOriginFlag(for: travelerID)
-                                                    let originName = viewModel.creatorOriginName(for: travelerID)
-                                                    if originFlag != nil || originName != nil {
+                                                    VStack(alignment: .leading, spacing: 6) {
                                                         HStack(spacing: 8) {
-                                                            if let flag = originFlag {
-                                                                Text(flag)
-                                                                    .font(.travelDetail)
-                                                                    .foregroundStyle(Colors.primaryText)
-                                                            }
+                                                            Text(name)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.primaryText)
 
-                                                            if let countryName = originName {
-                                                                Text(countryName)
+                                                            if let age = viewModel.creatorAge(for: travelerID) {
+                                                                Text("\(age)")
                                                                     .font(.travelDetail)
                                                                     .foregroundStyle(Colors.secondaryText)
                                                             }
                                                         }
-                                                    }
-                                                }
 
-                                                Spacer()
+                                                        let originFlag = viewModel.creatorOriginFlag(for: travelerID)
+                                                        let originName = viewModel.creatorOriginName(for: travelerID)
+                                                        if originFlag != nil || originName != nil {
+                                                            HStack(spacing: 8) {
+                                                                if let flag = originFlag {
+                                                                    Text(flag)
+                                                                        .font(.travelDetail)
+                                                                        .foregroundStyle(Colors.primaryText)
+                                                                }
+
+                                                                if let countryName = originName {
+                                                                    Text(countryName)
+                                                                        .font(.travelDetail)
+                                                                        .foregroundStyle(Colors.secondaryText)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Spacer()
+                                                }
+                                                .padding()
+                                                .background(Colors.card)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
                                             }
-                                            .padding()
-                                            .background(Colors.card)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                 }

@@ -118,9 +118,17 @@ struct OthersProfileView: View {
                     .padding(.top, 8)
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Upcoming Trips")
-                            .font(.custom(Fonts.semibold, size: 18))
-                            .foregroundStyle(Colors.primaryText)
+                        HStack {
+                            Text("Upcoming Trips")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Spacer()
+
+                            Button("See All") { }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
                         
                         if isLoadingTrips && trips.isEmpty {
                             RoundedRectangle(cornerRadius: 16)
@@ -128,38 +136,30 @@ struct OthersProfileView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 140)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if let friend, !friend.tripPlans.isEmpty {
-                            VStack(spacing: 12) {
-                                ForEach(friend.tripPlans) { plan in
-                                    TravelCard(
-                                        flag: plan.flag,
-                                        location: plan.location,
-                                        dates: plan.dates,
-                                        imageQuery: plan.imageQuery,
-                                        showsParticipants: false,
-                                        width: nil,
-                                        height: 140
-                                    )
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 140)
-                                }
-                            }
-                        } else if !trips.isEmpty {
-                            VStack(spacing: 12) {
-                                ForEach(trips) { trip in
-                                    TravelCard(
-                                        flag: tripFlag(for: trip),
-                                        location: tripLocation(for: trip),
-                                        dates: tripDateRange(for: trip),
-                                        imageQuery: tripImageQuery(for: trip),
-                                        showsParticipants: false,
-                                        width: nil,
-                                        height: 140
-                                    )
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 140)
-                                }
-                            }
+                        } else if let friend, let plan = friend.tripPlans.first {
+                            TravelCard(
+                                flag: plan.flag,
+                                location: plan.location,
+                                dates: plan.dates,
+                                imageQuery: plan.imageQuery,
+                                showsParticipants: false,
+                                width: nil,
+                                height: 140
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 140)
+                        } else if let trip = trips.first {
+                            TravelCard(
+                                flag: tripFlag(for: trip),
+                                location: tripLocation(for: trip),
+                                dates: tripDateRange(for: trip),
+                                imageQuery: tripImageQuery(for: trip),
+                                showsParticipants: false,
+                                width: nil,
+                                height: 140
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 140)
                         }
                     }
                     .padding(.top, 8)

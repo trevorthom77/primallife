@@ -73,6 +73,7 @@ struct TribesSocialView: View {
         self.onBack = onBack
         self.initialHeaderImage = initialHeaderImage
         _headerImage = State(initialValue: initialHeaderImage)
+        _hasJoinedTribe = State(initialValue: Self.cachedJoinStatus(for: tribeID))
     }
 
     var body: some View {
@@ -415,7 +416,8 @@ struct TribesSocialView: View {
                     title: title,
                     location: location,
                     imageURL: imageURL,
-                    totalTravelers: 67
+                    totalTravelers: 67,
+                    initialHeaderImage: headerImage ?? initialHeaderImage
                 )
             } else {
                 EmptyView()
@@ -439,6 +441,20 @@ private struct TribeJoinRecord: Decodable {
 }
 
 private extension TribesSocialView {
+    static func cachedJoinStatus(for tribeID: UUID?) -> Bool {
+        guard let tribeID else { return false }
+        return UserDefaults.standard.bool(forKey: joinCacheKey(for: tribeID))
+    }
+
+    func cacheJoinStatus(_ joined: Bool) {
+        guard let tribeID else { return }
+        UserDefaults.standard.set(joined, forKey: Self.joinCacheKey(for: tribeID))
+    }
+
+    static func joinCacheKey(for tribeID: UUID) -> String {
+        "tribeJoinStatus.\(tribeID.uuidString)"
+    }
+
     var dateRangeText: String {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
         let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
@@ -458,6 +474,7 @@ private extension TribesSocialView {
                 .from("tribes_join")
                 .insert(payload)
                 .execute()
+            cacheJoinStatus(true)
             return true
         } catch {
             return false
@@ -479,8 +496,10 @@ private extension TribesSocialView {
                 .execute()
                 .value
             hasJoinedTribe = !rows.isEmpty
+            cacheJoinStatus(hasJoinedTribe)
         } catch {
             hasJoinedTribe = false
+            cacheJoinStatus(false)
         }
     }
 

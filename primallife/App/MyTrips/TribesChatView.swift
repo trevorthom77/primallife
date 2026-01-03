@@ -79,11 +79,28 @@ struct TribesChatView: View {
     let location: String
     let imageURL: URL?
     let totalTravelers: Int
+    @State private var headerImage: Image?
     @State private var messages: [TribeChatMessage] = []
     @State private var draft = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
+
+    init(
+        tribeID: UUID,
+        title: String,
+        location: String,
+        imageURL: URL?,
+        totalTravelers: Int,
+        initialHeaderImage: Image? = nil
+    ) {
+        self.tribeID = tribeID
+        self.title = title
+        self.location = location
+        self.imageURL = imageURL
+        self.totalTravelers = totalTravelers
+        _headerImage = State(initialValue: initialHeaderImage)
+    }
 
     var body: some View {
         ZStack {
@@ -182,15 +199,30 @@ struct TribesChatView: View {
                 dismiss()
             }
 
-            AsyncImage(url: imageURL) { image in
-                image
+            if let headerImage {
+                headerImage
                     .resizable()
                     .scaledToFill()
-            } placeholder: {
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if let imageURL {
+                AsyncImage(url: imageURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .onAppear {
+                            headerImage = image
+                        }
+                } placeholder: {
+                    Colors.card
+                }
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
                 Colors.card
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .frame(width: 48, height: 48)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)

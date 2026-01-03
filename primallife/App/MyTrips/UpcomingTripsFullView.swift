@@ -52,13 +52,14 @@ struct UpcomingTripsFullView: View {
                                     Text(tab.rawValue)
                                     if tab == .tribes {
                                         Text(tribeCountText)
+                                    } else if tab == .travelers {
+                                        Text(travelerCountText)
                                     }
                                 }
                                 .font(.travelDetail)
                                 .foregroundStyle(selectedTab == tab ? Colors.tertiaryText : Colors.primaryText)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 14)
-                                .frame(maxWidth: .infinity)
                                 .background(
                                     selectedTab == tab
                                     ? Colors.accent
@@ -69,7 +70,6 @@ struct UpcomingTripsFullView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .frame(maxWidth: 280)
 
                     Spacer()
                 }
@@ -209,7 +209,68 @@ struct UpcomingTripsFullView: View {
                             .frame(height: 96)
                     }
                 } else {
-                    Spacer()
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            if let travelers = travelersForTrip {
+                                let currentUserID = supabase?.auth.currentUser?.id
+                                let visibleTravelers = travelers.filter { $0 != currentUserID }
+                                ForEach(visibleTravelers, id: \.self) { travelerID in
+                                    if let name = viewModel.creatorName(for: travelerID) {
+                                        HStack(spacing: 12) {
+                                            travelerAvatar(for: travelerID)
+
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                HStack(spacing: 8) {
+                                                    Text(name)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.primaryText)
+
+                                                    if let age = viewModel.creatorAge(for: travelerID) {
+                                                        Text("\(age)")
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                    }
+                                                }
+
+                                                let originFlag = viewModel.creatorOriginFlag(for: travelerID)
+                                                let originName = viewModel.creatorOriginName(for: travelerID)
+                                                if originFlag != nil || originName != nil {
+                                                    HStack(spacing: 8) {
+                                                        if let flag = originFlag {
+                                                            Text(flag)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.primaryText)
+                                                        }
+
+                                                        if let countryName = originName {
+                                                            Text(countryName)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.secondaryText)
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer()
+                                        }
+                                        .padding()
+                                        .background(Colors.card)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    }
+                                }
+                            } else if isLoadingTravelersForTrip {
+                                ProgressView()
+                                    .tint(Colors.accent)
+                                    .padding(.vertical, 4)
+                            }
+                        }
+                        .padding(.top, 8)
+                    }
+                    .scrollIndicators(.hidden)
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear
+                            .frame(height: 96)
+                    }
                 }
             }
             .padding(.horizontal, 24)
@@ -218,6 +279,8 @@ struct UpcomingTripsFullView: View {
         .task(id: selectedTab) {
             if selectedTab == .tribes {
                 await loadTribesForTrip()
+            } else {
+                await loadTravelersForTrip()
             }
         }
         .task(id: trip.id) {
@@ -252,8 +315,19 @@ struct UpcomingTripsFullView: View {
         await viewModel.loadTribes(for: trip, supabase: supabase)
     }
 
+    @MainActor
+    private func loadTravelersForTrip(force: Bool = false) async {
+        if viewModel.isLoadingTravelers(tripID: trip.id) { return }
+        if !force, viewModel.travelersByTrip[trip.id] != nil { return }
+        await viewModel.loadTravelers(for: trip, supabase: supabase)
+    }
+
     private var tribesForTrip: [Tribe]? {
         viewModel.tribesByTrip[trip.id]
+    }
+
+    private var travelersForTrip: [UUID]? {
+        viewModel.travelersByTrip[trip.id]
     }
 
     private var tribeCountText: String {
@@ -261,8 +335,44 @@ struct UpcomingTripsFullView: View {
         return "\(count)+"
     }
 
+    private var travelerCountText: String {
+        let count = travelersForTrip?.count ?? 0
+        return "\(count)+"
+    }
+
     private var isLoadingTribesForTrip: Bool {
         viewModel.isLoadingTribes(tripID: trip.id)
+    }
+
+    private var isLoadingTravelersForTrip: Bool {
+        viewModel.isLoadingTravelers(tripID: trip.id)
+    }
+
+    @ViewBuilder
+    private func travelerAvatar(for travelerID: UUID) -> some View {
+        let avatarURL = viewModel.creatorAvatarURL(for: travelerID, supabase: supabase)
+
+        Group {
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.3)
+                    }
+                }
+            } else {
+                Colors.secondaryText.opacity(0.3)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: 3)
+        }
     }
 
     @ViewBuilder

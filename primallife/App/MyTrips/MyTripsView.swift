@@ -504,7 +504,7 @@ struct MyTripsView: View {
                                 .padding(.vertical, 24)
                             }
 
-                            if selectedTrip != nil {
+                            if let trip = selectedTrip {
                                 HStack {
                                     Text("\(selectedTripTitle) Tribes")
                                         .font(.travelTitle)
@@ -512,9 +512,17 @@ struct MyTripsView: View {
                                     
                                     Spacer()
                                     
-                                    Button("See All") { }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
+                                    NavigationLink("See All") {
+                                        UpcomingTripsFullView(
+                                            trip: trip,
+                                            prefetchedDetails: tripImageDetails[trip.id],
+                                            tribeImageCache: $tribeImageCache,
+                                            tribeImageURLCache: $tribeImageURLCache,
+                                            startOnTribesTab: true
+                                        )
+                                    }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
                                 }
                                 .padding(.top, 16)
                                 
@@ -680,9 +688,16 @@ struct MyTripsView: View {
                                     
                                     Spacer()
                                     
-                                    Button("See All") { }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
+                                    NavigationLink("See All") {
+                                        UpcomingTripsFullView(
+                                            trip: trip,
+                                            prefetchedDetails: tripImageDetails[trip.id],
+                                            tribeImageCache: $tribeImageCache,
+                                            tribeImageURLCache: $tribeImageURLCache
+                                        )
+                                    }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
                                 }
                                 .padding(.top, 16)
 

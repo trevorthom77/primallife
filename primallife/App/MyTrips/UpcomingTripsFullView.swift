@@ -18,6 +18,20 @@ struct UpcomingTripsFullView: View {
         case tribes = "Tribes"
     }
 
+    init(
+        trip: Trip,
+        prefetchedDetails: UnsplashImageDetails?,
+        tribeImageCache: Binding<[UUID: Image]>,
+        tribeImageURLCache: Binding<[UUID: URL]>,
+        startOnTribesTab: Bool = false
+    ) {
+        self.trip = trip
+        self.prefetchedDetails = prefetchedDetails
+        _tribeImageCache = tribeImageCache
+        _tribeImageURLCache = tribeImageURLCache
+        _selectedTab = State(initialValue: startOnTribesTab ? .tribes : .travelers)
+    }
+
     var body: some View {
         ZStack {
             Colors.background

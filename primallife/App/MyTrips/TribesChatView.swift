@@ -69,16 +69,19 @@ private struct TribeMessagePayload: Encodable {
 private struct TribeMessageSender: Decodable {
     let id: String
     let fullName: String
+    let avatarPath: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case fullName = "full_name"
+        case avatarPath = "avatar_url"
     }
 }
 
 private struct TribeChatMessage: Identifiable {
     let id: UUID
     let senderName: String
+    let senderAvatarURL: URL?
     let text: String
     let time: String
     let isUser: Bool
@@ -191,9 +194,20 @@ struct TribesChatView: View {
     private func messageBubble(_ message: TribeChatMessage) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             if !message.senderName.isEmpty {
-                Text(message.senderName)
-                    .font(.custom(Fonts.regular, size: 12))
-                    .foregroundStyle(Colors.secondaryText)
+                HStack(spacing: 6) {
+                    if !message.isUser {
+                        messageAvatar(message.senderAvatarURL)
+                    }
+
+                    Text(message.senderName)
+                        .font(.custom(Fonts.regular, size: 12))
+                        .foregroundStyle(Colors.secondaryText)
+
+                    if message.isUser {
+                        messageAvatar(message.senderAvatarURL)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
             }
 
             Text(message.text)
@@ -208,6 +222,21 @@ struct TribesChatView: View {
                 .foregroundStyle(Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+    }
+
+    @ViewBuilder
+    private func messageAvatar(_ avatarURL: URL?) -> some View {
+        if let avatarURL {
+            AsyncImage(url: avatarURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                Color.clear
+            }
+            .frame(width: 20, height: 20)
+            .clipShape(Circle())
+        }
     }
 
     private var header: some View {
@@ -309,24 +338,39 @@ struct TribesChatView: View {
                 .value
 
             var senderNames: [String: String] = [:]
+            var senderAvatarURLs: [String: URL] = [:]
             let senderIDs = Set(rows.map { $0.senderID.uuidString.lowercased() })
             if !senderIDs.isEmpty {
                 let senders: [TribeMessageSender] = try await supabase
                     .from("onboarding")
-                    .select("id, full_name")
+                    .select("id, full_name, avatar_url")
                     .in("id", values: Array(senderIDs))
                     .execute()
                     .value
                 senderNames = Dictionary(
                     uniqueKeysWithValues: senders.map { ($0.id.lowercased(), $0.fullName) }
                 )
+                senderAvatarURLs = Dictionary(
+                    uniqueKeysWithValues: senders.compactMap { sender in
+                        guard let avatarPath = sender.avatarPath,
+                              !avatarPath.isEmpty,
+                              let avatarURL = try? supabase.storage
+                                .from("profile-photos")
+                                .getPublicURL(path: avatarPath) else {
+                            return nil
+                        }
+                        return (sender.id.lowercased(), avatarURL)
+                    }
+                )
             }
 
             let currentUserID = supabase.auth.currentUser?.id
             messages = rows.map { row in
-                TribeChatMessage(
+                let senderKey = row.senderID.uuidString.lowercased()
+                return TribeChatMessage(
                     id: row.id,
-                    senderName: senderNames[row.senderID.uuidString.lowercased()] ?? "",
+                    senderName: senderNames[senderKey] ?? "",
+                    senderAvatarURL: senderAvatarURLs[senderKey],
                     text: row.text,
                     time: tribeChatTimeFormatter.string(from: row.createdAt),
                     isUser: row.senderID == currentUserID

@@ -336,7 +336,8 @@ struct UpcomingTripsFullView: View {
     }
 
     private var travelerCountText: String {
-        let count = travelersForTrip?.count ?? 0
+        let currentUserID = supabase?.auth.currentUser?.id
+        let count = travelersForTrip?.filter { $0 != currentUserID }.count ?? 0
         return "\(count)+"
     }
 

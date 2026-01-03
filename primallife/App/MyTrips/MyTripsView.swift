@@ -687,7 +687,7 @@ struct MyTripsView: View {
                                 .padding(.top, 16)
 
                                 if let travelers = travelersForSelectedTrip {
-                                    let currentUserID = supabase.auth.currentUser?.id
+                                    let currentUserID = supabase?.auth.currentUser?.id
                                     let visibleTravelers = travelers.filter { $0 != currentUserID }
                                     ForEach(visibleTravelers.prefix(3), id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {

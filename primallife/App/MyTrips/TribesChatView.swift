@@ -157,7 +157,10 @@ struct TribesChatView: View {
                         }
                         .scrollIndicators(.hidden)
                         .onAppear {
-                            scrollToBottom(proxy: scrollProxy, animated: false)
+                            Task { @MainActor in
+                                await Task.yield()
+                                scrollToBottom(proxy: scrollProxy, animated: false)
+                            }
                         }
                         .onChange(of: messages.count) { _, _ in
                             if shouldAnimateScroll {

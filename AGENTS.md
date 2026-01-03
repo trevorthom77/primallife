@@ -1,4 +1,4 @@
-I need you to keep all generated code simple, clean, and direct. Avoid over-engineering. 
+I need you to keep all generated code simple, clean, and direct. Avoid over-engineering if u can if u cant just do what u need to. 
 
 Ok bro very fucking important right here - IF U ARENT USING OR NEED A FILE DO NOT WASTE UR TIME OR CONTEXT ON IT. For exmaple if i tell u to do something involving ex: tripsview and u open colors and fonts even though the task doesnt even involve that ur wasting time and context DO NOT DO THAT look at what u need do what u need so u dotn waste time and it goes fast and smoothly
 

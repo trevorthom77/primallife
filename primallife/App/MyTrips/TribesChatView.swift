@@ -91,6 +91,7 @@ private struct TribeChatMessage: Identifiable {
 private struct TribeChatCacheEntry {
     var messages: [TribeChatMessage]
     var headerImage: Image?
+    var avatarImageCache: [URL: Image]
 }
 
 private enum TribeChatCache {
@@ -105,6 +106,7 @@ struct TribesChatView: View {
     let totalTravelers: Int
     @State private var headerImage: Image?
     @State private var messages: [TribeChatMessage] = []
+    @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
     @State private var realtimeChannel: RealtimeChannelV2?
@@ -129,6 +131,7 @@ struct TribesChatView: View {
         let cachedEntry = TribeChatCache.entries[tribeID]
         _headerImage = State(initialValue: cachedEntry?.headerImage ?? initialHeaderImage)
         _messages = State(initialValue: cachedEntry?.messages ?? [])
+        _avatarImageCache = State(initialValue: cachedEntry?.avatarImageCache ?? [:])
     }
 
     var body: some View {
@@ -278,12 +281,28 @@ struct TribesChatView: View {
     @ViewBuilder
     private func messageAvatar(_ avatarURL: URL?) -> some View {
         if let avatarURL {
-            AsyncImage(url: avatarURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
+            Group {
+                if let cachedImage = cachedAvatarImage(for: avatarURL) {
+                    cachedImage
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    AsyncImage(url: avatarURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .onAppear {
+                                    cacheAvatarImage(image, for: avatarURL)
+                                }
+                        case .empty:
+                            Color.clear
+                        default:
+                            Color.clear
+                        }
+                    }
+                }
             }
             .frame(width: 28, height: 28)
             .clipShape(Circle())
@@ -503,15 +522,35 @@ struct TribesChatView: View {
 
     private func cacheMessages(_ newMessages: [TribeChatMessage]) {
         var entry = TribeChatCache.entries[tribeID]
-            ?? TribeChatCacheEntry(messages: [], headerImage: nil)
+            ?? TribeChatCacheEntry(messages: [], headerImage: nil, avatarImageCache: [:])
         entry.messages = newMessages
         TribeChatCache.entries[tribeID] = entry
     }
 
     private func cacheHeaderImage(_ image: Image) {
         var entry = TribeChatCache.entries[tribeID]
-            ?? TribeChatCacheEntry(messages: messages, headerImage: nil)
+            ?? TribeChatCacheEntry(
+                messages: messages,
+                headerImage: nil,
+                avatarImageCache: avatarImageCache
+            )
         entry.headerImage = image
+        TribeChatCache.entries[tribeID] = entry
+    }
+
+    private func cachedAvatarImage(for url: URL) -> Image? {
+        avatarImageCache[url]
+    }
+
+    private func cacheAvatarImage(_ image: Image, for url: URL) {
+        avatarImageCache[url] = image
+        var entry = TribeChatCache.entries[tribeID]
+            ?? TribeChatCacheEntry(
+                messages: messages,
+                headerImage: headerImage,
+                avatarImageCache: [:]
+            )
+        entry.avatarImageCache[url] = image
         TribeChatCache.entries[tribeID] = entry
     }
 }

@@ -97,6 +97,7 @@ struct TribesChatView: View {
     @State private var headerImage: Image?
     @State private var messages: [TribeChatMessage] = []
     @State private var draft = ""
+    @State private var shouldAnimateScroll = false
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -143,7 +144,12 @@ struct TribesChatView: View {
                             scrollToBottom(proxy: scrollProxy, animated: false)
                         }
                         .onChange(of: messages.count) { _, _ in
-                            scrollToBottom(proxy: scrollProxy, animated: false)
+                            if shouldAnimateScroll {
+                                scrollToBottom(proxy: scrollProxy, animated: true)
+                                shouldAnimateScroll = false
+                            } else {
+                                scrollToBottom(proxy: scrollProxy, animated: false)
+                            }
                         }
                     }
                 }
@@ -414,6 +420,7 @@ struct TribesChatView: View {
               let supabase,
               let userID = supabase.auth.currentUser?.id else { return }
 
+        shouldAnimateScroll = true
         let payload = TribeMessagePayload(
             tribeID: tribeID,
             senderID: userID,
@@ -428,6 +435,7 @@ struct TribesChatView: View {
             draft = ""
             await loadMessages()
         } catch {
+            shouldAnimateScroll = false
         }
     }
 }

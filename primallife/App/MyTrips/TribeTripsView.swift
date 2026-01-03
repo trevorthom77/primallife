@@ -608,6 +608,10 @@ private struct TribeGenderView: View {
         selectedGender == .girlsOnly ? Colors.girlsPink : Colors.accent
     }
 
+    private var tribeStartDate: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+
     init(
         trip: Trip,
         groupName: String,
@@ -629,7 +633,7 @@ private struct TribeGenderView: View {
         self.onFinish = onFinish
         _selectedGender = selectedGender
         _returnDate = State(initialValue: trip.returnDate)
-        _hasSelectedReturn = State(initialValue: true)
+        _hasSelectedReturn = State(initialValue: false)
         _isShowingReview = State(initialValue: false)
     }
 
@@ -752,6 +756,7 @@ private struct TribeGenderView: View {
 
                         Button("Done") {
                             showReturnPicker = false
+                            hasSelectedReturn = true
                         }
                         .font(.travelDetail)
                         .foregroundStyle(Colors.accent)
@@ -760,7 +765,7 @@ private struct TribeGenderView: View {
                     DatePicker(
                         "",
                         selection: $returnDate,
-                        in: Calendar.current.startOfDay(for: Date())...,
+                        in: tribeStartDate...,
                         displayedComponents: .date
                     )
                         .datePickerStyle(.wheel)
@@ -805,7 +810,7 @@ private struct TribeGenderView: View {
     }
 
     private var isContinueEnabled: Bool {
-        hasSelectedReturn
+        hasSelectedReturn && returnDate >= tribeStartDate
     }
 }
 

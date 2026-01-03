@@ -6,10 +6,24 @@
 //
 
 import SwiftUI
+import Supabase
 
 struct OthersProfileView: View {
-    let friend: Friend
+    let friend: Friend?
+    let userID: UUID?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
+    @State private var profile: UserProfile?
+
+    init(friend: Friend) {
+        self.friend = friend
+        self.userID = nil
+    }
+
+    init(userID: UUID) {
+        self.userID = userID
+        self.friend = nil
+    }
     
     var body: some View {
         ZStack {
@@ -18,9 +32,7 @@ struct OthersProfileView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    Image(friend.imageName)
-                        .resizable()
-                        .scaledToFill()
+                    avatarView
                         .frame(width: 140, height: 140)
                         .clipShape(Circle())
                         .overlay {
@@ -29,7 +41,7 @@ struct OthersProfileView: View {
                         }
                     
                     HStack(spacing: 8) {
-                        Text(friend.name)
+                        Text(displayName)
                             .font(.customTitle)
                             .foregroundStyle(Colors.primaryText)
                         
@@ -38,9 +50,11 @@ struct OthersProfileView: View {
                             .foregroundStyle(Colors.accent)
                     }
                     
-                    Text("\(friend.countryFlag) \(friend.country)")
-                        .font(.custom(Fonts.regular, size: 16))
-                        .foregroundStyle(Colors.secondaryText)
+                    if let originDisplay {
+                        Text(originDisplay)
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                    }
                     
                     HStack(spacing: 12) {
                         Button(action: {}) {
@@ -72,9 +86,11 @@ struct OthersProfileView: View {
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         
-                        Text(friend.about)
-                            .font(.custom(Fonts.regular, size: 16))
-                            .foregroundStyle(Colors.secondaryText)
+                        if !aboutText.isEmpty {
+                            Text(aboutText)
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                        }
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,9 +103,11 @@ struct OthersProfileView: View {
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         
-                        Text("Likes")
-                            .font(.custom(Fonts.regular, size: 16))
-                            .foregroundStyle(Colors.secondaryText)
+                        if let likesText {
+                            Text(likesText)
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                        }
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -102,16 +120,18 @@ struct OthersProfileView: View {
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         
-                        VStack(spacing: 12) {
-                            ForEach(friend.tripPlans) { plan in
-                                TravelCard(
-                                    flag: plan.flag,
-                                    location: plan.location,
-                                    dates: plan.dates,
-                                    imageQuery: plan.imageQuery
-                                )
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .frame(height: 180)
+                        if !tripPlans.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(tripPlans) { plan in
+                                    TravelCard(
+                                        flag: plan.flag,
+                                        location: plan.location,
+                                        dates: plan.dates,
+                                        imageQuery: plan.imageQuery
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .frame(height: 180)
+                                }
                             }
                         }
                     }
@@ -135,6 +155,94 @@ struct OthersProfileView: View {
             }
             .padding(.leading, 16)
             .padding(.top, 16)
+        }
+        .task(id: userID) {
+            guard let userID else { return }
+            await loadProfile(for: userID)
+        }
+    }
+
+    private var displayName: String {
+        profile?.fullName ?? friend?.name ?? ""
+    }
+
+    private var originDisplay: String? {
+        if let profile,
+           let flag = profile.originFlag,
+           let name = profile.originName {
+            return "\(flag) \(name)"
+        }
+
+        if let friend {
+            return "\(friend.countryFlag) \(friend.country)"
+        }
+
+        return nil
+    }
+
+    private var aboutText: String {
+        if let profile {
+            return profile.bio
+        }
+
+        return friend?.about ?? ""
+    }
+
+    private var likesText: String? {
+        if let profile {
+            let likes = profile.interests.joined(separator: ", ")
+            return likes.isEmpty ? nil : likes
+        }
+
+        return friend != nil ? "Likes" : nil
+    }
+
+    private var tripPlans: [TripPlan] {
+        friend?.tripPlans ?? []
+    }
+
+    private var avatarURL: URL? {
+        profile?.avatarURL(using: supabase)
+    }
+
+    @ViewBuilder
+    private var avatarView: some View {
+        if let avatarURL {
+            AsyncImage(url: avatarURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+        } else if let imageName = friend?.imageName {
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
+    }
+
+    private func loadProfile(for userID: UUID) async {
+        guard let supabase else { return }
+
+        do {
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .eq("id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            await MainActor.run {
+                profile = profiles.first
+            }
+        } catch {
+            return
         }
     }
 }

@@ -20,6 +20,7 @@ struct InterestView: View {
         "🏄 Surfing",
         "🛶 Kayaking",
         "🎣 Fishing",
+        "🔱 Spearfishing",
         "🦈 Sharks",
         "🌊 Ocean",
         "🏖️ Beaches",

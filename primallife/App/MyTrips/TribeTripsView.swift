@@ -433,6 +433,7 @@ private struct TribeDetailsView: View {
         "🏄 Surfing",
         "🛶 Kayaking",
         "🎣 Fishing",
+        "🔱 Spearfishing",
         "🦈 Sharks",
         "🌊 Ocean",
         "🏖️ Beaches",

@@ -853,6 +853,16 @@ private struct NewTribe: Encodable {
     }()
 }
 
+private struct TribeJoinPayload: Encodable {
+    let id: UUID
+    let tribeID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case tribeID = "tribe_id"
+    }
+}
+
 private struct CreatedTribeDisplay {
     let id: UUID
     let title: String
@@ -1141,6 +1151,12 @@ private struct TribeReviewView: View {
                 .single()
                 .execute()
                 .value
+
+            let joinPayload = TribeJoinPayload(id: userID, tribeID: createdRecord.id)
+            try await supabase
+                .from("tribes_join")
+                .insert(joinPayload)
+                .execute()
 
             createdTribe = CreatedTribeDisplay(
                 id: createdRecord.id,

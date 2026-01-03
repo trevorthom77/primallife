@@ -23,6 +23,7 @@ struct TribesSocialView: View {
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
     @State private var shouldNavigateToChat = false
+    @State private var hasJoinedTribe = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -207,13 +208,19 @@ struct TribesSocialView: View {
 
                     Button {
                         Task {
+                            if hasJoinedTribe {
+                                shouldNavigateToChat = true
+                                return
+                            }
+
                             let didJoin = await joinTribe()
                             if didJoin {
+                                hasJoinedTribe = true
                                 shouldNavigateToChat = true
                             }
                         }
                     } label: {
-                        Text("Join")
+                        Text(hasJoinedTribe ? "View Chat" : "Join")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.tertiaryText)
                             .frame(maxWidth: .infinity)
@@ -397,6 +404,9 @@ struct TribesSocialView: View {
                 )
             }
         }
+        .task {
+            await loadJoinStatus()
+        }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $shouldNavigateToChat) {
             if let tribeID {
@@ -424,6 +434,10 @@ private struct TribeJoinPayload: Encodable {
     }
 }
 
+private struct TribeJoinRecord: Decodable {
+    let id: UUID
+}
+
 private extension TribesSocialView {
     var dateRangeText: String {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
@@ -447,6 +461,26 @@ private extension TribesSocialView {
             return true
         } catch {
             return false
+        }
+    }
+
+    @MainActor
+    func loadJoinStatus() async {
+        guard let supabase,
+              let tribeID,
+              let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let rows: [TribeJoinRecord] = try await supabase
+                .from("tribes_join")
+                .select("id")
+                .eq("id", value: userID.uuidString)
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+                .value
+            hasJoinedTribe = !rows.isEmpty
+        } catch {
+            hasJoinedTribe = false
         }
     }
 

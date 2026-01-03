@@ -98,6 +98,8 @@ struct TribesChatView: View {
     @State private var messages: [TribeChatMessage] = []
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
+    @State private var realtimeChannel: RealtimeChannelV2?
+    @State private var realtimeTask: Task<Void, Never>?
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -166,6 +168,12 @@ struct TribesChatView: View {
         }
         .task(id: tribeID) {
             await loadMessages()
+            await startRealtime()
+        }
+        .onDisappear {
+            Task {
+                await stopRealtime()
+            }
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -411,6 +419,46 @@ struct TribesChatView: View {
             }
         } catch {
         }
+    }
+
+    @MainActor
+    private func startRealtime() async {
+        guard let supabase else { return }
+
+        await stopRealtime()
+
+        let channel = supabase.channel("tribe-messages-\(tribeID.uuidString)")
+        let insertions = channel.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "tribe_messages",
+            filter: .eq("tribe_id", value: tribeID)
+        )
+
+        do {
+            try await channel.subscribeWithError()
+        } catch {
+            return
+        }
+
+        realtimeChannel = channel
+        realtimeTask = Task { @MainActor in
+            for await _ in insertions {
+                await loadMessages()
+            }
+        }
+    }
+
+    @MainActor
+    private func stopRealtime() async {
+        realtimeTask?.cancel()
+        realtimeTask = nil
+
+        if let supabase, let realtimeChannel {
+            await supabase.removeChannel(realtimeChannel)
+        }
+
+        realtimeChannel = nil
     }
 
     @MainActor

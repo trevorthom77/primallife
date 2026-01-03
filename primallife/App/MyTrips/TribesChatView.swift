@@ -88,6 +88,15 @@ private struct TribeChatMessage: Identifiable {
     let isUser: Bool
 }
 
+private struct TribeChatCacheEntry {
+    var messages: [TribeChatMessage]
+    var headerImage: Image?
+}
+
+private enum TribeChatCache {
+    static var entries: [UUID: TribeChatCacheEntry] = [:]
+}
+
 struct TribesChatView: View {
     let tribeID: UUID
     let title: String
@@ -117,7 +126,9 @@ struct TribesChatView: View {
         self.location = location
         self.imageURL = imageURL
         self.totalTravelers = totalTravelers
-        _headerImage = State(initialValue: initialHeaderImage)
+        let cachedEntry = TribeChatCache.entries[tribeID]
+        _headerImage = State(initialValue: cachedEntry?.headerImage ?? initialHeaderImage)
+        _messages = State(initialValue: cachedEntry?.messages ?? [])
     }
 
     var body: some View {
@@ -298,6 +309,7 @@ struct TribesChatView: View {
                         .scaledToFill()
                         .onAppear {
                             headerImage = image
+                            cacheHeaderImage(image)
                         }
                 } placeholder: {
                     Colors.card
@@ -405,7 +417,7 @@ struct TribesChatView: View {
             }
 
             let currentUserID = supabase.auth.currentUser?.id
-            messages = rows.map { row in
+            let newMessages = rows.map { row in
                 let senderKey = row.senderID.uuidString.lowercased()
                 return TribeChatMessage(
                     id: row.id,
@@ -417,6 +429,8 @@ struct TribesChatView: View {
                     isUser: row.senderID == currentUserID
                 )
             }
+            messages = newMessages
+            cacheMessages(newMessages)
         } catch {
         }
     }
@@ -485,5 +499,19 @@ struct TribesChatView: View {
         } catch {
             shouldAnimateScroll = false
         }
+    }
+
+    private func cacheMessages(_ newMessages: [TribeChatMessage]) {
+        var entry = TribeChatCache.entries[tribeID]
+            ?? TribeChatCacheEntry(messages: [], headerImage: nil)
+        entry.messages = newMessages
+        TribeChatCache.entries[tribeID] = entry
+    }
+
+    private func cacheHeaderImage(_ image: Image) {
+        var entry = TribeChatCache.entries[tribeID]
+            ?? TribeChatCacheEntry(messages: messages, headerImage: nil)
+        entry.headerImage = image
+        TribeChatCache.entries[tribeID] = entry
     }
 }

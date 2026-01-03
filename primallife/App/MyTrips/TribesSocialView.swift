@@ -26,12 +26,6 @@ struct TribesSocialView: View {
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
-    private let tribeMessages: [ChatMessage] = [
-        ChatMessage(text: "Welcome to the Costa Rica crew.", time: "6:10 PM", isUser: false),
-        ChatMessage(text: "Landing on the 5th, can't wait.", time: "6:12 PM", isUser: true),
-        ChatMessage(text: "We're meeting at Playa Hermosa night one.", time: "6:14 PM", isUser: false),
-        ChatMessage(text: "Count me in for the bonfire.", time: "6:15 PM", isUser: true)
-    ]
     private let customPlaceImageNames = [
         "florida",
         "italy",
@@ -405,13 +399,17 @@ struct TribesSocialView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $shouldNavigateToChat) {
-            TribesChatView(
-                title: title,
-                location: location,
-                imageURL: imageURL,
-                totalTravelers: 67,
-                messages: tribeMessages
-            )
+            if let tribeID {
+                TribesChatView(
+                    tribeID: tribeID,
+                    title: title,
+                    location: location,
+                    imageURL: imageURL,
+                    totalTravelers: 67
+                )
+            } else {
+                EmptyView()
+            }
         }
     }
 }

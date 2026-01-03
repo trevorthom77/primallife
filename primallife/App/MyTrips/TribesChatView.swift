@@ -1,14 +1,89 @@
 import SwiftUI
+import Supabase
+
+private let tribeChatTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let tribeChatTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
+private let tribeChatTimeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "h:mm a"
+    return formatter
+}()
+
+private struct TribeMessageRow: Decodable {
+    let id: UUID
+    let createdAt: Date
+    let tribeID: UUID
+    let senderID: UUID
+    let text: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt = "created_at"
+        case tribeID = "tribe_id"
+        case senderID = "sender_id"
+        case text
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        tribeID = try container.decode(UUID.self, forKey: .tribeID)
+        senderID = try container.decode(UUID.self, forKey: .senderID)
+        text = try container.decode(String.self, forKey: .text)
+
+        let createdAtString = try container.decode(String.self, forKey: .createdAt)
+        guard let createdAtDate = tribeChatTimestampFormatterWithFractional.date(from: createdAtString)
+            ?? tribeChatTimestampFormatter.date(from: createdAtString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
+            )
+        }
+        createdAt = createdAtDate
+    }
+}
+
+private struct TribeMessagePayload: Encodable {
+    let tribeID: UUID
+    let senderID: UUID
+    let text: String
+
+    enum CodingKeys: String, CodingKey {
+        case tribeID = "tribe_id"
+        case senderID = "sender_id"
+        case text
+    }
+}
+
+private struct TribeChatMessage: Identifiable {
+    let id: UUID
+    let text: String
+    let time: String
+    let isUser: Bool
+}
 
 struct TribesChatView: View {
+    let tribeID: UUID
     let title: String
     let location: String
     let imageURL: URL?
     let totalTravelers: Int
-    let messages: [ChatMessage]
+    @State private var messages: [TribeChatMessage] = []
     @State private var draft = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
 
     var body: some View {
         ZStack {
@@ -43,6 +118,9 @@ struct TribesChatView: View {
         .onTapGesture {
             isInputFocused = false
         }
+        .task(id: tribeID) {
+            await loadMessages()
+        }
         .navigationBarBackButtonHidden(true)
     }
 
@@ -65,7 +143,11 @@ struct TribesChatView: View {
             .background(Colors.contentview)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            Button(action: {}) {
+            Button(action: {
+                Task {
+                    await sendMessage()
+                }
+            }) {
                 Text("Send")
                     .font(.custom(Fonts.semibold, size: 16))
                     .foregroundStyle(Colors.tertiaryText)
@@ -78,7 +160,7 @@ struct TribesChatView: View {
         }
     }
 
-    private func messageBubble(_ message: ChatMessage) -> some View {
+    private func messageBubble(_ message: TribeChatMessage) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             Text(message.text)
                 .font(.custom(Fonts.regular, size: 16))
@@ -162,5 +244,55 @@ struct TribesChatView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(Colors.background)
+    }
+
+    @MainActor
+    private func loadMessages() async {
+        guard let supabase else { return }
+
+        do {
+            let rows: [TribeMessageRow] = try await supabase
+                .from("tribe_messages")
+                .select()
+                .eq("tribe_id", value: tribeID.uuidString)
+                .order("created_at", ascending: true)
+                .execute()
+                .value
+
+            let currentUserID = supabase.auth.currentUser?.id
+            messages = rows.map { row in
+                TribeChatMessage(
+                    id: row.id,
+                    text: row.text,
+                    time: tribeChatTimeFormatter.string(from: row.createdAt),
+                    isUser: row.senderID == currentUserID
+                )
+            }
+        } catch {
+        }
+    }
+
+    @MainActor
+    private func sendMessage() async {
+        let trimmedMessage = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty,
+              let supabase,
+              let userID = supabase.auth.currentUser?.id else { return }
+
+        let payload = TribeMessagePayload(
+            tribeID: tribeID,
+            senderID: userID,
+            text: trimmedMessage
+        )
+
+        do {
+            try await supabase
+                .from("tribe_messages")
+                .insert(payload)
+                .execute()
+            draft = ""
+            await loadMessages()
+        } catch {
+        }
     }
 }

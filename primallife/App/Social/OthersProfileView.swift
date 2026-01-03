@@ -125,7 +125,8 @@ struct OthersProfileView: View {
                         if isLoadingTrips && trips.isEmpty {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Colors.secondaryText.opacity(0.3))
-                                .frame(width: 344, height: 180)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 140)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else if let friend, !friend.tripPlans.isEmpty {
                             VStack(spacing: 12) {
@@ -134,10 +135,13 @@ struct OthersProfileView: View {
                                         flag: plan.flag,
                                         location: plan.location,
                                         dates: plan.dates,
-                                        imageQuery: plan.imageQuery
+                                        imageQuery: plan.imageQuery,
+                                        showsParticipants: false,
+                                        width: nil,
+                                        height: 140
                                     )
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 180)
+                                    .frame(height: 140)
                                 }
                             }
                         } else if !trips.isEmpty {
@@ -147,10 +151,13 @@ struct OthersProfileView: View {
                                         flag: tripFlag(for: trip),
                                         location: tripLocation(for: trip),
                                         dates: tripDateRange(for: trip),
-                                        imageQuery: tripImageQuery(for: trip)
+                                        imageQuery: tripImageQuery(for: trip),
+                                        showsParticipants: false,
+                                        width: nil,
+                                        height: 140
                                     )
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 180)
+                                    .frame(height: 140)
                                 }
                             }
                         }

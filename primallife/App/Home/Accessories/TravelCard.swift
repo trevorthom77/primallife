@@ -18,6 +18,7 @@ struct TravelCard: View {
     var showsParticipants: Bool = true
     var showsAttribution: Bool = false
     var prefetchedDetails: UnsplashImageDetails? = nil
+    var width: CGFloat? = 344
     var height: CGFloat = 180
     @State private var didApplyPrefetch = false
     
@@ -63,7 +64,8 @@ struct TravelCard: View {
                 Colors.primaryText
             }
         }
-        .frame(width: 344, height: height)
+        .frame(width: width, height: height)
+        .frame(maxWidth: width == nil ? .infinity : nil)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(alignment: .topLeading) {
             HStack(spacing: 12) {

@@ -22,6 +22,7 @@ struct TribesSocialView: View {
     @State private var placeImageURL: URL?
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
+    @State private var shouldNavigateToChat = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -210,14 +211,13 @@ struct TribesSocialView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    NavigationLink {
-                        TribesChatView(
-                            title: title,
-                            location: location,
-                            imageURL: imageURL,
-                            totalTravelers: 67,
-                            messages: tribeMessages
-                        )
+                    Button {
+                        Task {
+                            let didJoin = await joinTribe()
+                            if didJoin {
+                                shouldNavigateToChat = true
+                            }
+                        }
                     } label: {
                         Text("Join")
                             .font(.travelDetail)
@@ -227,11 +227,6 @@ struct TribesSocialView: View {
                             .background(Colors.accent)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .simultaneousGesture(TapGesture().onEnded {
-                        Task {
-                            await joinTribe()
-                        }
-                    })
                     .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -409,6 +404,15 @@ struct TribesSocialView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $shouldNavigateToChat) {
+            TribesChatView(
+                title: title,
+                location: location,
+                imageURL: imageURL,
+                totalTravelers: 67,
+                messages: tribeMessages
+            )
+        }
     }
 }
 
@@ -430,10 +434,10 @@ private extension TribesSocialView {
     }
 
     @MainActor
-    func joinTribe() async {
+    func joinTribe() async -> Bool {
         guard let supabase,
               let tribeID,
-              let userID = supabase.auth.currentUser?.id else { return }
+              let userID = supabase.auth.currentUser?.id else { return false }
 
         let payload = TribeJoinPayload(id: userID, tribeID: tribeID)
 
@@ -442,8 +446,9 @@ private extension TribesSocialView {
                 .from("tribes_join")
                 .insert(payload)
                 .execute()
+            return true
         } catch {
-            return
+            return false
         }
     }
 

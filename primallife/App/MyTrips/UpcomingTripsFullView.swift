@@ -8,6 +8,8 @@ struct UpcomingTripsFullView: View {
     let prefetchedDetails: UnsplashImageDetails?
     @Binding var tribeImageCache: [UUID: Image]
     @Binding var tribeImageURLCache: [UUID: URL]
+    @State private var travelerImageCache: [UUID: Image] = [:]
+    @State private var travelerImageURLCache: [UUID: URL] = [:]
     @State private var selectedTab: UpcomingTripsTab = .travelers
     @StateObject private var viewModel = MyTripsViewModel()
 
@@ -354,13 +356,24 @@ struct UpcomingTripsFullView: View {
         let avatarURL = viewModel.creatorAvatarURL(for: travelerID, supabase: supabase)
 
         Group {
-            if let avatarURL {
+            if let cachedImage = cachedTravelerImage(for: travelerID, avatarURL: avatarURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else if let avatarURL {
                 AsyncImage(url: avatarURL) { phase in
-                    if let image = phase.image {
+                    switch phase {
+                    case .success(let image):
                         image
                             .resizable()
                             .scaledToFill()
-                    } else {
+                            .onAppear {
+                                travelerImageCache[travelerID] = image
+                                travelerImageURLCache[travelerID] = avatarURL
+                            }
+                    case .empty:
+                        Colors.secondaryText.opacity(0.3)
+                    default:
                         Colors.secondaryText.opacity(0.3)
                     }
                 }
@@ -374,6 +387,15 @@ struct UpcomingTripsFullView: View {
             Circle()
                 .stroke(Colors.card, lineWidth: 3)
         }
+    }
+
+    private func cachedTravelerImage(for travelerID: UUID, avatarURL: URL?) -> Image? {
+        guard let avatarURL,
+              let cachedImage = travelerImageCache[travelerID],
+              travelerImageURLCache[travelerID] == avatarURL else {
+            return nil
+        }
+        return cachedImage
     }
 
     @ViewBuilder

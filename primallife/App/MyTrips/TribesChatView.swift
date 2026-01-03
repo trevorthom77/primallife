@@ -126,19 +126,26 @@ struct TribesChatView: View {
                 header
 
                 GeometryReader { proxy in
-                    ScrollView {
-                        VStack(spacing: 14) {
-                            ForEach(messages.indices, id: \.self) { index in
-                                let message = messages[index]
-                                messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                    ScrollViewReader { scrollProxy in
+                        ScrollView {
+                            VStack(spacing: 14) {
+                                ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                                    messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                                }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: proxy.size.height, alignment: .bottom)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: proxy.size.height, alignment: .bottom)
+                        .scrollIndicators(.hidden)
+                        .onAppear {
+                            scrollToBottom(proxy: scrollProxy, animated: false)
+                        }
+                        .onChange(of: messages.count) { _, _ in
+                            scrollToBottom(proxy: scrollProxy, animated: false)
+                        }
                     }
-                    .scrollIndicators(.hidden)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -230,6 +237,17 @@ struct TribesChatView: View {
         guard messages.indices.contains(index) else { return false }
         guard index > 0 else { return true }
         return messages[index].senderID != messages[index - 1].senderID
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
+        guard let lastID = messages.last?.id else { return }
+        if animated {
+            withAnimation {
+                proxy.scrollTo(lastID, anchor: .bottom)
+            }
+        } else {
+            proxy.scrollTo(lastID, anchor: .bottom)
+        }
     }
 
     @ViewBuilder

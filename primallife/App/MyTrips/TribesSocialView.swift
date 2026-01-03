@@ -24,6 +24,7 @@ struct TribesSocialView: View {
     @State private var isShowingDeleteConfirm = false
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
+    @State private var isJoiningTribe = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -208,26 +209,35 @@ struct TribesSocialView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Button {
+                        if hasJoinedTribe {
+                            shouldNavigateToChat = true
+                            return
+                        }
+                        guard !isJoiningTribe else { return }
+                        isJoiningTribe = true
                         Task {
-                            if hasJoinedTribe {
-                                shouldNavigateToChat = true
-                                return
-                            }
-
                             let didJoin = await joinTribe()
                             if didJoin {
                                 hasJoinedTribe = true
                                 shouldNavigateToChat = true
                             }
+                            isJoiningTribe = false
                         }
                     } label: {
-                        Text(hasJoinedTribe ? "View Chat" : "Join")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Colors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        HStack(spacing: 8) {
+                            Text(hasJoinedTribe ? "View Chat" : "Join")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+
+                            if isJoiningTribe {
+                                ProgressView()
+                                    .tint(Colors.tertiaryText)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Colors.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
 

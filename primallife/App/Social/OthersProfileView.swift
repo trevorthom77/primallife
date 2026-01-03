@@ -122,19 +122,32 @@ struct OthersProfileView: View {
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         
-                        if isLoadingTrips {
+                        if isLoadingTrips && trips.isEmpty {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Colors.secondaryText.opacity(0.3))
                                 .frame(width: 344, height: 180)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if !tripPlans.isEmpty {
+                        } else if let friend, !friend.tripPlans.isEmpty {
                             VStack(spacing: 12) {
-                                ForEach(tripPlans) { plan in
+                                ForEach(friend.tripPlans) { plan in
                                     TravelCard(
                                         flag: plan.flag,
                                         location: plan.location,
                                         dates: plan.dates,
                                         imageQuery: plan.imageQuery
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .frame(height: 180)
+                                }
+                            }
+                        } else if !trips.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(trips) { trip in
+                                    TravelCard(
+                                        flag: tripFlag(for: trip),
+                                        location: tripLocation(for: trip),
+                                        dates: tripDateRange(for: trip),
+                                        imageQuery: tripImageQuery(for: trip)
                                     )
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .frame(height: 180)
@@ -166,7 +179,9 @@ struct OthersProfileView: View {
         .task(id: userID) {
             guard let userID else { return }
             await MainActor.run {
-                isLoadingTrips = true
+                if trips.isEmpty {
+                    isLoadingTrips = true
+                }
             }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
@@ -209,23 +224,6 @@ struct OthersProfileView: View {
         }
 
         return friend != nil ? "Likes" : nil
-    }
-
-    private var tripPlans: [TripPlan] {
-        if let friend {
-            return friend.tripPlans
-        }
-
-        return trips.map { trip in
-            let location = tripLocation(for: trip)
-            return TripPlan(
-                title: location,
-                location: location,
-                flag: tripFlag(for: trip),
-                dates: tripDateRange(for: trip),
-                imageQuery: tripImageQuery(for: trip)
-            )
-        }
     }
 
     private var avatarURL: URL? {

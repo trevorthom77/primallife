@@ -227,6 +227,11 @@ struct TribesSocialView: View {
                             .background(Colors.accent)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        Task {
+                            await joinTribe()
+                        }
+                    })
                     .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -407,11 +412,39 @@ struct TribesSocialView: View {
     }
 }
 
+private struct TribeJoinPayload: Encodable {
+    let id: UUID
+    let tribeID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case tribeID = "tribe_id"
+    }
+}
+
 private extension TribesSocialView {
     var dateRangeText: String {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
         let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
         return "\(start) - \(end)"
+    }
+
+    @MainActor
+    func joinTribe() async {
+        guard let supabase,
+              let tribeID,
+              let userID = supabase.auth.currentUser?.id else { return }
+
+        let payload = TribeJoinPayload(id: userID, tribeID: tribeID)
+
+        do {
+            try await supabase
+                .from("tribes_join")
+                .insert(payload)
+                .execute()
+        } catch {
+            return
+        }
     }
 
     @MainActor

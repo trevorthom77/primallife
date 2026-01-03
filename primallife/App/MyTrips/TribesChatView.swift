@@ -80,6 +80,7 @@ private struct TribeMessageSender: Decodable {
 
 private struct TribeChatMessage: Identifiable {
     let id: UUID
+    let senderID: UUID
     let senderName: String
     let senderAvatarURL: URL?
     let text: String
@@ -127,8 +128,9 @@ struct TribesChatView: View {
                 GeometryReader { proxy in
                     ScrollView {
                         VStack(spacing: 14) {
-                            ForEach(messages) { message in
-                                messageBubble(message)
+                            ForEach(messages.indices, id: \.self) { index in
+                                let message = messages[index]
+                                messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -191,16 +193,16 @@ struct TribesChatView: View {
         }
     }
 
-    private func messageBubble(_ message: TribeChatMessage) -> some View {
+    private func messageBubble(_ message: TribeChatMessage, showsHeader: Bool) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-            if !message.senderName.isEmpty {
+            if showsHeader, !message.senderName.isEmpty {
                 HStack(spacing: 6) {
                     if !message.isUser {
                         messageAvatar(message.senderAvatarURL)
                     }
 
                     Text(message.senderName)
-                        .font(.custom(Fonts.regular, size: 12))
+                        .font(.custom(Fonts.regular, size: 16))
                         .foregroundStyle(Colors.secondaryText)
 
                     if message.isUser {
@@ -224,6 +226,12 @@ struct TribesChatView: View {
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
     }
 
+    private func shouldShowSenderHeader(at index: Int) -> Bool {
+        guard messages.indices.contains(index) else { return false }
+        guard index > 0 else { return true }
+        return messages[index].senderID != messages[index - 1].senderID
+    }
+
     @ViewBuilder
     private func messageAvatar(_ avatarURL: URL?) -> some View {
         if let avatarURL {
@@ -234,7 +242,7 @@ struct TribesChatView: View {
             } placeholder: {
                 Color.clear
             }
-            .frame(width: 20, height: 20)
+            .frame(width: 28, height: 28)
             .clipShape(Circle())
         }
     }
@@ -369,6 +377,7 @@ struct TribesChatView: View {
                 let senderKey = row.senderID.uuidString.lowercased()
                 return TribeChatMessage(
                     id: row.id,
+                    senderID: row.senderID,
                     senderName: senderNames[senderKey] ?? "",
                     senderAvatarURL: senderAvatarURLs[senderKey],
                     text: row.text,

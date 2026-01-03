@@ -14,6 +14,7 @@ struct OthersProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
     @State private var profile: UserProfile?
+    @State private var trips: [Trip] = []
 
     init(friend: Friend) {
         self.friend = friend
@@ -159,6 +160,7 @@ struct OthersProfileView: View {
         .task(id: userID) {
             guard let userID else { return }
             await loadProfile(for: userID)
+            await loadTrips(for: userID)
         }
     }
 
@@ -198,7 +200,20 @@ struct OthersProfileView: View {
     }
 
     private var tripPlans: [TripPlan] {
-        friend?.tripPlans ?? []
+        if let friend {
+            return friend.tripPlans
+        }
+
+        return trips.map { trip in
+            let location = tripLocation(for: trip)
+            return TripPlan(
+                title: location,
+                location: location,
+                flag: tripFlag(for: trip),
+                dates: tripDateRange(for: trip),
+                imageQuery: tripImageQuery(for: trip)
+            )
+        }
     }
 
     private var avatarURL: URL? {
@@ -244,6 +259,49 @@ struct OthersProfileView: View {
         } catch {
             return
         }
+    }
+
+    private func loadTrips(for userID: UUID) async {
+        guard let supabase else { return }
+
+        do {
+            let fetchedTrips: [Trip] = try await supabase
+                .from("mytrips")
+                .select()
+                .eq("user_id", value: userID.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+
+            await MainActor.run {
+                trips = fetchedTrips
+            }
+        } catch {
+            return
+        }
+    }
+
+    private func tripFlag(for trip: Trip) -> String {
+        let emojiScalars = trip.destination.unicodeScalars.filter { $0.properties.isEmoji }
+        return String(String.UnicodeScalarView(emojiScalars))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func tripLocation(for trip: Trip) -> String {
+        let filteredScalars = trip.destination.unicodeScalars.filter { !$0.properties.isEmoji }
+        return String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func tripImageQuery(for trip: Trip) -> String {
+        let cleaned = tripLocation(for: trip)
+        return cleaned.isEmpty ? trip.destination : cleaned
+    }
+
+    private func tripDateRange(for trip: Trip) -> String {
+        let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
+        let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
+        return "\(start)–\(end)"
     }
 }
 

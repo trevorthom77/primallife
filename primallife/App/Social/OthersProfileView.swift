@@ -15,6 +15,7 @@ struct OthersProfileView: View {
     @Environment(\.supabaseClient) private var supabase
     @State private var profile: UserProfile?
     @State private var trips: [Trip] = []
+    @State private var isLoadingTrips = false
 
     init(friend: Friend) {
         self.friend = friend
@@ -121,7 +122,12 @@ struct OthersProfileView: View {
                             .font(.custom(Fonts.semibold, size: 18))
                             .foregroundStyle(Colors.primaryText)
                         
-                        if !tripPlans.isEmpty {
+                        if isLoadingTrips {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Colors.secondaryText.opacity(0.3))
+                                .frame(width: 344, height: 180)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else if !tripPlans.isEmpty {
                             VStack(spacing: 12) {
                                 ForEach(tripPlans) { plan in
                                     TravelCard(
@@ -159,8 +165,14 @@ struct OthersProfileView: View {
         }
         .task(id: userID) {
             guard let userID else { return }
+            await MainActor.run {
+                isLoadingTrips = true
+            }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
+            await MainActor.run {
+                isLoadingTrips = false
+            }
         }
     }
 

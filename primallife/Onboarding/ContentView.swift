@@ -21,38 +21,44 @@ struct ContentView: View {
                 Colors.contentview
                     .ignoresSafeArea()
                 
-                VStack(spacing: 0) {
+                GeometryReader { proxy in
+                    let size = proxy.size
+                    let scale = min(size.width / 390, size.height / 844)
+                    let imageWidth = 200 * scale
+                    let imageHeight = 230 * scale
+                    let cornerRadius = 28 * scale
+                    
                     ZStack {
                         Image("travel1")
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 200, height: 230)
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             .scaleEffect(showTopLeft ? 1 : 0.01)
                             .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showTopLeft)
                             .sensoryFeedback(.impact(weight: .medium), trigger: showTopLeft)
                             .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .padding(.leading, 24)
-                            .padding(.top, -160)
+                            .padding(.leading, 24 * scale)
+                            .padding(.top, -160 * scale)
                         
                         Image("travel2")
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 200, height: 230)
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             .rotationEffect(.degrees(10))
                             .scaleEffect(showTopRight ? 1 : 0.01)
                             .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showTopRight)
                             .sensoryFeedback(.impact(weight: .medium), trigger: showTopRight)
                             .frame(maxWidth: .infinity, alignment: .topTrailing)
-                            .padding(.top, -184)
-                            .padding(.trailing, 24)
+                            .padding(.top, -184 * scale)
+                            .padding(.trailing, 24 * scale)
                         
                         Image("travel3")
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 200, height: 230)
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             .rotationEffect(.degrees(-8))
                             .zIndex(1)
                             .scaleEffect(showMiddle ? 1 : 0.01)
@@ -64,31 +70,30 @@ struct ContentView: View {
                         Image("travel4")
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 200, height: 230)
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             .rotationEffect(.degrees(-4))
                             .scaleEffect(showBottomLeft ? 1 : 0.01)
                             .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showBottomLeft)
                             .sensoryFeedback(.impact(weight: .medium), trigger: showBottomLeft)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 300)
-                            .padding(.leading, 20)
+                            .padding(.top, 300 * scale)
+                            .padding(.leading, 20 * scale)
                         
                         Image("travel5")
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 200, height: 230)
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             .rotationEffect(.degrees(10))
                             .scaleEffect(showBottomRight ? 1 : 0.01)
                             .animation(.spring(response: 0.38, dampingFraction: 0.62), value: showBottomRight)
                             .sensoryFeedback(.impact(weight: .medium), trigger: showBottomRight)
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.top, 340)
-                            .padding(.trailing, 36)
+                            .padding(.top, 340 * scale)
+                            .padding(.trailing, 36 * scale)
                     }
-                    
-                    Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
                 
                 VStack {

@@ -66,8 +66,19 @@ private struct TribeMessagePayload: Encodable {
     }
 }
 
+private struct TribeMessageSender: Decodable {
+    let id: String
+    let fullName: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullName = "full_name"
+    }
+}
+
 private struct TribeChatMessage: Identifiable {
     let id: UUID
+    let senderName: String
     let text: String
     let time: String
     let isUser: Bool
@@ -179,6 +190,12 @@ struct TribesChatView: View {
 
     private func messageBubble(_ message: TribeChatMessage) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+            if !message.senderName.isEmpty {
+                Text(message.senderName)
+                    .font(.custom(Fonts.regular, size: 12))
+                    .foregroundStyle(Colors.secondaryText)
+            }
+
             Text(message.text)
                 .font(.custom(Fonts.regular, size: 16))
                 .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
@@ -291,10 +308,25 @@ struct TribesChatView: View {
                 .execute()
                 .value
 
+            var senderNames: [String: String] = [:]
+            let senderIDs = Set(rows.map { $0.senderID.uuidString.lowercased() })
+            if !senderIDs.isEmpty {
+                let senders: [TribeMessageSender] = try await supabase
+                    .from("onboarding")
+                    .select("id, full_name")
+                    .in("id", values: Array(senderIDs))
+                    .execute()
+                    .value
+                senderNames = Dictionary(
+                    uniqueKeysWithValues: senders.map { ($0.id.lowercased(), $0.fullName) }
+                )
+            }
+
             let currentUserID = supabase.auth.currentUser?.id
             messages = rows.map { row in
                 TribeChatMessage(
                     id: row.id,
+                    senderName: senderNames[row.senderID.uuidString.lowercased()] ?? "",
                     text: row.text,
                     time: tribeChatTimeFormatter.string(from: row.createdAt),
                     isUser: row.senderID == currentUserID

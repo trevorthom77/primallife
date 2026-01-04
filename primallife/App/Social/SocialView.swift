@@ -94,6 +94,10 @@ struct MessagesView: View {
                                             .buttonStyle(.plain)
                                         }
                                     }
+                                } else {
+                                    Text("No chats yet")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.secondaryText)
                                 }
                             }
                             

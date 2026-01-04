@@ -43,9 +43,14 @@ private enum TribeChatListCache {
     }
 }
 
+private enum TribeChatImageCache {
+    static var images: [URL: Image] = [:]
+}
+
 struct MessagesView: View {
     @State private var isShowingBell = false
     @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
+    @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
     @State private var isLoadingTribeChats = false
     @Environment(\.supabaseClient) private var supabase
     
@@ -249,18 +254,41 @@ struct MessagesView: View {
     @ViewBuilder
     private func tribeChatImage(for chat: TribeChatPreview) -> some View {
         if let photoURL = chat.photoURL {
-            AsyncImage(url: photoURL) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Colors.card
+            if let cachedImage = cachedTribeChatImage(for: photoURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AsyncImage(url: photoURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .onAppear {
+                                if tribeChatImageCache[photoURL] == nil {
+                                    cacheTribeChatImage(image, for: photoURL)
+                                }
+                            }
+                    case .empty:
+                        Colors.card
+                    default:
+                        Colors.card
+                    }
                 }
             }
         } else {
             Colors.card
         }
+    }
+
+    private func cachedTribeChatImage(for url: URL) -> Image? {
+        tribeChatImageCache[url]
+    }
+
+    private func cacheTribeChatImage(_ image: Image, for url: URL) {
+        tribeChatImageCache[url] = image
+        TribeChatImageCache.images[url] = image
     }
 
     @MainActor

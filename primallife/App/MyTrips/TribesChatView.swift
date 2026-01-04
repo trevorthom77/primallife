@@ -398,7 +398,7 @@ struct TribesChatView: View {
 
             Button(action: {}) {
                 Text("Add Plan")
-                    .font(.travelDetail)
+                    .font(.tripsfont)
                     .foregroundStyle(Colors.primaryText)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 16)

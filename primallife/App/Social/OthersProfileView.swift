@@ -142,6 +142,7 @@ struct OthersProfileView: View {
                                 width: nil,
                                 height: 140
                             )
+                            .allowsHitTesting(false)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(height: 140)
                         }

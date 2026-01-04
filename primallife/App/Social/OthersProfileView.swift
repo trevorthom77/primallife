@@ -9,7 +9,6 @@ import SwiftUI
 import Supabase
 
 struct OthersProfileView: View {
-    let friend: Friend?
     let userID: UUID?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -17,14 +16,8 @@ struct OthersProfileView: View {
     @State private var trips: [Trip] = []
     @State private var isLoadingTrips = false
 
-    init(friend: Friend) {
-        self.friend = friend
-        self.userID = nil
-    }
-
     init(userID: UUID) {
         self.userID = userID
-        self.friend = nil
     }
     
     var body: some View {
@@ -136,18 +129,6 @@ struct OthersProfileView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 140)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if let friend, let plan = friend.tripPlans.first {
-                            TravelCard(
-                                flag: plan.flag,
-                                location: plan.location,
-                                dates: plan.dates,
-                                imageQuery: plan.imageQuery,
-                                showsParticipants: false,
-                                width: nil,
-                                height: 140
-                            )
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .frame(height: 140)
                         } else if let trip = trips.first {
                             TravelCard(
                                 flag: tripFlag(for: trip),
@@ -199,7 +180,7 @@ struct OthersProfileView: View {
     }
 
     private var displayName: String {
-        profile?.fullName ?? friend?.name ?? ""
+        profile?.fullName ?? ""
     }
 
     private var originDisplay: String? {
@@ -208,11 +189,6 @@ struct OthersProfileView: View {
            let name = profile.originName {
             return "\(flag) \(name)"
         }
-
-        if let friend {
-            return "\(friend.countryFlag) \(friend.country)"
-        }
-
         return nil
     }
 
@@ -220,8 +196,7 @@ struct OthersProfileView: View {
         if let profile {
             return profile.bio
         }
-
-        return friend?.about ?? ""
+        return ""
     }
 
     private var likesText: String? {
@@ -230,7 +205,7 @@ struct OthersProfileView: View {
             return likes.isEmpty ? nil : likes
         }
 
-        return friend != nil ? "Likes" : nil
+        return nil
     }
 
     private var avatarURL: URL? {
@@ -249,10 +224,6 @@ struct OthersProfileView: View {
                     Colors.secondaryText.opacity(0.3)
                 }
             }
-        } else if let imageName = friend?.imageName {
-            Image(imageName)
-                .resizable()
-                .scaledToFill()
         } else {
             Colors.secondaryText.opacity(0.3)
         }
@@ -320,20 +291,4 @@ struct OthersProfileView: View {
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return "\(start)–\(end)"
     }
-}
-
-#Preview {
-    OthersProfileView(
-        friend: Friend(
-            name: "Ava",
-            countryFlag: "🇦🇺",
-            country: "Australia",
-            imageName: "profile1",
-            about: "Surf trips, sunrise runs, and finding hidden beaches.",
-            tripPlans: [
-                TripPlan(title: "Bali Surf", location: "Bali", flag: "🇮🇩", dates: "May 12–18", imageQuery: "Bali beach"),
-                TripPlan(title: "Noosa Run", location: "Noosa", flag: "🇦🇺", dates: "Jun 4–6", imageQuery: "Noosa beach")
-            ]
-        )
-    )
 }

@@ -49,51 +49,6 @@ struct MessagesView: View {
         )
     ]
     
-    private let friends: [Friend] = [
-        Friend(
-            name: "Ava",
-            countryFlag: "🇦🇺",
-            country: "Australia",
-            imageName: "profile1",
-            about: "Surf trips, sunrise runs, and finding hidden beaches.",
-            tripPlans: [
-                TripPlan(title: "Bali Surf", location: "Bali", flag: "🇮🇩", dates: "May 12–18", imageQuery: "Bali beach"),
-                TripPlan(title: "Noosa Run", location: "Noosa", flag: "🇦🇺", dates: "Jun 4–6", imageQuery: "Noosa beach")
-            ]
-        ),
-        Friend(
-            name: "Maya",
-            countryFlag: "🇨🇷",
-            country: "Costa Rica",
-            imageName: "profile2",
-            about: "Living between jungle trails and ocean breaks.",
-            tripPlans: [
-                TripPlan(title: "Santa Teresa", location: "Santa Teresa", flag: "🇨🇷", dates: "Apr 22–25", imageQuery: "Santa Teresa beach")
-            ]
-        ),
-        Friend(
-            name: "Liam",
-            countryFlag: "🇮🇪",
-            country: "Ireland",
-            imageName: "profile3",
-            about: "Climbing, cold plunges, and slow travel.",
-            tripPlans: [
-                TripPlan(title: "Swiss Alps", location: "Swiss Alps", flag: "🇨🇭", dates: "Jul 8–15", imageQuery: "Swiss Alps mountains")
-            ]
-        ),
-        Friend(
-            name: "Noah",
-            countryFlag: "🇺🇸",
-            country: "United States",
-            imageName: "profile4",
-            about: "Road trips, camp coffee, and desert nights.",
-            tripPlans: [
-                TripPlan(title: "Zion", location: "Zion", flag: "🇺🇸", dates: "May 1–3", imageQuery: "Zion cliffs"),
-                TripPlan(title: "Big Sur", location: "Big Sur", flag: "🇺🇸", dates: "Jun 18–20", imageQuery: "Big Sur coast")
-            ]
-        )
-    ]
-    
     private let plans: [Plan] = [
         Plan(title: "Beach Run", detail: "Tomorrow • 7:00 AM"),
         Plan(title: "Sunset Climb", detail: "Friday • 5:30 PM"),
@@ -139,23 +94,15 @@ struct MessagesView: View {
                                     }
                                 }
                             }
-                            
+
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Friends")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
-                                
-                                VStack(spacing: 12) {
-                                    ForEach(friends) { friend in
-                                        NavigationLink {
-                                            OthersProfileView(friend: friend)
-                                        } label: {
-                                            friendRow(friend)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
+
+                                friendCard
                             }
+                            
                         }
                         .padding(.vertical, 16)
                         .padding(.horizontal, 24)
@@ -277,29 +224,30 @@ struct MessagesView: View {
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
-    
-    private func friendRow(_ friend: Friend) -> some View {
+
+    private var friendCard: some View {
         HStack(spacing: 12) {
             Circle()
                 .fill(Colors.accent)
                 .frame(width: 44, height: 44)
-            
+
             VStack(alignment: .leading, spacing: 4) {
-                Text(friend.name)
+                Text("Ava")
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
-                
-            Text("\(friend.countryFlag) \(friend.country)")
-                .font(.custom(Fonts.regular, size: 14))
-                .foregroundStyle(Colors.secondaryText)
+
+                Text("🇦🇺 Australia")
+                    .font(.custom(Fonts.regular, size: 14))
+                    .foregroundStyle(Colors.secondaryText)
             }
-            
+
             Spacer()
         }
         .padding()
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
+    
 }
 
 struct ChatDetailView: View {
@@ -478,25 +426,6 @@ struct ChatPreview: Identifiable {
         self.imageName = imageName
         self.memberCount = memberCount
     }
-}
-
-struct Friend: Identifiable {
-    let id = UUID()
-    let name: String
-    let countryFlag: String
-    let country: String
-    let imageName: String
-    let about: String
-    let tripPlans: [TripPlan]
-}
-
-struct TripPlan: Identifiable {
-    let id = UUID()
-    let title: String
-    let location: String
-    let flag: String
-    let dates: String
-    let imageQuery: String
 }
 
 private struct Plan: Identifiable {

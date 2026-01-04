@@ -172,6 +172,7 @@ final class MyTripsViewModel: ObservableObject {
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
+    private var pendingTripKeys: Set<String> = []
 
     func loadTrips(supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -206,6 +207,15 @@ final class MyTripsViewModel: ObservableObject {
 
     func addTrip(destination: String, checkIn: Date, returnDate: Date, supabase: SupabaseClient?) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        let tripKey = pendingTripKey(destination: destination, checkIn: checkIn, returnDate: returnDate)
+        if pendingTripKeys.contains(tripKey)
+            || hasOverlappingTrip(destination: destination, checkIn: checkIn, returnDate: returnDate) {
+            error = "You already added this trip."
+            return
+        }
+        pendingTripKeys.insert(tripKey)
+        defer { pendingTripKeys.remove(tripKey) }
+
         let payload = NewTrip(
             userID: userID,
             destination: destination,
@@ -375,6 +385,28 @@ final class MyTripsViewModel: ObservableObject {
 
     func isLoadingTravelers(tripID: UUID) -> Bool {
         loadingTravelerTripIDs.contains(tripID)
+    }
+
+    private func normalizedDestination(_ destination: String) -> String {
+        destination.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func pendingTripKey(destination: String, checkIn: Date, returnDate: Date) -> String {
+        let normalized = normalizedDestination(destination)
+        let checkInString = myTripsDateFormatter.string(from: checkIn)
+        let returnString = myTripsDateFormatter.string(from: returnDate)
+        return "\(normalized)|\(checkInString)|\(returnString)"
+    }
+
+    private func hasOverlappingTrip(destination: String, checkIn: Date, returnDate: Date) -> Bool {
+        let normalized = normalizedDestination(destination)
+        let normalizedCheckIn = Calendar.current.startOfDay(for: checkIn)
+        let normalizedReturn = Calendar.current.startOfDay(for: returnDate)
+        return trips.contains { trip in
+            normalizedDestination(trip.destination) == normalized
+                && normalizedCheckIn <= trip.returnDate
+                && normalizedReturn >= trip.checkIn
+        }
     }
 }
 

@@ -126,6 +126,13 @@ struct TripsView: View {
                         .foregroundStyle(Colors.secondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                if viewModel.error == "You already added this trip." {
+                    Text("You already added this trip.")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 
                 Button {
                     Task {

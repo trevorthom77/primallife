@@ -320,6 +320,6 @@ struct OthersProfileView: View {
     private func tripDateRange(for trip: Trip) -> String {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
-        return "\(start)–\(end)"
+        return start == end ? start : "\(start)–\(end)"
     }
 }

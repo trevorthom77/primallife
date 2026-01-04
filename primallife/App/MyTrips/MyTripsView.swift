@@ -265,8 +265,22 @@ final class MyTripsViewModel: ObservableObject {
                 .execute()
                 .value
 
-            tribesByTrip[trip.id] = fetchedTribes
-            await loadCreators(for: fetchedTribes, supabase: supabase)
+            let startOfToday = Calendar.current.startOfDay(for: Date())
+            let expiredTribes = fetchedTribes.filter { $0.endDate < startOfToday }
+            if !expiredTribes.isEmpty {
+                let expiredIDs = expiredTribes.map { $0.id.uuidString }
+                do {
+                    try await supabase
+                        .from("tribes")
+                        .delete()
+                        .in("id", values: expiredIDs)
+                        .execute()
+                } catch { }
+            }
+
+            let activeTribes = fetchedTribes.filter { $0.endDate >= startOfToday }
+            tribesByTrip[trip.id] = activeTribes
+            await loadCreators(for: activeTribes, supabase: supabase)
         } catch {
             tribesByTrip[trip.id] = []
         }

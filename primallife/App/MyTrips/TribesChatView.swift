@@ -396,7 +396,9 @@ struct TribesChatView: View {
 
             Spacer()
 
-            Button(action: {}) {
+            NavigationLink {
+                AddPlanView()
+            } label: {
                 Text("Add Plan")
                     .font(.tripsfont)
                     .foregroundStyle(Colors.primaryText)

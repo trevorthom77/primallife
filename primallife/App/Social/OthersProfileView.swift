@@ -15,6 +15,7 @@ struct OthersProfileView: View {
     @State private var profile: UserProfile?
     @State private var trips: [Trip] = []
     @State private var isLoadingTrips = false
+    @State private var isShowingSeeAllSheet = false
 
     init(userID: UUID) {
         self.userID = userID
@@ -118,7 +119,9 @@ struct OthersProfileView: View {
 
                             Spacer()
 
-                            Button("See All") { }
+                            Button("See All") {
+                                isShowingSeeAllSheet = true
+                            }
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.accent)
                         }
@@ -163,6 +166,20 @@ struct OthersProfileView: View {
             }
             .padding(.leading, 16)
             .padding(.top, 16)
+        }
+        .sheet(isPresented: $isShowingSeeAllSheet) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 32)
+                }
+            }
         }
         .task(id: userID) {
             guard let userID else { return }

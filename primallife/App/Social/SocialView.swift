@@ -10,45 +10,6 @@ import SwiftUI
 struct MessagesView: View {
     @State private var isShowingBell = false
     
-    private let chats: [ChatPreview] = [
-        ChatPreview(
-            name: "Aurora Tribe",
-            unreadCount: 2,
-            messages: [
-                ChatMessage(text: "Marina meetup tonight?", time: "7:40 PM", isUser: false),
-                ChatMessage(text: "I can be there by 8.", time: "7:42 PM", isUser: true),
-                ChatMessage(text: "Perfect—bring boards?", time: "7:44 PM", isUser: false),
-                ChatMessage(text: "Already packed.", time: "7:45 PM", isUser: true)
-            ],
-            imageName: "profile1",
-            memberCount: 6
-        ),
-        ChatPreview(
-            name: "Coastal Crew",
-            unreadCount: 0,
-            messages: [
-                ChatMessage(text: "Waves look perfect tomorrow.", time: "6:18 PM", isUser: false),
-                ChatMessage(text: "Let’s roll at sunrise.", time: "6:21 PM", isUser: true),
-                ChatMessage(text: "Meet at the north lot?", time: "6:26 PM", isUser: false),
-                ChatMessage(text: "North lot works. I’ll bring extra wax.", time: "6:30 PM", isUser: true)
-            ],
-            imageName: "profile2",
-            memberCount: 4
-        ),
-        ChatPreview(
-            name: "Sierra Pack",
-            unreadCount: 1,
-            messages: [
-                ChatMessage(text: "Sunrise hike confirmed.", time: "5:02 PM", isUser: false),
-                ChatMessage(text: "Layer up—trail will be cold.", time: "5:05 PM", isUser: false),
-                ChatMessage(text: "Packing headlamps now.", time: "5:08 PM", isUser: true),
-                ChatMessage(text: "See you at the trailhead.", time: "5:10 PM", isUser: true)
-            ],
-            imageName: "profile3",
-            memberCount: 5
-        )
-    ]
-    
     private let plans: [Plan] = [
         Plan(title: "Beach Run", detail: "Tomorrow • 7:00 AM"),
         Plan(title: "Sunset Climb", detail: "Friday • 5:30 PM"),
@@ -70,17 +31,6 @@ struct MessagesView: View {
                                 Text("Chats")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
-                                
-                                VStack(spacing: 12) {
-                                    ForEach(chats) { chat in
-                                        NavigationLink {
-                                            ChatDetailView(chat: chat)
-                                        } label: {
-                                            chatRow(chat)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
                             }
                             
                             VStack(alignment: .leading, spacing: 12) {

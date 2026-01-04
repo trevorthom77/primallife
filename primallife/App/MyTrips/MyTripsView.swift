@@ -187,17 +187,6 @@ final class MyTripsViewModel: ObservableObject {
                 .value
 
             let startOfToday = Calendar.current.startOfDay(for: Date())
-            let expiredTrips = fetchedTrips.filter { $0.returnDate < startOfToday }
-            if !expiredTrips.isEmpty {
-                let expiredIDs = expiredTrips.map { $0.id.uuidString }
-                try await supabase
-                    .from("mytrips")
-                    .delete()
-                    .in("id", values: expiredIDs)
-                    .eq("user_id", value: "\(userID)")
-                    .execute()
-            }
-
             trips = fetchedTrips.filter { $0.returnDate >= startOfToday }
             error = nil
         } catch {

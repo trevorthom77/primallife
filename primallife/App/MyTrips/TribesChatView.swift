@@ -109,6 +109,7 @@ struct TribesChatView: View {
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
+    @State private var sendFeedbackToggle = false
     @State private var realtimeChannel: RealtimeChannelV2?
     @State private var realtimeTask: Task<Void, Never>?
     @FocusState private var isInputFocused: Bool
@@ -215,6 +216,7 @@ struct TribesChatView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button(action: {
+                sendFeedbackToggle.toggle()
                 Task {
                     await sendMessage()
                 }
@@ -228,6 +230,7 @@ struct TribesChatView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.impact(weight: .medium), trigger: sendFeedbackToggle)
         }
     }
 

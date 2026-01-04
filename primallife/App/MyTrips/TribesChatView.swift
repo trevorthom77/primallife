@@ -395,6 +395,17 @@ struct TribesChatView: View {
             .frame(height: 48, alignment: .leading)
 
             Spacer()
+
+            Button(action: {}) {
+                Text("Add Plan")
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)

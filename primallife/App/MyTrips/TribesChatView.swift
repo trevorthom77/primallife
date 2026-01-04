@@ -353,43 +353,50 @@ struct TribesChatView: View {
                     .foregroundStyle(Colors.primaryText)
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    HStack(spacing: -8) {
-                        Image("profile1")
-                            .resizable()
-                            .scaledToFill()
+                HStack(spacing: -8) {
+                    Image("profile1")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+
+                    Image("profile2")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+
+                    Image("profile3")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Colors.card, lineWidth: 3)
+                        }
+
+                    ZStack {
+                        Circle()
+                            .fill(Colors.background)
                             .frame(width: 28, height: 28)
-                            .clipShape(Circle())
                             .overlay {
                                 Circle()
                                     .stroke(Colors.card, lineWidth: 3)
                             }
 
-                        Image("profile2")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 28, height: 28)
-                            .clipShape(Circle())
-                            .overlay {
-                                Circle()
-                                    .stroke(Colors.card, lineWidth: 3)
-                            }
-
-                        Image("profile3")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 28, height: 28)
-                            .clipShape(Circle())
-                            .overlay {
-                                Circle()
-                                    .stroke(Colors.card, lineWidth: 3)
-                            }
+                        Text("\(totalTravelers)+")
+                            .font(.badgeDetail)
+                            .foregroundStyle(Colors.primaryText)
                     }
-
-                    Text("\(totalTravelers) travelers")
-                        .font(.custom(Fonts.regular, size: 14))
-                        .foregroundStyle(Colors.secondaryText)
-                        .lineLimit(1)
                 }
             }
             .frame(height: 48, alignment: .leading)

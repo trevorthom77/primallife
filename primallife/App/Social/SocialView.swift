@@ -28,9 +28,24 @@ private let socialChatTimeFormatter: DateFormatter = {
     return formatter
 }()
 
+private enum TribeChatListCache {
+    static var latestChats: [TribeChatPreview] = []
+    static var chatsByUser: [UUID: [TribeChatPreview]] = [:]
+
+    static func cachedChats(for userID: UUID?) -> [TribeChatPreview] {
+        guard let userID else { return latestChats }
+        return chatsByUser[userID] ?? latestChats
+    }
+
+    static func update(_ chats: [TribeChatPreview], for userID: UUID) {
+        chatsByUser[userID] = chats
+        latestChats = chats
+    }
+}
+
 struct MessagesView: View {
     @State private var isShowingBell = false
-    @State private var joinedTribeChats: [TribeChatPreview] = []
+    @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
     @State private var isLoadingTribeChats = false
     @Environment(\.supabaseClient) private var supabase
     
@@ -254,6 +269,11 @@ struct MessagesView: View {
               let userID = supabase.auth.currentUser?.id,
               !isLoadingTribeChats else { return }
 
+        let cachedChats = TribeChatListCache.cachedChats(for: userID)
+        if joinedTribeChats.isEmpty, !cachedChats.isEmpty {
+            joinedTribeChats = cachedChats
+        }
+
         isLoadingTribeChats = true
         defer { isLoadingTribeChats = false }
 
@@ -268,6 +288,7 @@ struct MessagesView: View {
             let tribeIDs = joinRows.map { $0.tribeID }
             if tribeIDs.isEmpty {
                 joinedTribeChats = []
+                TribeChatListCache.update([], for: userID)
                 return
             }
 
@@ -306,7 +327,7 @@ struct MessagesView: View {
                 memberCounts[row.tribeID, default: 0] += 1
             }
 
-            joinedTribeChats = tribes.map { tribe in
+            let chats = tribes.map { tribe in
                 let message = latestMessageByTribe[tribe.id]
                 return TribeChatPreview(
                     id: tribe.id,
@@ -318,8 +339,12 @@ struct MessagesView: View {
                     memberCount: memberCounts[tribe.id] ?? 0
                 )
             }
+            joinedTribeChats = chats
+            TribeChatListCache.update(chats, for: userID)
         } catch {
-            joinedTribeChats = []
+            if joinedTribeChats.isEmpty {
+                joinedTribeChats = TribeChatListCache.cachedChats(for: userID)
+            }
         }
     }
     

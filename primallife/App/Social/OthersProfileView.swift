@@ -174,6 +174,19 @@ struct OthersProfileView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
+                        ForEach(trips) { trip in
+                            TravelCard(
+                                flag: tripFlag(for: trip),
+                                location: tripLocation(for: trip),
+                                dates: tripDateRange(for: trip),
+                                imageQuery: tripImageQuery(for: trip),
+                                showsParticipants: false,
+                                width: nil,
+                                height: 140
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 140)
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 24)

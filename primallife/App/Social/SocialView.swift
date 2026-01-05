@@ -28,6 +28,22 @@ private let socialChatTimeFormatter: DateFormatter = {
     return formatter
 }()
 
+private let socialPlanDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+private let socialPlanMonthDayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "EEEE MMM d"
+    return formatter
+}()
+
 private enum TribeChatListCache {
     static var latestChats: [TribeChatPreview] = []
     static var chatsByUser: [UUID: [TribeChatPreview]] = [:]
@@ -50,6 +66,7 @@ private enum TribeChatImageCache {
 struct MessagesView: View {
     @State private var isShowingBell = false
     @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
+    @State private var activePlans: [SocialPlan] = []
     @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
     @State private var isLoadingTribeChats = false
     @Environment(\.supabaseClient) private var supabase
@@ -99,6 +116,10 @@ struct MessagesView: View {
                                 Text("Plans")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
+
+                                if !activePlans.isEmpty {
+                                    plansRow
+                                }
                             }
 
                             VStack(alignment: .leading, spacing: 12) {
@@ -243,6 +264,63 @@ struct MessagesView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    private var plansRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 12) {
+                ForEach(activePlans) { plan in
+                    planCard(plan)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func planCard(_ plan: SocialPlan) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let imageURL = plan.imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty:
+                        Colors.card
+                    default:
+                        Colors.card
+                    }
+                }
+                .frame(height: 90)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+
+            Text(plan.title)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+                .lineLimit(1)
+
+            Text(planDateRangeText(plan))
+                .font(.badgeDetail)
+                .foregroundStyle(Colors.secondaryText)
+        }
+        .padding(12)
+        .frame(width: 220, alignment: .leading)
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func planDateRangeText(_ plan: SocialPlan) -> String {
+        let calendar = Calendar(identifier: .gregorian)
+        if calendar.isDate(plan.startDate, inSameDayAs: plan.endDate) {
+            return socialPlanMonthDayFormatter.string(from: plan.startDate)
+        }
+
+        let startText = socialPlanMonthDayFormatter.string(from: plan.startDate)
+        let endText = socialPlanMonthDayFormatter.string(from: plan.endDate)
+        return "\(startText) - \(endText)"
+    }
+
     @ViewBuilder
     private func tribeChatImage(for chat: TribeChatPreview) -> some View {
         if let photoURL = chat.photoURL {
@@ -309,6 +387,7 @@ struct MessagesView: View {
             if tribeIDs.isEmpty {
                 joinedTribeChats = []
                 TribeChatListCache.update([], for: userID)
+                activePlans = []
                 return
             }
 
@@ -361,10 +440,62 @@ struct MessagesView: View {
             }
             joinedTribeChats = chats
             TribeChatListCache.update(chats, for: userID)
+            await loadActivePlans(for: tribeIDs)
         } catch {
             if joinedTribeChats.isEmpty {
                 joinedTribeChats = TribeChatListCache.cachedChats(for: userID)
             }
+        }
+    }
+
+    @MainActor
+    private func loadActivePlans(for tribeIDs: [UUID]) async {
+        guard let supabase else { return }
+
+        let tribeIDStrings = tribeIDs.map { $0.uuidString }
+        if tribeIDStrings.isEmpty {
+            activePlans = []
+            return
+        }
+
+        do {
+            let rows: [SocialPlanRow] = try await supabase
+                .from("plans")
+                .select("id, tribe_id, title, start_date, end_date, image_path")
+                .in("tribe_id", values: tribeIDStrings)
+                .order("start_date", ascending: true)
+                .execute()
+                .value
+
+            let calendar = Calendar(identifier: .gregorian)
+            let today = calendar.startOfDay(for: Date())
+
+            let newPlans = rows.compactMap { row -> SocialPlan? in
+                let startDay = calendar.startOfDay(for: row.startDate)
+                let endDay = calendar.startOfDay(for: row.endDate)
+                guard startDay <= today && endDay >= today else { return nil }
+
+                let imageURL: URL?
+                if let imagePath = row.imagePath, !imagePath.isEmpty {
+                    imageURL = try? supabase.storage
+                        .from("plan-photos")
+                        .getPublicURL(path: imagePath)
+                } else {
+                    imageURL = nil
+                }
+
+                return SocialPlan(
+                    id: row.id,
+                    title: row.title,
+                    startDate: row.startDate,
+                    endDate: row.endDate,
+                    imageURL: imageURL
+                )
+            }
+
+            activePlans = newPlans
+        } catch {
+            return
         }
     }
     
@@ -638,6 +769,51 @@ private struct TribeChatMessageRow: Decodable {
         }
         createdAt = createdAtDate
     }
+}
+
+private struct SocialPlanRow: Decodable {
+    let id: UUID
+    let tribeID: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let imagePath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case tribeID = "tribe_id"
+        case title
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case imagePath = "image_path"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        tribeID = try container.decode(UUID.self, forKey: .tribeID)
+        title = try container.decode(String.self, forKey: .title)
+        imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
+
+        let startDateString = try container.decode(String.self, forKey: .startDate)
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        guard let start = socialPlanDateFormatter.date(from: startDateString),
+              let end = socialPlanDateFormatter.date(from: endDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.startDate], debugDescription: "Invalid plan date format")
+            )
+        }
+        startDate = start
+        endDate = end
+    }
+}
+
+private struct SocialPlan: Identifiable {
+    let id: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let imageURL: URL?
 }
 
 private struct TribeChatPreview: Identifiable {

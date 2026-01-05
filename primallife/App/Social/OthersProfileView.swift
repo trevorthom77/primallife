@@ -18,6 +18,14 @@ struct OthersProfileView: View {
     @State private var isShowingSeeAllSheet = false
     @State private var hasRequestedFriend = false
 
+    private struct FriendRequestStatusRow: Decodable {
+        let requesterID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case requesterID = "requester_id"
+        }
+    }
+
     init(userID: UUID) {
         self.userID = userID
     }
@@ -344,14 +352,6 @@ struct OthersProfileView: View {
                 hasRequestedFriend = false
             }
             return
-        }
-
-        struct FriendRequestStatusRow: Decodable {
-            let requesterID: UUID
-
-            enum CodingKeys: String, CodingKey {
-                case requesterID = "requester_id"
-            }
         }
 
         do {

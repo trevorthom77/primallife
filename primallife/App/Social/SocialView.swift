@@ -117,7 +117,7 @@ struct MessagesView: View {
 
                                 if !joinedTribeChats.isEmpty {
                                     VStack(spacing: 12) {
-                                        ForEach(joinedTribeChats) { chat in
+                                        ForEach(Array(joinedTribeChats.prefix(3))) { chat in
                                             NavigationLink {
                                                 TribesChatView(
                                                     tribeID: chat.id,

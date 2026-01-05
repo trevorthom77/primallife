@@ -16,6 +16,7 @@ private struct NewPlan: Encodable {
     let endDate: Date
     let tribeID: UUID
     let creatorID: UUID
+    let imagePath: String?
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -23,6 +24,7 @@ private struct NewPlan: Encodable {
         case endDate = "end_date"
         case tribeID = "tribe_id"
         case creatorID = "creator_id"
+        case imagePath = "image_path"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -32,6 +34,9 @@ private struct NewPlan: Encodable {
         try container.encode(planDateFormatter.string(from: endDate), forKey: .endDate)
         try container.encode(tribeID, forKey: .tribeID)
         try container.encode(creatorID, forKey: .creatorID)
+        if let imagePath {
+            try container.encode(imagePath, forKey: .imagePath)
+        }
     }
 }
 
@@ -281,15 +286,17 @@ struct AddPlanView: View {
         let trimmedTitle = planTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty, hasStartDate, hasEndDate else { return }
 
-        let payload = NewPlan(
-            title: trimmedTitle,
-            startDate: startDate,
-            endDate: endDate,
-            tribeID: tribeID,
-            creatorID: userID
-        )
-
         do {
+            let imagePath = try await uploadPlanPhotoIfNeeded(supabase: supabase, userID: userID)
+            let payload = NewPlan(
+                title: trimmedTitle,
+                startDate: startDate,
+                endDate: endDate,
+                tribeID: tribeID,
+                creatorID: userID,
+                imagePath: imagePath
+            )
+
             try await supabase
                 .from("plans")
                 .insert(payload)
@@ -298,6 +305,23 @@ struct AddPlanView: View {
         } catch {
             return
         }
+    }
+
+    private func uploadPlanPhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> String? {
+        guard let planImage,
+              let imageData = planImage.jpegData(compressionQuality: 0.9) else { return nil }
+
+        let path = "\(userID)/plans/\(UUID().uuidString).jpg"
+
+        try await supabase.storage
+            .from("plan-photos")
+            .upload(
+                path,
+                data: imageData,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+
+        return path
     }
 }
 

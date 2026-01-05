@@ -17,6 +17,7 @@ struct OthersProfileView: View {
     @State private var isLoadingTrips = false
     @State private var isShowingSeeAllSheet = false
     @State private var hasRequestedFriend = false
+    @State private var isShowingCancelRequestConfirm = false
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
@@ -63,11 +64,15 @@ struct OthersProfileView: View {
                     
                     HStack(spacing: 12) {
                         Button(action: {
-                            Task {
-                                let didRequest = await sendFriendRequest()
-                                if didRequest {
-                                    await MainActor.run {
-                                        hasRequestedFriend = true
+                            if hasRequestedFriend {
+                                isShowingCancelRequestConfirm = true
+                            } else {
+                                Task {
+                                    let didRequest = await sendFriendRequest()
+                                    if didRequest {
+                                        await MainActor.run {
+                                            hasRequestedFriend = true
+                                        }
                                     }
                                 }
                             }
@@ -81,7 +86,6 @@ struct OthersProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
-                        .disabled(hasRequestedFriend)
                         
                         Button(action: {}) {
                             Text("Message")
@@ -186,6 +190,30 @@ struct OthersProfileView: View {
             }
             .padding(.leading, 16)
             .padding(.top, 16)
+        }
+        .overlay {
+            if isShowingCancelRequestConfirm {
+                confirmationOverlay(
+                    title: "Cancel Request",
+                    message: "Cancel this friend request?",
+                    confirmTitle: "Cancel Request",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingCancelRequestConfirm = false
+                        Task {
+                            let didCancel = await cancelFriendRequest()
+                            if didCancel {
+                                await MainActor.run {
+                                    hasRequestedFriend = false
+                                }
+                            }
+                        }
+                    },
+                    cancelAction: {
+                        isShowingCancelRequestConfirm = false
+                    }
+                )
+            }
         }
         .sheet(isPresented: $isShowingSeeAllSheet) {
             ZStack {
@@ -450,6 +478,87 @@ struct OthersProfileView: View {
             return true
         } catch {
             return false
+        }
+    }
+
+    private func cancelFriendRequest() async -> Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let receiverID = userID,
+              currentUserID != receiverID
+        else { return false }
+
+        do {
+            try await supabase
+                .from("friend_requests")
+                .delete()
+                .eq("requester_id", value: currentUserID.uuidString)
+                .eq("receiver_id", value: receiverID.uuidString)
+                .execute()
+            Self.cacheFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: receiverID
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
         }
     }
 

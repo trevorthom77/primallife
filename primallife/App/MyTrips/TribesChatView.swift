@@ -29,6 +29,22 @@ private let tribePlanDateFormatter: DateFormatter = {
     return formatter
 }()
 
+private let tribePlanMonthDayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "EEEE MMM d"
+    return formatter
+}()
+
+private let tribePlanMonthDayYearFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "EEEE MMM d"
+    return formatter
+}()
+
 private struct TribeMessageRow: Decodable {
     let id: UUID
     let createdAt: Date
@@ -343,9 +359,23 @@ struct TribesChatView: View {
     }
 
     private func planDateRangeText(_ plan: TribePlan) -> String {
-        let start = plan.startDate.formatted(date: .abbreviated, time: .omitted)
-        let end = plan.endDate.formatted(date: .abbreviated, time: .omitted)
-        return start == end ? start : "\(start) - \(end)"
+        let calendar = Calendar(identifier: .gregorian)
+        if calendar.isDate(plan.startDate, inSameDayAs: plan.endDate) {
+            return tribePlanMonthDayYearFormatter.string(from: plan.startDate)
+        }
+
+        let startYear = calendar.component(.year, from: plan.startDate)
+        let endYear = calendar.component(.year, from: plan.endDate)
+
+        if startYear == endYear {
+            let startText = tribePlanMonthDayFormatter.string(from: plan.startDate)
+            let endText = tribePlanMonthDayYearFormatter.string(from: plan.endDate)
+            return "\(startText) - \(endText)"
+        }
+
+        let startText = tribePlanMonthDayYearFormatter.string(from: plan.startDate)
+        let endText = tribePlanMonthDayYearFormatter.string(from: plan.endDate)
+        return "\(startText) - \(endText)"
     }
 
     private func messageBubble(_ message: TribeChatMessage, showsHeader: Bool) -> some View {

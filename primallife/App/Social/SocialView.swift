@@ -308,25 +308,36 @@ struct MessagesView: View {
     }
 
     private func planCard(_ plan: SocialPlan) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .top, spacing: 12) {
             if let imageURL = plan.imageURL {
                 planImage(for: imageURL)
-                    .frame(height: 90)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 72, height: 72)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
-            Text(plan.title)
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(plan.title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+                    .lineLimit(1)
 
-            Text(planDateRangeText(plan))
-                .font(.badgeDetail)
-                .foregroundStyle(Colors.secondaryText)
+                Text(planDateRangeText(plan))
+                    .font(.badgeDetail)
+                    .foregroundStyle(Colors.secondaryText)
+
+                if !plan.tribeName.isEmpty {
+                    Text(plan.tribeName)
+                        .font(.badgeDetail)
+                        .foregroundStyle(Colors.primaryText)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Colors.contentview)
+                        .clipShape(Capsule())
+                }
+            }
         }
         .padding(12)
-        .frame(width: 220, alignment: .leading)
+        .frame(width: 240, alignment: .leading)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
@@ -503,7 +514,8 @@ struct MessagesView: View {
             }
             joinedTribeChats = chats
             TribeChatListCache.update(chats, for: userID)
-            await loadActivePlans(for: tribeIDs, userID: userID)
+            let tribeNamesByID = Dictionary(uniqueKeysWithValues: tribes.map { ($0.id, $0.name) })
+            await loadActivePlans(for: tribeIDs, tribeNamesByID: tribeNamesByID, userID: userID)
         } catch {
             if joinedTribeChats.isEmpty {
                 joinedTribeChats = TribeChatListCache.cachedChats(for: userID)
@@ -512,7 +524,11 @@ struct MessagesView: View {
     }
 
     @MainActor
-    private func loadActivePlans(for tribeIDs: [UUID], userID: UUID) async {
+    private func loadActivePlans(
+        for tribeIDs: [UUID],
+        tribeNamesByID: [UUID: String],
+        userID: UUID
+    ) async {
         guard let supabase else { return }
 
         let tribeIDStrings = tribeIDs.map { $0.uuidString }
@@ -553,7 +569,8 @@ struct MessagesView: View {
                     title: row.title,
                     startDate: row.startDate,
                     endDate: row.endDate,
-                    imageURL: imageURL
+                    imageURL: imageURL,
+                    tribeName: tribeNamesByID[row.tribeID] ?? ""
                 )
             }
 
@@ -881,6 +898,7 @@ private struct SocialPlan: Identifiable {
     let startDate: Date
     let endDate: Date
     let imageURL: URL?
+    let tribeName: String
 }
 
 private struct TribeChatPreview: Identifiable {

@@ -59,6 +59,25 @@ private enum TribeChatListCache {
     }
 }
 
+private enum SocialPlanListCache {
+    static var latestPlans: [SocialPlan] = []
+    static var plansByUser: [UUID: [SocialPlan]] = [:]
+
+    static func cachedPlans(for userID: UUID?) -> [SocialPlan] {
+        guard let userID else { return latestPlans }
+        return plansByUser[userID] ?? latestPlans
+    }
+
+    static func update(_ plans: [SocialPlan], for userID: UUID) {
+        plansByUser[userID] = plans
+        latestPlans = plans
+    }
+}
+
+private enum SocialPlanImageCache {
+    static var images: [URL: Image] = [:]
+}
+
 private enum TribeChatImageCache {
     static var images: [URL: Image] = [:]
 }
@@ -66,7 +85,8 @@ private enum TribeChatImageCache {
 struct MessagesView: View {
     @State private var isShowingBell = false
     @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
-    @State private var activePlans: [SocialPlan] = []
+    @State private var activePlans: [SocialPlan] = SocialPlanListCache.cachedPlans(for: nil)
+    @State private var planImageCache: [URL: Image] = SocialPlanImageCache.images
     @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
     @State private var isLoadingTribeChats = false
     @Environment(\.supabaseClient) private var supabase
@@ -83,9 +103,17 @@ struct MessagesView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Chats")
-                                    .font(.travelTitle)
-                                    .foregroundStyle(Colors.primaryText)
+                                HStack {
+                                    Text("Chats")
+                                        .font(.travelTitle)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    Spacer()
+
+                                    Button("See All") { }
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
+                                }
 
                                 if !joinedTribeChats.isEmpty {
                                     VStack(spacing: 12) {
@@ -278,21 +306,10 @@ struct MessagesView: View {
     private func planCard(_ plan: SocialPlan) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if let imageURL = plan.imageURL {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .empty:
-                        Colors.card
-                    default:
-                        Colors.card
-                    }
-                }
-                .frame(height: 90)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                planImage(for: imageURL)
+                    .frame(height: 90)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
             Text(plan.title)
@@ -308,6 +325,42 @@ struct MessagesView: View {
         .frame(width: 220, alignment: .leading)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func planImage(for url: URL) -> some View {
+        if let cachedImage = cachedPlanImage(for: url) {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .onAppear {
+                            if planImageCache[url] == nil {
+                                cachePlanImage(image, for: url)
+                            }
+                        }
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
+                }
+            }
+        }
+    }
+
+    private func cachedPlanImage(for url: URL) -> Image? {
+        planImageCache[url]
+    }
+
+    private func cachePlanImage(_ image: Image, for url: URL) {
+        planImageCache[url] = image
+        SocialPlanImageCache.images[url] = image
     }
 
     private func planDateRangeText(_ plan: SocialPlan) -> String {
@@ -372,6 +425,11 @@ struct MessagesView: View {
             joinedTribeChats = cachedChats
         }
 
+        let cachedPlans = SocialPlanListCache.cachedPlans(for: userID)
+        if activePlans.isEmpty, !cachedPlans.isEmpty {
+            activePlans = cachedPlans
+        }
+
         isLoadingTribeChats = true
         defer { isLoadingTribeChats = false }
 
@@ -388,6 +446,7 @@ struct MessagesView: View {
                 joinedTribeChats = []
                 TribeChatListCache.update([], for: userID)
                 activePlans = []
+                SocialPlanListCache.update([], for: userID)
                 return
             }
 
@@ -440,7 +499,7 @@ struct MessagesView: View {
             }
             joinedTribeChats = chats
             TribeChatListCache.update(chats, for: userID)
-            await loadActivePlans(for: tribeIDs)
+            await loadActivePlans(for: tribeIDs, userID: userID)
         } catch {
             if joinedTribeChats.isEmpty {
                 joinedTribeChats = TribeChatListCache.cachedChats(for: userID)
@@ -449,12 +508,13 @@ struct MessagesView: View {
     }
 
     @MainActor
-    private func loadActivePlans(for tribeIDs: [UUID]) async {
+    private func loadActivePlans(for tribeIDs: [UUID], userID: UUID) async {
         guard let supabase else { return }
 
         let tribeIDStrings = tribeIDs.map { $0.uuidString }
         if tribeIDStrings.isEmpty {
             activePlans = []
+            SocialPlanListCache.update([], for: userID)
             return
         }
 
@@ -494,8 +554,11 @@ struct MessagesView: View {
             }
 
             activePlans = newPlans
+            SocialPlanListCache.update(newPlans, for: userID)
         } catch {
-            return
+            if activePlans.isEmpty {
+                activePlans = SocialPlanListCache.cachedPlans(for: userID)
+            }
         }
     }
     

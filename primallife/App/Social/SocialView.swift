@@ -54,12 +54,6 @@ struct MessagesView: View {
     @State private var isLoadingTribeChats = false
     @Environment(\.supabaseClient) private var supabase
     
-    private let plans: [Plan] = [
-        Plan(title: "Beach Run", detail: "Tomorrow • 7:00 AM"),
-        Plan(title: "Sunset Climb", detail: "Friday • 5:30 PM"),
-        Plan(title: "Cafe Check-in", detail: "Sunday • 10:00 AM")
-    ]
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -105,12 +99,6 @@ struct MessagesView: View {
                                 Text("Plans")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
-                                
-                                VStack(spacing: 12) {
-                                    ForEach(plans) { plan in
-                                        planRow(plan)
-                                    }
-                                }
                             }
 
                             VStack(alignment: .leading, spacing: 12) {
@@ -380,29 +368,6 @@ struct MessagesView: View {
         }
     }
     
-    private func planRow(_ plan: Plan) -> some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Colors.accent)
-                .frame(width: 48, height: 48)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(plan.title)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.primaryText)
-                
-                Text(plan.detail)
-                    .font(.travelBody)
-                    .foregroundStyle(Colors.secondaryText)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(Colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
     private var friendCard: some View {
         HStack(spacing: 12) {
             Circle()
@@ -604,12 +569,6 @@ struct ChatPreview: Identifiable {
         self.imageName = imageName
         self.memberCount = memberCount
     }
-}
-
-private struct Plan: Identifiable {
-    let id = UUID()
-    let title: String
-    let detail: String
 }
 
 struct ChatMessage: Identifiable {

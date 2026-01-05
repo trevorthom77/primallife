@@ -73,6 +73,7 @@ struct OthersProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
+                        .disabled(hasRequestedFriend)
                         
                         Button(action: {}) {
                             Text("Message")
@@ -214,6 +215,7 @@ struct OthersProfileView: View {
             }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
+            await loadFriendRequestStatus(for: userID)
             await MainActor.run {
                 isLoadingTrips = false
             }
@@ -333,12 +335,53 @@ struct OthersProfileView: View {
         return start == end ? start : "\(start)–\(end)"
     }
 
+    private func loadFriendRequestStatus(for otherUserID: UUID) async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              currentUserID != otherUserID
+        else {
+            await MainActor.run {
+                hasRequestedFriend = false
+            }
+            return
+        }
+
+        struct FriendRequestStatusRow: Decodable {
+            let requesterID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case requesterID = "requester_id"
+            }
+        }
+
+        do {
+            let rows: [FriendRequestStatusRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id")
+                .eq("requester_id", value: currentUserID.uuidString)
+                .eq("receiver_id", value: otherUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            await MainActor.run {
+                hasRequestedFriend = !rows.isEmpty
+            }
+        } catch {
+            return
+        }
+    }
+
     private func sendFriendRequest() async -> Bool {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id,
               let receiverID = userID,
               currentUserID != receiverID
         else { return false }
+
+        if hasRequestedFriend {
+            return true
+        }
 
         struct FriendRequestInsert: Encodable {
             let requesterID: UUID
@@ -351,6 +394,19 @@ struct OthersProfileView: View {
         }
 
         do {
+            let existing: [FriendRequestStatusRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id")
+                .eq("requester_id", value: currentUserID.uuidString)
+                .eq("receiver_id", value: receiverID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            if !existing.isEmpty {
+                return true
+            }
+
             try await supabase
                 .from("friend_requests")
                 .insert(

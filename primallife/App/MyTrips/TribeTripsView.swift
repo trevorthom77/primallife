@@ -100,6 +100,7 @@ private struct CreateTribeFormView: View {
     let onFinish: () -> Void
     @State private var groupName: String = ""
     @State private var privacy: TribePrivacy = .public
+    @State private var hasSelectedPrivacy = false
     @FocusState private var isGroupNameFocused: Bool
     @State private var groupPhoto: UIImage?
     @State private var groupPhotoData: Data?
@@ -236,21 +237,24 @@ private struct CreateTribeFormView: View {
 
                     VStack(spacing: 12) {
                         ForEach(TribePrivacy.allCases) { option in
+                            let isSelected = isPrivacySelected(option)
+
                             Button {
                                 privacy = option
+                                hasSelectedPrivacy = true
                             } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(option.label)
                                         .font(.travelDetail)
-                                        .foregroundStyle(selectedTextColor(for: option))
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
 
                                     Text(option.description)
                                         .font(.travelBody)
-                                        .foregroundStyle(selectedSubtextColor(for: option))
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(16)
-                                .background(privacy == option ? Colors.accent : Colors.card)
+                                .background(isSelected ? Colors.accent : Colors.card)
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
@@ -308,12 +312,8 @@ private struct CreateTribeFormView: View {
         }
     }
 
-    private func selectedTextColor(for option: TribePrivacy) -> Color {
-        option == privacy ? Colors.tertiaryText : Colors.primaryText
-    }
-
-    private func selectedSubtextColor(for option: TribePrivacy) -> Color {
-        option == privacy ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
+    private func isPrivacySelected(_ option: TribePrivacy) -> Bool {
+        hasSelectedPrivacy && privacy == option
     }
 
     private var isContinueEnabled: Bool {

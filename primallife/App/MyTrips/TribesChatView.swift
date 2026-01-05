@@ -81,6 +81,7 @@ private struct TribeMessageRow: Decodable {
 private struct TribePlanRow: Decodable {
     let id: UUID
     let tribeID: UUID
+    let creatorID: UUID
     let title: String
     let startDate: Date
     let endDate: Date
@@ -89,6 +90,7 @@ private struct TribePlanRow: Decodable {
     enum CodingKeys: String, CodingKey {
         case id
         case tribeID = "tribe_id"
+        case creatorID = "creator_id"
         case title
         case startDate = "start_date"
         case endDate = "end_date"
@@ -99,6 +101,7 @@ private struct TribePlanRow: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         tribeID = try container.decode(UUID.self, forKey: .tribeID)
+        creatorID = try container.decode(UUID.self, forKey: .creatorID)
         title = try container.decode(String.self, forKey: .title)
         imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
 
@@ -151,6 +154,7 @@ private struct TribeChatMessage: Identifiable {
 
 private struct TribePlan: Identifiable {
     let id: UUID
+    let creatorID: UUID
     let title: String
     let startDate: Date
     let endDate: Date
@@ -324,7 +328,8 @@ struct TribesChatView: View {
     }
 
     private func planCard(_ plan: TribePlan) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let isCreator = plan.creatorID == supabase?.auth.currentUser?.id
+        return VStack(alignment: .leading, spacing: 8) {
             if let imageURL = plan.imageURL {
                 AsyncImage(url: imageURL) { phase in
                     switch phase {
@@ -342,14 +347,18 @@ struct TribesChatView: View {
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .topTrailing) {
-                    planMoreButton
-                        .padding(.top, 8)
-                        .padding(.trailing, 8)
+                    if isCreator {
+                        planMoreButton
+                            .padding(.top, 8)
+                            .padding(.trailing, 8)
+                    }
                 }
             } else {
                 HStack {
                     Spacer()
-                    planMoreButton
+                    if isCreator {
+                        planMoreButton
+                    }
                 }
             }
 
@@ -594,7 +603,7 @@ struct TribesChatView: View {
         do {
             let rows: [TribePlanRow] = try await supabase
                 .from("plans")
-                .select("id, tribe_id, title, start_date, end_date, image_path")
+                .select("id, tribe_id, creator_id, title, start_date, end_date, image_path")
                 .eq("tribe_id", value: tribeID.uuidString)
                 .order("start_date", ascending: true)
                 .execute()
@@ -612,6 +621,7 @@ struct TribesChatView: View {
 
                 return TribePlan(
                     id: row.id,
+                    creatorID: row.creatorID,
                     title: row.title,
                     startDate: row.startDate,
                     endDate: row.endDate,

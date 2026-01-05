@@ -21,6 +21,14 @@ private let tribeChatTimeFormatter: DateFormatter = {
     return formatter
 }()
 
+private let tribePlanDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
 private struct TribeMessageRow: Decodable {
     let id: UUID
     let createdAt: Date
@@ -51,6 +59,43 @@ private struct TribeMessageRow: Decodable {
             )
         }
         createdAt = createdAtDate
+    }
+}
+
+private struct TribePlanRow: Decodable {
+    let id: UUID
+    let tribeID: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let imagePath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case tribeID = "tribe_id"
+        case title
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case imagePath = "image_path"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        tribeID = try container.decode(UUID.self, forKey: .tribeID)
+        title = try container.decode(String.self, forKey: .title)
+        imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
+
+        let startDateString = try container.decode(String.self, forKey: .startDate)
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        guard let start = tribePlanDateFormatter.date(from: startDateString),
+              let end = tribePlanDateFormatter.date(from: endDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.startDate], debugDescription: "Invalid plan date format")
+            )
+        }
+        startDate = start
+        endDate = end
     }
 }
 
@@ -88,6 +133,14 @@ private struct TribeChatMessage: Identifiable {
     let isUser: Bool
 }
 
+private struct TribePlan: Identifiable {
+    let id: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let imageURL: URL?
+}
+
 private struct TribeChatCacheEntry {
     var messages: [TribeChatMessage]
     var headerImage: Image?
@@ -105,6 +158,7 @@ struct TribesChatView: View {
     let imageURL: URL?
     let totalTravelers: Int
     @State private var headerImage: Image?
+    @State private var plans: [TribePlan] = []
     @State private var messages: [TribeChatMessage] = []
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
@@ -142,6 +196,10 @@ struct TribesChatView: View {
 
             VStack(spacing: 0) {
                 header
+
+                if !plans.isEmpty {
+                    plansRow
+                }
 
                 GeometryReader { proxy in
                     ScrollViewReader { scrollProxy in
@@ -185,6 +243,7 @@ struct TribesChatView: View {
             isInputFocused = false
         }
         .task(id: tribeID) {
+            await loadPlans()
             await loadMessages()
             await startRealtime()
         }
@@ -194,6 +253,20 @@ struct TribesChatView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+    }
+
+    private var plansRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 12) {
+                ForEach(plans) { plan in
+                    planCard(plan)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+        }
+        .scrollIndicators(.hidden)
+        .background(Colors.background)
     }
 
     private var typeBar: some View {
@@ -232,6 +305,47 @@ struct TribesChatView: View {
             .buttonStyle(.plain)
             .sensoryFeedback(.impact(weight: .medium), trigger: sendFeedbackToggle)
         }
+    }
+
+    private func planCard(_ plan: TribePlan) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let imageURL = plan.imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty:
+                        Colors.card
+                    default:
+                        Colors.card
+                    }
+                }
+                .frame(height: 90)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+
+            Text(plan.title)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+                .lineLimit(1)
+
+            Text(planDateRangeText(plan))
+                .font(.badgeDetail)
+                .foregroundStyle(Colors.secondaryText)
+        }
+        .padding(12)
+        .frame(width: 220, alignment: .leading)
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func planDateRangeText(_ plan: TribePlan) -> String {
+        let start = plan.startDate.formatted(date: .abbreviated, time: .omitted)
+        let end = plan.endDate.formatted(date: .abbreviated, time: .omitted)
+        return start == end ? start : "\(start) - \(end)"
     }
 
     private func messageBubble(_ message: TribeChatMessage, showsHeader: Bool) -> some View {
@@ -419,6 +533,44 @@ struct TribesChatView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(Colors.background)
+    }
+
+    @MainActor
+    private func loadPlans() async {
+        guard let supabase else { return }
+
+        do {
+            let rows: [TribePlanRow] = try await supabase
+                .from("plans")
+                .select("id, tribe_id, title, start_date, end_date, image_path")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .order("start_date", ascending: true)
+                .execute()
+                .value
+
+            let newPlans = rows.map { row -> TribePlan in
+                let imageURL: URL?
+                if let imagePath = row.imagePath, !imagePath.isEmpty {
+                    imageURL = try? supabase.storage
+                        .from("plan-photos")
+                        .getPublicURL(path: imagePath)
+                } else {
+                    imageURL = nil
+                }
+
+                return TribePlan(
+                    id: row.id,
+                    title: row.title,
+                    startDate: row.startDate,
+                    endDate: row.endDate,
+                    imageURL: imageURL
+                )
+            }
+
+            plans = newPlans
+        } catch {
+            return
+        }
     }
 
     @MainActor

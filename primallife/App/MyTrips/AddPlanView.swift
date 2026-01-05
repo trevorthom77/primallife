@@ -53,6 +53,7 @@ struct AddPlanView: View {
     @State private var hasStartDate = false
     @State private var hasEndDate = false
     @State private var activeDatePicker: DatePickerType?
+    @State private var isCreating = false
     private let unsplashURL = URL(string: "https://unsplash.com")!
 
     private var isAddPlanEnabled: Bool {
@@ -170,26 +171,44 @@ struct AddPlanView: View {
                         )
                     }
                 }
-
-                Button {
-                    Task {
-                        await addPlan()
-                    }
-                } label: {
-                    Text("Create Plan")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(isAddPlanEnabled ? Colors.accent : Colors.accent.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .contentShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .buttonStyle(.plain)
-                .disabled(!isAddPlanEnabled)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    guard !isCreating else { return }
+                    isCreating = true
+                    Task {
+                        await addPlan()
+                        await MainActor.run {
+                            isCreating = false
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Create Plan")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+
+                        if isCreating {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
+                }
+                .disabled(!isAddPlanEnabled || isCreating)
+                .opacity(isAddPlanEnabled ? 1 : 0.6)
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
         }
         .scrollDismissesKeyboard(.immediately)
         .contentShape(Rectangle())

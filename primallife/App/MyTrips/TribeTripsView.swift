@@ -212,7 +212,7 @@ private struct CreateTribeFormView: View {
                         Link(destination: unsplashURL) {
                             HStack {
                                 Spacer()
-                                Image("unsplashwhite")
+                                Image("unsplashblack")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(height: 28)
@@ -221,7 +221,7 @@ private struct CreateTribeFormView: View {
                             .padding(.vertical, 12)
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity)
-                            .background(Colors.accent)
+                            .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                         }

@@ -16,6 +16,7 @@ struct OthersProfileView: View {
     @State private var trips: [Trip] = []
     @State private var isLoadingTrips = false
     @State private var isShowingSeeAllSheet = false
+    @State private var hasRequestedFriend = false
 
     init(userID: UUID) {
         self.userID = userID
@@ -55,10 +56,15 @@ struct OthersProfileView: View {
                     HStack(spacing: 12) {
                         Button(action: {
                             Task {
-                                await sendFriendRequest()
+                                let didRequest = await sendFriendRequest()
+                                if didRequest {
+                                    await MainActor.run {
+                                        hasRequestedFriend = true
+                                    }
+                                }
                             }
                         }) {
-                            Text("Add Friend")
+                            Text(hasRequestedFriend ? "Requested" : "Add Friend")
                                 .font(.custom(Fonts.semibold, size: 16))
                                 .foregroundStyle(Colors.tertiaryText)
                                 .frame(maxWidth: .infinity)
@@ -327,12 +333,12 @@ struct OthersProfileView: View {
         return start == end ? start : "\(start)–\(end)"
     }
 
-    private func sendFriendRequest() async {
+    private func sendFriendRequest() async -> Bool {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id,
               let receiverID = userID,
               currentUserID != receiverID
-        else { return }
+        else { return false }
 
         struct FriendRequestInsert: Encodable {
             let requesterID: UUID
@@ -354,8 +360,9 @@ struct OthersProfileView: View {
                     )
                 )
                 .execute()
+            return true
         } catch {
-            return
+            return false
         }
     }
 }

@@ -53,7 +53,11 @@ struct OthersProfileView: View {
                     }
                     
                     HStack(spacing: 12) {
-                        Button(action: {}) {
+                        Button(action: {
+                            Task {
+                                await sendFriendRequest()
+                            }
+                        }) {
                             Text("Add Friend")
                                 .font(.custom(Fonts.semibold, size: 16))
                                 .foregroundStyle(Colors.tertiaryText)
@@ -321,5 +325,37 @@ struct OthersProfileView: View {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func sendFriendRequest() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let receiverID = userID,
+              currentUserID != receiverID
+        else { return }
+
+        struct FriendRequestInsert: Encodable {
+            let requesterID: UUID
+            let receiverID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case requesterID = "requester_id"
+                case receiverID = "receiver_id"
+            }
+        }
+
+        do {
+            try await supabase
+                .from("friend_requests")
+                .insert(
+                    FriendRequestInsert(
+                        requesterID: currentUserID,
+                        receiverID: receiverID
+                    )
+                )
+                .execute()
+        } catch {
+            return
+        }
     }
 }

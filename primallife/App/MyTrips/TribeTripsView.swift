@@ -317,7 +317,9 @@ private struct CreateTribeFormView: View {
     }
 
     private var isContinueEnabled: Bool {
-        !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && groupPhoto != nil
+        !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && groupPhoto != nil
+            && hasSelectedPrivacy
     }
 }
 

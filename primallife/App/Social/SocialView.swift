@@ -147,6 +147,10 @@ struct MessagesView: View {
 
                                 if !activePlans.isEmpty {
                                     plansRow
+                                } else {
+                                    Text("No plans yet")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.secondaryText)
                                 }
                             }
 

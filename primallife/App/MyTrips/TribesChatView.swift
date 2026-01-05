@@ -341,6 +341,16 @@ struct TribesChatView: View {
                 .frame(height: 90)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(alignment: .topTrailing) {
+                    planMoreButton
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            } else {
+                HStack {
+                    Spacer()
+                    planMoreButton
+                }
             }
 
             Text(plan.title)
@@ -356,6 +366,18 @@ struct TribesChatView: View {
         .frame(width: 220, alignment: .leading)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var planMoreButton: some View {
+        Button(action: {}) {
+            Image(systemName: "ellipsis")
+                .font(.travelBody)
+                .foregroundStyle(Colors.primaryText)
+                .frame(width: 36, height: 36)
+                .background(Colors.card.opacity(0.9))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func planDateRangeText(_ plan: TribePlan) -> String {

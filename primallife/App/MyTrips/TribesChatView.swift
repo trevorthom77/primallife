@@ -179,6 +179,7 @@ struct TribesChatView: View {
     let totalTravelers: Int
     @State private var headerImage: Image?
     @State private var plans: [TribePlan] = []
+    @State private var selectedPlan: TribePlan?
     @State private var messages: [TribeChatMessage] = []
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
@@ -273,6 +274,16 @@ struct TribesChatView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .sheet(item: $selectedPlan) { plan in
+            PlanMoreSheetView(
+                plan: plan,
+                onDeletePlan: {
+                    Task {
+                        await deletePlan(plan)
+                    }
+                }
+            )
+        }
     }
 
     private var plansRow: some View {
@@ -348,7 +359,7 @@ struct TribesChatView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .topTrailing) {
                     if isCreator {
-                        planMoreButton
+                        planMoreButton(for: plan)
                             .padding(.top, 8)
                             .padding(.trailing, 8)
                     }
@@ -357,7 +368,7 @@ struct TribesChatView: View {
                 HStack {
                     Spacer()
                     if isCreator {
-                        planMoreButton
+                        planMoreButton(for: plan)
                     }
                 }
             }
@@ -377,8 +388,10 @@ struct TribesChatView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private var planMoreButton: some View {
-        Button(action: {}) {
+    private func planMoreButton(for plan: TribePlan) -> some View {
+        Button(action: {
+            selectedPlan = plan
+        }) {
             Image(systemName: "ellipsis")
                 .font(.travelBody)
                 .foregroundStyle(Colors.primaryText)
@@ -636,6 +649,23 @@ struct TribesChatView: View {
     }
 
     @MainActor
+    private func deletePlan(_ plan: TribePlan) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            try await supabase
+                .from("plans")
+                .delete()
+                .eq("id", value: plan.id.uuidString)
+                .eq("creator_id", value: userID.uuidString)
+                .execute()
+            await loadPlans()
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
     private func loadMessages() async {
         guard let supabase else { return }
 
@@ -792,5 +822,140 @@ struct TribesChatView: View {
             )
         entry.avatarImageCache[url] = image
         TribeChatCache.entries[tribeID] = entry
+    }
+}
+
+private struct PlanMoreSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var isShowingDeleteConfirm = false
+    let plan: TribePlan
+    let onDeletePlan: () -> Void
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Delete Plan")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Text("This removes \(plan.title) from the plans list.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Button(action: {
+                        isShowingDeleteConfirm = true
+                    }) {
+                        HStack {
+                            Text("Delete Plan")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
+                Spacer()
+            }
+            .padding(20)
+        }
+        .overlay {
+            if isShowingDeleteConfirm {
+                confirmationOverlay(
+                    title: "Delete Plan",
+                    message: "This removes \(plan.title) from the plans list.",
+                    confirmTitle: "Delete",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingDeleteConfirm = false
+                        onDeletePlan()
+                        dismiss()
+                    },
+                    cancelAction: {
+                        isShowingDeleteConfirm = false
+                    }
+                )
+            }
+        }
+        .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
+        .presentationDragIndicator(.hidden)
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 }

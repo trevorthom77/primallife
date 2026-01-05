@@ -535,7 +535,7 @@ struct OthersProfileView: View {
 
                 HStack(spacing: 12) {
                     Button(action: cancelAction) {
-                        Text("Cancel")
+                        Text("Keep")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
                             .frame(maxWidth: .infinity)

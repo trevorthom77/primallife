@@ -86,6 +86,7 @@ struct OthersProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
+                        .opacity(hasRequestedFriend ? 0.6 : 1)
                         
                         Button(action: {}) {
                             Text("Message")
@@ -196,7 +197,7 @@ struct OthersProfileView: View {
                 confirmationOverlay(
                     title: "Cancel Request",
                     message: "Cancel this friend request?",
-                    confirmTitle: "Cancel Request",
+                    confirmTitle: "Cancel",
                     isDestructive: true,
                     confirmAction: {
                         isShowingCancelRequestConfirm = false

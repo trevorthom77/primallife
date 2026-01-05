@@ -1,8 +1,44 @@
 import SwiftUI
 import UIKit
+import Supabase
+
+private let planDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+private struct NewPlan: Encodable {
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let tribeID: UUID
+    let creatorID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case startDate = "start_date"
+        case endDate = "end_date"
+        case tribeID = "tribe_id"
+        case creatorID = "creator_id"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(title, forKey: .title)
+        try container.encode(planDateFormatter.string(from: startDate), forKey: .startDate)
+        try container.encode(planDateFormatter.string(from: endDate), forKey: .endDate)
+        try container.encode(tribeID, forKey: .tribeID)
+        try container.encode(creatorID, forKey: .creatorID)
+    }
+}
 
 struct AddPlanView: View {
+    let tribeID: UUID
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
     @State private var planTitle: String = ""
     @FocusState private var isTitleFocused: Bool
     @State private var planImage: UIImage?
@@ -12,6 +48,11 @@ struct AddPlanView: View {
     @State private var hasStartDate = false
     @State private var hasEndDate = false
     @State private var activeDatePicker: DatePickerType?
+
+    private var isAddPlanEnabled: Bool {
+        let trimmedTitle = planTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmedTitle.isEmpty && hasStartDate && hasEndDate
+    }
 
     var body: some View {
         ScrollView {
@@ -99,6 +140,23 @@ struct AddPlanView: View {
                         )
                     }
                 }
+
+                Button {
+                    Task {
+                        await addPlan()
+                    }
+                } label: {
+                    Text("Create Plan")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(isAddPlanEnabled ? Colors.accent : Colors.accent.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(.plain)
+                .disabled(!isAddPlanEnabled)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -215,6 +273,31 @@ struct AddPlanView: View {
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    @MainActor
+    private func addPlan() async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        let trimmedTitle = planTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty, hasStartDate, hasEndDate else { return }
+
+        let payload = NewPlan(
+            title: trimmedTitle,
+            startDate: startDate,
+            endDate: endDate,
+            tribeID: tribeID,
+            creatorID: userID
+        )
+
+        do {
+            try await supabase
+                .from("plans")
+                .insert(payload)
+                .execute()
+            dismiss()
+        } catch {
+            return
+        }
     }
 }
 

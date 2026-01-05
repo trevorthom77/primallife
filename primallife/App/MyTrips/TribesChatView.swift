@@ -404,7 +404,7 @@ struct TribesChatView: View {
             Spacer()
 
             NavigationLink {
-                AddPlanView()
+                AddPlanView(tribeID: tribeID)
             } label: {
                 Text("Add Plan")
                     .font(.tripsfont)

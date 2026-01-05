@@ -202,7 +202,7 @@ struct AddPlanView: View {
                     .background(Colors.accent)
                     .cornerRadius(16)
                 }
-                .disabled(!isAddPlanEnabled || isCreating)
+                .disabled(!isAddPlanEnabled)
                 .opacity(isAddPlanEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)

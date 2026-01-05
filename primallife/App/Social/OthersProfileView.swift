@@ -221,6 +221,17 @@ struct OthersProfileView: View {
                     isLoadingTrips = true
                 }
             }
+            if let supabase,
+               let currentUserID = supabase.auth.currentUser?.id,
+               currentUserID != userID {
+                let cached = Self.cachedFriendRequestStatus(
+                    currentUserID: currentUserID,
+                    otherUserID: userID
+                )
+                await MainActor.run {
+                    hasRequestedFriend = cached
+                }
+            }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
             await loadFriendRequestStatus(for: userID)
@@ -367,6 +378,11 @@ struct OthersProfileView: View {
             await MainActor.run {
                 hasRequestedFriend = !rows.isEmpty
             }
+            Self.cacheFriendRequestStatus(
+                !rows.isEmpty,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
         } catch {
             return
         }
@@ -380,6 +396,11 @@ struct OthersProfileView: View {
         else { return false }
 
         if hasRequestedFriend {
+            Self.cacheFriendRequestStatus(
+                true,
+                currentUserID: currentUserID,
+                otherUserID: receiverID
+            )
             return true
         }
 
@@ -404,6 +425,11 @@ struct OthersProfileView: View {
                 .value
 
             if !existing.isEmpty {
+                Self.cacheFriendRequestStatus(
+                    true,
+                    currentUserID: currentUserID,
+                    otherUserID: receiverID
+                )
                 return true
             }
 
@@ -416,9 +442,47 @@ struct OthersProfileView: View {
                     )
                 )
                 .execute()
+            Self.cacheFriendRequestStatus(
+                true,
+                currentUserID: currentUserID,
+                otherUserID: receiverID
+            )
             return true
         } catch {
             return false
         }
+    }
+
+    private static func cachedFriendRequestStatus(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> Bool {
+        UserDefaults.standard.bool(
+            forKey: friendRequestCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func cacheFriendRequestStatus(
+        _ requested: Bool,
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) {
+        UserDefaults.standard.set(
+            requested,
+            forKey: friendRequestCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func friendRequestCacheKey(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> String {
+        "friendRequestStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
     }
 }

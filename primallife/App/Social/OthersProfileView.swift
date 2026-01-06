@@ -17,6 +17,7 @@ struct OthersProfileView: View {
     @State private var isLoadingTrips = false
     @State private var isShowingSeeAllSheet = false
     @State private var hasRequestedFriend = false
+    @State private var isFriend = false
     @State private var isShowingCancelRequestConfirm = false
 
     private struct FriendRequestStatusRow: Decodable {
@@ -24,6 +25,14 @@ struct OthersProfileView: View {
 
         enum CodingKeys: String, CodingKey {
             case requesterID = "requester_id"
+        }
+    }
+
+    private struct FriendStatusRow: Decodable {
+        let friendID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case friendID = "friend_id"
         }
     }
 
@@ -77,7 +86,7 @@ struct OthersProfileView: View {
                                 }
                             }
                         }) {
-                            Text(hasRequestedFriend ? "Requested" : "Add Friend")
+                            Text(friendButtonTitle)
                                 .font(.custom(Fonts.semibold, size: 16))
                                 .foregroundStyle(Colors.tertiaryText)
                                 .frame(maxWidth: .infinity)
@@ -86,7 +95,8 @@ struct OthersProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
-                        .opacity(hasRequestedFriend ? 0.6 : 1)
+                        .opacity(hasRequestedFriend && !isFriend ? 0.6 : 1)
+                        .allowsHitTesting(!isFriend)
                         
                         Button(action: {}) {
                             Text("Message")
@@ -263,6 +273,7 @@ struct OthersProfileView: View {
             }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
+            await loadFriendStatus(for: userID)
             await loadFriendRequestStatus(for: userID)
             await MainActor.run {
                 isLoadingTrips = false
@@ -272,6 +283,13 @@ struct OthersProfileView: View {
 
     private var displayName: String {
         profile?.fullName ?? ""
+    }
+
+    private var friendButtonTitle: String {
+        if isFriend {
+            return "Friends"
+        }
+        return hasRequestedFriend ? "Requested" : "Add Friend"
     }
 
     private var originDisplay: String? {
@@ -383,6 +401,35 @@ struct OthersProfileView: View {
         return start == end ? start : "\(start)–\(end)"
     }
 
+    private func loadFriendStatus(for otherUserID: UUID) async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              currentUserID != otherUserID
+        else {
+            await MainActor.run {
+                isFriend = false
+            }
+            return
+        }
+
+        do {
+            let rows: [FriendStatusRow] = try await supabase
+                .from("friends")
+                .select("friend_id")
+                .eq("user_id", value: currentUserID.uuidString)
+                .eq("friend_id", value: otherUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            await MainActor.run {
+                isFriend = !rows.isEmpty
+            }
+        } catch {
+            return
+        }
+    }
+
     private func loadFriendRequestStatus(for otherUserID: UUID) async {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id,
@@ -444,6 +491,23 @@ struct OthersProfileView: View {
         }
 
         do {
+            let existingFriends: [FriendStatusRow] = try await supabase
+                .from("friends")
+                .select("friend_id")
+                .eq("user_id", value: currentUserID.uuidString)
+                .eq("friend_id", value: receiverID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            if !existingFriends.isEmpty {
+                await MainActor.run {
+                    isFriend = true
+                    hasRequestedFriend = false
+                }
+                return false
+            }
+
             let existing: [FriendRequestStatusRow] = try await supabase
                 .from("friend_requests")
                 .select("requester_id")

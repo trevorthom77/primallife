@@ -400,9 +400,24 @@ struct OthersProfileView: View {
                     currentUserID: currentUserID,
                     otherUserID: userID
                 )
+                let cachedIncomingRequest = Self.cachedIncomingFriendRequestStatus(
+                    currentUserID: currentUserID,
+                    otherUserID: userID
+                )
+                let cachedBlocked = Self.cachedBlockStatus(
+                    currentUserID: currentUserID,
+                    otherUserID: userID
+                )
+                let cachedBlockedBy = Self.cachedBlockedByStatus(
+                    currentUserID: currentUserID,
+                    otherUserID: userID
+                )
                 await MainActor.run {
                     isFriend = cachedFriendStatus
                     hasRequestedFriend = cachedRequest
+                    hasIncomingFriendRequest = cachedIncomingRequest
+                    hasBlockedUser = cachedBlocked
+                    isBlockedByUser = cachedBlockedBy
                 }
             }
             await loadBlockStatus(for: userID)
@@ -576,6 +591,16 @@ struct OthersProfileView: View {
                 hasBlockedUser = hasBlocked
                 isBlockedByUser = isBlockedBy
             }
+            Self.cacheBlockStatus(
+                hasBlocked,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            Self.cacheBlockedByStatus(
+                isBlockedBy,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
         } catch {
             return
         }
@@ -694,6 +719,11 @@ struct OthersProfileView: View {
                 currentUserID: currentUserID,
                 otherUserID: otherUserID
             )
+            Self.cacheIncomingFriendRequestStatus(
+                incoming,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
         } catch {
             return
         }
@@ -743,6 +773,11 @@ struct OthersProfileView: View {
                 otherUserID: requesterID
             )
             Self.cacheFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: requesterID
+            )
+            Self.cacheIncomingFriendRequestStatus(
                 false,
                 currentUserID: currentUserID,
                 otherUserID: requesterID
@@ -919,6 +954,16 @@ struct OthersProfileView: View {
                 currentUserID: currentUserID,
                 otherUserID: otherUserID
             )
+            Self.cacheIncomingFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            Self.cacheBlockStatus(
+                true,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
             return true
         } catch {
             return false
@@ -1029,6 +1074,11 @@ struct OthersProfileView: View {
             await MainActor.run {
                 hasBlockedUser = false
             }
+            Self.cacheBlockStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
             return true
         } catch {
             return false
@@ -1155,6 +1205,105 @@ struct OthersProfileView: View {
         otherUserID: UUID
     ) -> String {
         "friendRequestStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
+    }
+
+    private static func cachedIncomingFriendRequestStatus(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> Bool {
+        UserDefaults.standard.bool(
+            forKey: incomingFriendRequestCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func cacheIncomingFriendRequestStatus(
+        _ incoming: Bool,
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) {
+        UserDefaults.standard.set(
+            incoming,
+            forKey: incomingFriendRequestCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func incomingFriendRequestCacheKey(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> String {
+        "incomingFriendRequestStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
+    }
+
+    private static func cachedBlockStatus(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> Bool {
+        UserDefaults.standard.bool(
+            forKey: blockStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func cacheBlockStatus(
+        _ hasBlocked: Bool,
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) {
+        UserDefaults.standard.set(
+            hasBlocked,
+            forKey: blockStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func blockStatusCacheKey(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> String {
+        "blockStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
+    }
+
+    private static func cachedBlockedByStatus(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> Bool {
+        UserDefaults.standard.bool(
+            forKey: blockedByStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func cacheBlockedByStatus(
+        _ isBlockedBy: Bool,
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) {
+        UserDefaults.standard.set(
+            isBlockedBy,
+            forKey: blockedByStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func blockedByStatusCacheKey(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> String {
+        "blockedByStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
     }
 }
 

@@ -61,159 +61,163 @@ struct OthersProfileView: View {
         ZStack {
             Colors.background
                 .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 16) {
-                    avatarView
-                        .frame(width: 140, height: 140)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 4)
+
+            if isBlockedByUser {
+                blockedProfileView
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        avatarView
+                            .frame(width: 140, height: 140)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 4)
+                            }
+
+                        HStack(spacing: 8) {
+                            Text(displayName)
+                                .font(.customTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(Colors.accent)
                         }
-                    
-                    HStack(spacing: 8) {
-                        Text(displayName)
-                            .font(.customTitle)
-                            .foregroundStyle(Colors.primaryText)
-                        
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(Colors.accent)
-                    }
-                    
-                    if let originDisplay {
-                        Text(originDisplay)
-                            .font(.custom(Fonts.regular, size: 16))
-                            .foregroundStyle(Colors.secondaryText)
-                    }
-                    
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            guard !isBlocked else { return }
-                            if hasIncomingFriendRequest {
-                                Task {
-                                    _ = await acceptFriendRequest()
-                                }
-                            } else if hasRequestedFriend {
-                                isShowingCancelRequestConfirm = true
-                            } else {
-                                Task {
-                                    let didRequest = await sendFriendRequest()
-                                    if didRequest {
-                                        await MainActor.run {
-                                            hasRequestedFriend = true
+
+                        if let originDisplay {
+                            Text(originDisplay)
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                        }
+
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                guard !isBlocked else { return }
+                                if hasIncomingFriendRequest {
+                                    Task {
+                                        _ = await acceptFriendRequest()
+                                    }
+                                } else if hasRequestedFriend {
+                                    isShowingCancelRequestConfirm = true
+                                } else {
+                                    Task {
+                                        let didRequest = await sendFriendRequest()
+                                        if didRequest {
+                                            await MainActor.run {
+                                                hasRequestedFriend = true
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        }) {
-                            Text(friendButtonTitle)
-                                .font(.custom(Fonts.semibold, size: 16))
-                                .foregroundStyle(Colors.primaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(.plain)
-                        .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
-                        .allowsHitTesting(!isFriend && !isBlocked)
-                        
-                        Button(action: {}) {
-                            Text("Message")
-                                .font(.custom(Fonts.semibold, size: 16))
-                                .foregroundStyle(Colors.primaryText)
+                            }) {
+                                Text(friendButtonTitle)
+                                    .font(.custom(Fonts.semibold, size: 16))
+                                    .foregroundStyle(Colors.primaryText)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(Colors.card)
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.plain)
+                            .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
+                            .allowsHitTesting(!isFriend && !isBlocked)
+
+                            Button(action: {}) {
+                                Text("Message")
+                                    .font(.custom(Fonts.semibold, size: 16))
+                                    .foregroundStyle(Colors.primaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.top, 8)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("About Me")
-                            .font(.custom(Fonts.semibold, size: 18))
-                            .foregroundStyle(Colors.primaryText)
-                        
-                        if !aboutText.isEmpty {
-                            Text(aboutText)
-                                .font(.custom(Fonts.regular, size: 16))
-                                .foregroundStyle(Colors.secondaryText)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.top, 8)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Likes")
-                            .font(.custom(Fonts.semibold, size: 18))
-                            .foregroundStyle(Colors.primaryText)
-                        
-                        if let likesText {
-                            Text(likesText)
-                                .font(.custom(Fonts.regular, size: 16))
-                                .foregroundStyle(Colors.secondaryText)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.top, 8)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Upcoming Trips")
-                                .font(.travelTitle)
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("About Me")
+                                .font(.custom(Fonts.semibold, size: 18))
                                 .foregroundStyle(Colors.primaryText)
 
-                            Spacer()
-
-                            Button("See All") {
-                                isShowingSeeAllSheet = true
+                            if !aboutText.isEmpty {
+                                Text(aboutText)
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
                             }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
                         }
-                        
-                        if isLoadingTrips && trips.isEmpty {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Colors.secondaryText.opacity(0.3))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 140)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Likes")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+
+                            if let likesText {
+                                Text(likesText)
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Upcoming Trips")
+                                    .font(.travelTitle)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Spacer()
+
+                                Button("See All") {
+                                    isShowingSeeAllSheet = true
+                                }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
+                            }
+
+                            if isLoadingTrips && trips.isEmpty {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Colors.secondaryText.opacity(0.3))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 140)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            } else if let trip = trips.first {
+                                TravelCard(
+                                    flag: tripFlag(for: trip),
+                                    location: tripLocation(for: trip),
+                                    dates: tripDateRange(for: trip),
+                                    imageQuery: tripImageQuery(for: trip),
+                                    showsParticipants: false,
+                                    width: nil,
+                                    height: 140
+                                )
+                                .allowsHitTesting(false)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if let trip = trips.first {
-                            TravelCard(
-                                flag: tripFlag(for: trip),
-                                location: tripLocation(for: trip),
-                                dates: tripDateRange(for: trip),
-                                imageQuery: tripImageQuery(for: trip),
-                                showsParticipants: false,
-                                width: nil,
-                                height: 140
-                            )
-                            .allowsHitTesting(false)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .frame(height: 140)
+                                .frame(height: 140)
+                            }
                         }
+                        .padding(.top, 8)
+
+                        Spacer()
                     }
-                    .padding(.top, 8)
-                    
-                    Spacer()
+                    .frame(maxWidth: .infinity)
+                    .padding(24)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(24)
-            }
-            .scrollIndicators(.hidden)
-            .safeAreaInset(edge: .bottom) {
-                Color.clear
-                    .frame(height: 96)
+                .scrollIndicators(.hidden)
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear
+                        .frame(height: 96)
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -388,9 +392,16 @@ struct OthersProfileView: View {
                     hasRequestedFriend = cachedRequest
                 }
             }
+            await loadBlockStatus(for: userID)
+            let blockedByUser = await MainActor.run { isBlockedByUser }
+            if blockedByUser {
+                await MainActor.run {
+                    isLoadingTrips = false
+                }
+                return
+            }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
-            await loadBlockStatus(for: userID)
             await loadFriendStatus(for: userID)
             await loadFriendRequestStatus(for: userID)
             await MainActor.run {
@@ -405,6 +416,15 @@ struct OthersProfileView: View {
 
     private var isBlocked: Bool {
         hasBlockedUser || isBlockedByUser
+    }
+
+    private var blockedProfileView: some View {
+        Text("You can't view this profile.")
+            .font(.travelDetail)
+            .foregroundStyle(Colors.primaryText)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(.horizontal, 24)
     }
 
     private var friendButtonTitle: String {

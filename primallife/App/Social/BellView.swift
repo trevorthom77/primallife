@@ -4,19 +4,30 @@ import Supabase
 private struct FriendRequestRow: Decodable {
     let requesterID: UUID
     let receiverID: UUID
+    let status: String
 
     enum CodingKeys: String, CodingKey {
         case requesterID = "requester_id"
         case receiverID = "receiver_id"
+        case status
     }
+}
+
+private enum FriendRequestKind: String {
+    case incoming
+    case statusUpdate
 }
 
 private struct FriendRequestItem: Identifiable {
     let requesterID: UUID
     let receiverID: UUID
+    let status: String
+    let kind: FriendRequestKind
     let profile: UserProfile?
 
-    var id: UUID { requesterID }
+    var id: String {
+        "\(kind.rawValue)-\(requesterID.uuidString)-\(receiverID.uuidString)"
+    }
 }
 
 struct BellView: View {
@@ -76,36 +87,42 @@ struct BellView: View {
                         .foregroundStyle(Colors.secondaryText)
                 }
 
-                HStack(spacing: 12) {
-                    Button(action: {
-                        Task {
-                            await acceptRequest(request)
+                if request.kind == .incoming {
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            Task {
+                                await acceptRequest(request)
+                            }
+                        }) {
+                            Text("Accept")
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Colors.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                    }) {
-                        Text("Accept")
-                            .font(.tripsfont)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Colors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .buttonStyle(.plain)
+                        .buttonStyle(.plain)
 
-                    Button(action: {
-                        Task {
-                            await declineRequest(request)
+                        Button(action: {
+                            Task {
+                                await declineRequest(request)
+                            }
+                        }) {
+                            Text("Decline")
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.primaryText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Colors.secondaryText.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                    }) {
-                        Text("Decline")
-                            .font(.tripsfont)
-                            .foregroundStyle(Colors.primaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Colors.secondaryText.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    Text(statusMessage(for: request.status))
+                        .font(.tripsfont)
+                        .foregroundStyle(Colors.primaryText)
                 }
             }
         }
@@ -144,6 +161,17 @@ struct BellView: View {
         return "\(flag) \(name)"
     }
 
+    private func statusMessage(for status: String) -> String {
+        switch status {
+        case "accepted":
+            return "Accepted your friend request"
+        case "declined":
+            return "Declined your friend request"
+        default:
+            return "Updated your friend request"
+        }
+    }
+
     private func loadRequests() async {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id
@@ -152,39 +180,62 @@ struct BellView: View {
         }
 
         do {
-            let rows: [FriendRequestRow] = try await supabase
+            let incomingRows: [FriendRequestRow] = try await supabase
                 .from("friend_requests")
-                .select("requester_id, receiver_id")
+                .select("requester_id, receiver_id, status")
                 .eq("receiver_id", value: currentUserID.uuidString)
+                .eq("status", value: "pending")
                 .execute()
                 .value
 
-            if rows.isEmpty {
+            let statusRows: [FriendRequestRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id, receiver_id, status")
+                .eq("requester_id", value: currentUserID.uuidString)
+                .in("status", values: ["accepted", "declined"])
+                .execute()
+                .value
+
+            let profileIDs = Set(
+                incomingRows.map { $0.requesterID } + statusRows.map { $0.receiverID }
+            )
+
+            if profileIDs.isEmpty {
                 await MainActor.run {
                     requests = []
                 }
                 return
             }
 
-            let requesterIDs = rows.map { $0.requesterID.uuidString }
             let profiles: [UserProfile] = try await supabase
                 .from("onboarding")
                 .select()
-                .in("id", values: requesterIDs)
+                .in("id", values: profileIDs.map { $0.uuidString })
                 .execute()
                 .value
 
             let profilesByID = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
-            let items = rows.map { row in
+            let incomingItems = incomingRows.map { row in
                 FriendRequestItem(
                     requesterID: row.requesterID,
                     receiverID: row.receiverID,
+                    status: row.status,
+                    kind: .incoming,
                     profile: profilesByID[row.requesterID]
+                )
+            }
+            let statusItems = statusRows.map { row in
+                FriendRequestItem(
+                    requesterID: row.requesterID,
+                    receiverID: row.receiverID,
+                    status: row.status,
+                    kind: .statusUpdate,
+                    profile: profilesByID[row.receiverID]
                 )
             }
 
             await MainActor.run {
-                requests = items
+                requests = incomingItems + statusItems
             }
         } catch {
             return
@@ -219,7 +270,7 @@ struct BellView: View {
 
             try await supabase
                 .from("friend_requests")
-                .delete()
+                .update(["status": "accepted"])
                 .eq("requester_id", value: request.requesterID.uuidString)
                 .eq("receiver_id", value: currentUserID.uuidString)
                 .execute()
@@ -242,7 +293,7 @@ struct BellView: View {
         do {
             try await supabase
                 .from("friend_requests")
-                .delete()
+                .update(["status": "declined"])
                 .eq("requester_id", value: request.requesterID.uuidString)
                 .eq("receiver_id", value: currentUserID.uuidString)
                 .execute()

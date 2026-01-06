@@ -22,9 +22,11 @@ struct OthersProfileView: View {
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
+        let status: String
 
         enum CodingKeys: String, CodingKey {
             case requesterID = "requester_id"
+            case status
         }
     }
 
@@ -464,9 +466,10 @@ struct OthersProfileView: View {
         do {
             let rows: [FriendRequestStatusRow] = try await supabase
                 .from("friend_requests")
-                .select("requester_id")
+                .select("requester_id, status")
                 .eq("requester_id", value: currentUserID.uuidString)
                 .eq("receiver_id", value: otherUserID.uuidString)
+                .eq("status", value: "pending")
                 .limit(1)
                 .execute()
                 .value
@@ -503,10 +506,12 @@ struct OthersProfileView: View {
         struct FriendRequestInsert: Encodable {
             let requesterID: UUID
             let receiverID: UUID
+            let status: String
 
             enum CodingKeys: String, CodingKey {
                 case requesterID = "requester_id"
                 case receiverID = "receiver_id"
+                case status
             }
         }
 
@@ -535,14 +540,30 @@ struct OthersProfileView: View {
 
             let existing: [FriendRequestStatusRow] = try await supabase
                 .from("friend_requests")
-                .select("requester_id")
+                .select("requester_id, status")
                 .eq("requester_id", value: currentUserID.uuidString)
                 .eq("receiver_id", value: receiverID.uuidString)
                 .limit(1)
                 .execute()
                 .value
 
-            if !existing.isEmpty {
+            if let existingRequest = existing.first {
+                if existingRequest.status == "pending" {
+                    Self.cacheFriendRequestStatus(
+                        true,
+                        currentUserID: currentUserID,
+                        otherUserID: receiverID
+                    )
+                    return true
+                }
+
+                try await supabase
+                    .from("friend_requests")
+                    .update(["status": "pending"])
+                    .eq("requester_id", value: currentUserID.uuidString)
+                    .eq("receiver_id", value: receiverID.uuidString)
+                    .execute()
+
                 Self.cacheFriendRequestStatus(
                     true,
                     currentUserID: currentUserID,
@@ -556,7 +577,8 @@ struct OthersProfileView: View {
                 .insert(
                     FriendRequestInsert(
                         requesterID: currentUserID,
-                        receiverID: receiverID
+                        receiverID: receiverID,
+                        status: "pending"
                     )
                 )
                 .execute()

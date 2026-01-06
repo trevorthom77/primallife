@@ -88,18 +88,9 @@ struct OthersProfileView: View {
                                 }
                             }
                         }) {
-                            ZStack {
-                                if isFriend {
-                                    Image("friends")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(height: 20)
-                                } else {
-                                    Text(friendButtonTitle)
-                                        .font(.custom(Fonts.semibold, size: 16))
-                                        .foregroundStyle(Colors.primaryText)
-                                }
-                            }
+                            Text(friendButtonTitle)
+                                .font(.custom(Fonts.semibold, size: 16))
+                                .foregroundStyle(Colors.primaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Colors.card)
@@ -211,6 +202,19 @@ struct OthersProfileView: View {
                 dismiss()
             }
             .padding(.leading, 16)
+            .padding(.top, 16)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button(action: {}) {
+                Image(systemName: "ellipsis")
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                    .frame(width: 36, height: 36)
+                    .background(Colors.card.opacity(0.9))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 16)
             .padding(.top, 16)
         }
         .overlay {

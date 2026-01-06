@@ -70,7 +70,21 @@ struct BellView: View {
         }
     }
 
+    @ViewBuilder
     private func requestCard(_ request: FriendRequestItem) -> some View {
+        if request.kind == .incoming {
+            NavigationLink {
+                OthersProfileView(userID: request.requesterID)
+            } label: {
+                requestCardContent(request)
+            }
+            .buttonStyle(.plain)
+        } else {
+            requestCardContent(request)
+        }
+    }
+
+    private func requestCardContent(_ request: FriendRequestItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
             avatarView(for: request.profile)
                 .frame(width: 56, height: 56)
@@ -102,7 +116,7 @@ struct BellView: View {
                                 .background(Colors.accent)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
 
                         Button(action: {
                             Task {
@@ -117,7 +131,7 @@ struct BellView: View {
                                 .background(Colors.secondaryText.opacity(0.2))
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
                     }
                 } else {
                     Text(statusMessage(for: request.status))

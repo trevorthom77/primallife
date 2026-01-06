@@ -23,6 +23,7 @@ struct OthersProfileView: View {
     @State private var isShowingMoreSheet = false
     @State private var isShowingUnfriendConfirm = false
     @State private var isShowingBlockConfirm = false
+    @State private var isShowingUnblockConfirm = false
     @State private var hasBlockedUser = false
     @State private var isBlockedByUser = false
 
@@ -300,6 +301,25 @@ struct OthersProfileView: View {
                 )
             }
         }
+        .overlay {
+            if isShowingUnblockConfirm {
+                confirmationOverlay(
+                    title: "Unblock",
+                    message: "Unblock this user?",
+                    confirmTitle: "Unblock",
+                    isDestructive: false,
+                    confirmAction: {
+                        isShowingUnblockConfirm = false
+                        Task {
+                            _ = await unblockUser()
+                        }
+                    },
+                    cancelAction: {
+                        isShowingUnblockConfirm = false
+                    }
+                )
+            }
+        }
         .sheet(isPresented: $isShowingSeeAllSheet) {
             ZStack {
                 Colors.background
@@ -330,6 +350,7 @@ struct OthersProfileView: View {
         .sheet(isPresented: $isShowingMoreSheet) {
             OthersProfileMoreSheetView(
                 isFriend: isFriend,
+                hasBlockedUser: hasBlockedUser,
                 unfriendAction: {
                     isShowingMoreSheet = false
                     isShowingUnfriendConfirm = true
@@ -337,6 +358,10 @@ struct OthersProfileView: View {
                 blockAction: {
                     isShowingMoreSheet = false
                     isShowingBlockConfirm = true
+                },
+                unblockAction: {
+                    isShowingMoreSheet = false
+                    isShowingUnblockConfirm = true
                 }
             )
         }
@@ -949,6 +974,34 @@ struct OthersProfileView: View {
         }
     }
 
+    private func unblockUser() async -> Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let otherUserID = userID,
+              currentUserID != otherUserID
+        else { return false }
+
+        if !hasBlockedUser {
+            return true
+        }
+
+        do {
+            try await supabase
+                .from("blocks")
+                .delete()
+                .eq("blocker_id", value: currentUserID.uuidString)
+                .eq("blocked_id", value: otherUserID.uuidString)
+                .execute()
+
+            await MainActor.run {
+                hasBlockedUser = false
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private func confirmationOverlay(
         title: String,
         message: String,
@@ -1075,8 +1128,10 @@ struct OthersProfileView: View {
 private struct OthersProfileMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
     let isFriend: Bool
+    let hasBlockedUser: Bool
     let unfriendAction: () -> Void
     let blockAction: () -> Void
+    let unblockAction: () -> Void
 
     var body: some View {
         ZStack {
@@ -1114,11 +1169,11 @@ private struct OthersProfileMoreSheetView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
 
-                    Button(action: blockAction) {
+                    Button(action: hasBlockedUser ? unblockAction : blockAction) {
                         HStack {
-                            Text("Block")
+                            Text(hasBlockedUser ? "Unblock" : "Block")
                                 .font(.travelDetail)
-                                .foregroundStyle(Color.red)
+                                .foregroundStyle(hasBlockedUser ? Colors.primaryText : Color.red)
 
                             Spacer()
                         }

@@ -110,7 +110,13 @@ struct MessagesView: View {
     @State private var friendImageCache: [URL: Image] = FriendAvatarImageCache.images
     @State private var isLoadingTribeChats = false
     @State private var friends: [UserProfile] = FriendListCache.cachedFriends(for: nil)
+    @State private var notificationCount = 0
     @Environment(\.supabaseClient) private var supabase
+    
+    private var notificationBadgeText: String? {
+        guard notificationCount > 0 else { return nil }
+        return notificationCount > 9 ? "9+" : "\(notificationCount)"
+    }
     
     var body: some View {
         NavigationStack {
@@ -215,6 +221,7 @@ struct MessagesView: View {
             .task {
                 await loadJoinedTribeChats()
                 await loadFriends()
+                await loadNotificationCount()
             }
         }
     }
@@ -243,13 +250,15 @@ struct MessagesView: View {
                         .foregroundStyle(Colors.primaryText)
                 }
                 .overlay(alignment: .topTrailing) {
-                    Text("3")
-                        .font(.custom(Fonts.semibold, size: 12))
-                        .foregroundStyle(Colors.tertiaryText)
-                        .frame(width: 20, height: 20)
-                        .background(Colors.accent)
-                        .clipShape(Circle())
-                        .padding(2)
+                    if let badgeText = notificationBadgeText {
+                        Text(badgeText)
+                            .font(.badgeDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(width: 20, height: 20)
+                            .background(Colors.accent)
+                            .clipShape(Circle())
+                            .padding(2)
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -668,6 +677,35 @@ struct MessagesView: View {
             }
         }
     }
+    
+    @MainActor
+    private func loadNotificationCount() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        do {
+            let incomingRows: [FriendRequestCountRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id")
+                .eq("receiver_id", value: currentUserID.uuidString)
+                .eq("status", value: "pending")
+                .execute()
+                .value
+
+            let statusRows: [FriendRequestCountRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id")
+                .eq("requester_id", value: currentUserID.uuidString)
+                .in("status", values: ["accepted", "declined"])
+                .execute()
+                .value
+
+            notificationCount = incomingRows.count + statusRows.count
+        } catch {
+            return
+        }
+    }
 
     private func friendCard(_ friend: UserProfile) -> some View {
         HStack(spacing: 12) {
@@ -997,6 +1035,14 @@ private struct FriendRow: Decodable {
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
         case friendID = "friend_id"
+    }
+}
+
+private struct FriendRequestCountRow: Decodable {
+    let requesterID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case requesterID = "requester_id"
     }
 }
 

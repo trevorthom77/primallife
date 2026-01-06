@@ -123,19 +123,31 @@ struct OthersProfileView: View {
                             .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
                             .allowsHitTesting(!isFriend && !isBlocked)
 
-                            Button(action: {}) {
-                                Text("Message")
-                                    .font(.custom(Fonts.semibold, size: 16))
-                                    .foregroundStyle(Colors.primaryText)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(.plain)
+                        Button(action: {}) {
+                            Text("Message")
+                                .font(.custom(Fonts.semibold, size: 16))
+                                .foregroundStyle(Colors.primaryText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
+                        .buttonStyle(.plain)
+                        .opacity(isBlocked ? 0.6 : 1)
+                        .allowsHitTesting(!isBlocked)
+                    }
                         .padding(.top, 8)
 
+                    if hasBlockedUser {
+                        Text("You blocked this user.")
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .padding(.top, 8)
+                    } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("About Me")
                                 .font(.custom(Fonts.semibold, size: 18))
@@ -207,6 +219,7 @@ struct OthersProfileView: View {
                             }
                         }
                         .padding(.top, 8)
+                    }
 
                         Spacer()
                     }

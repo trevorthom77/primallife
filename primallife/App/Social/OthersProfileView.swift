@@ -263,12 +263,17 @@ struct OthersProfileView: View {
             if let supabase,
                let currentUserID = supabase.auth.currentUser?.id,
                currentUserID != userID {
-                let cached = Self.cachedFriendRequestStatus(
+                let cachedFriendStatus = Self.cachedFriendStatus(
+                    currentUserID: currentUserID,
+                    otherUserID: userID
+                )
+                let cachedRequest = Self.cachedFriendRequestStatus(
                     currentUserID: currentUserID,
                     otherUserID: userID
                 )
                 await MainActor.run {
-                    hasRequestedFriend = cached
+                    isFriend = cachedFriendStatus
+                    hasRequestedFriend = cachedRequest
                 }
             }
             await loadProfile(for: userID)
@@ -422,9 +427,15 @@ struct OthersProfileView: View {
                 .execute()
                 .value
 
+            let isFriendNow = !rows.isEmpty
             await MainActor.run {
-                isFriend = !rows.isEmpty
+                isFriend = isFriendNow
             }
+            Self.cacheFriendStatus(
+                isFriendNow,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
         } catch {
             return
         }
@@ -505,6 +516,11 @@ struct OthersProfileView: View {
                     isFriend = true
                     hasRequestedFriend = false
                 }
+                Self.cacheFriendStatus(
+                    true,
+                    currentUserID: currentUserID,
+                    otherUserID: receiverID
+                )
                 return false
             }
 
@@ -625,6 +641,39 @@ struct OthersProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .padding(.horizontal, 24)
         }
+    }
+
+    private static func cachedFriendStatus(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> Bool {
+        UserDefaults.standard.bool(
+            forKey: friendStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func cacheFriendStatus(
+        _ isFriend: Bool,
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) {
+        UserDefaults.standard.set(
+            isFriend,
+            forKey: friendStatusCacheKey(
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+        )
+    }
+
+    private static func friendStatusCacheKey(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> String {
+        "friendStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
     }
 
     private static func cachedFriendRequestStatus(

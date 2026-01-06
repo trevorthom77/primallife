@@ -166,6 +166,10 @@ struct MessagesView: View {
                                             friendCard(friend)
                                         }
                                     }
+                                } else {
+                                    Text("No friends yet")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.secondaryText)
                                 }
                             }
                             

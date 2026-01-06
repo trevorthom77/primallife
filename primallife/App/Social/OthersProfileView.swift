@@ -22,6 +22,8 @@ struct OthersProfileView: View {
     @State private var isShowingCancelRequestConfirm = false
     @State private var isShowingMoreSheet = false
     @State private var isShowingUnfriendConfirm = false
+    @State private var hasBlockedUser = false
+    @State private var isBlockedByUser = false
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
@@ -38,6 +40,14 @@ struct OthersProfileView: View {
 
         enum CodingKeys: String, CodingKey {
             case friendID = "friend_id"
+        }
+    }
+
+    private struct BlockStatusRow: Decodable {
+        let blockerID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case blockerID = "blocker_id"
         }
     }
 
@@ -78,6 +88,7 @@ struct OthersProfileView: View {
                     
                     HStack(spacing: 12) {
                         Button(action: {
+                            guard !isBlocked else { return }
                             if hasIncomingFriendRequest {
                                 Task {
                                     _ = await acceptFriendRequest()
@@ -104,8 +115,8 @@ struct OthersProfileView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
-                        .opacity(hasRequestedFriend && !isFriend ? 0.6 : 1)
-                        .allowsHitTesting(!isFriend)
+                        .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
+                        .allowsHitTesting(!isFriend && !isBlocked)
                         
                         Button(action: {}) {
                             Text("Message")
@@ -302,6 +313,12 @@ struct OthersProfileView: View {
                 unfriendAction: {
                     isShowingMoreSheet = false
                     isShowingUnfriendConfirm = true
+                },
+                blockAction: {
+                    isShowingMoreSheet = false
+                    Task {
+                        _ = await blockUser()
+                    }
                 }
             )
         }
@@ -330,6 +347,7 @@ struct OthersProfileView: View {
             }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
+            await loadBlockStatus(for: userID)
             await loadFriendStatus(for: userID)
             await loadFriendRequestStatus(for: userID)
             await MainActor.run {
@@ -342,7 +360,14 @@ struct OthersProfileView: View {
         profile?.fullName ?? ""
     }
 
+    private var isBlocked: Bool {
+        hasBlockedUser || isBlockedByUser
+    }
+
     private var friendButtonTitle: String {
+        if isBlocked {
+            return "Blocked"
+        }
         if isFriend {
             return "Friends"
         }
@@ -432,6 +457,48 @@ struct OthersProfileView: View {
 
             await MainActor.run {
                 trips = fetchedTrips
+            }
+        } catch {
+            return
+        }
+    }
+
+    private func loadBlockStatus(for otherUserID: UUID) async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              currentUserID != otherUserID
+        else {
+            await MainActor.run {
+                hasBlockedUser = false
+                isBlockedByUser = false
+            }
+            return
+        }
+
+        do {
+            let outgoing: [BlockStatusRow] = try await supabase
+                .from("blocks")
+                .select("blocker_id")
+                .eq("blocker_id", value: currentUserID.uuidString)
+                .eq("blocked_id", value: otherUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            let incoming: [BlockStatusRow] = try await supabase
+                .from("blocks")
+                .select("blocker_id")
+                .eq("blocker_id", value: otherUserID.uuidString)
+                .eq("blocked_id", value: currentUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            let hasBlocked = !outgoing.isEmpty
+            let isBlockedBy = !incoming.isEmpty
+            await MainActor.run {
+                hasBlockedUser = hasBlocked
+                isBlockedByUser = isBlockedBy
             }
         } catch {
             return
@@ -617,6 +684,10 @@ struct OthersProfileView: View {
               currentUserID != receiverID
         else { return false }
 
+        if isBlocked {
+            return false
+        }
+
         if hasRequestedFriend {
             Self.cacheFriendRequestStatus(
                 true,
@@ -778,6 +849,60 @@ struct OthersProfileView: View {
         }
     }
 
+    private func blockUser() async -> Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let otherUserID = userID,
+              currentUserID != otherUserID
+        else { return false }
+
+        if hasBlockedUser {
+            return true
+        }
+
+        struct BlockInsert: Encodable {
+            let blockerID: UUID
+            let blockedID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case blockerID = "blocker_id"
+                case blockedID = "blocked_id"
+            }
+        }
+
+        do {
+            try await supabase
+                .from("blocks")
+                .insert(
+                    BlockInsert(
+                        blockerID: currentUserID,
+                        blockedID: otherUserID
+                    )
+                )
+                .execute()
+
+            await MainActor.run {
+                hasBlockedUser = true
+                isFriend = false
+                hasRequestedFriend = false
+                hasIncomingFriendRequest = false
+            }
+            Self.cacheFriendStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            Self.cacheFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private func confirmationOverlay(
         title: String,
         message: String,
@@ -905,6 +1030,7 @@ private struct OthersProfileMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
     let isFriend: Bool
     let unfriendAction: () -> Void
+    let blockAction: () -> Void
 
     var body: some View {
         ZStack {
@@ -942,7 +1068,7 @@ private struct OthersProfileMoreSheetView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
 
-                    Button(action: {}) {
+                    Button(action: blockAction) {
                         HStack {
                             Text("Block")
                                 .font(.travelDetail)

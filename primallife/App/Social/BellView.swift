@@ -196,6 +196,15 @@ struct BellView: View {
                 .execute()
                 .value
 
+            if !statusRows.isEmpty {
+                try await supabase
+                    .from("friend_requests")
+                    .delete()
+                    .eq("requester_id", value: currentUserID.uuidString)
+                    .in("status", values: ["accepted", "declined"])
+                    .execute()
+            }
+
             let profileIDs = Set(
                 incomingRows.map { $0.requesterID } + statusRows.map { $0.receiverID }
             )

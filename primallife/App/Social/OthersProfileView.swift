@@ -19,6 +19,7 @@ struct OthersProfileView: View {
     @State private var hasRequestedFriend = false
     @State private var isFriend = false
     @State private var isShowingCancelRequestConfirm = false
+    @State private var isShowingMoreSheet = false
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
@@ -205,7 +206,9 @@ struct OthersProfileView: View {
             .padding(.top, 16)
         }
         .overlay(alignment: .topTrailing) {
-            Button(action: {}) {
+            Button(action: {
+                isShowingMoreSheet = true
+            }) {
                 Image(systemName: "ellipsis")
                     .font(.travelBody)
                     .foregroundStyle(Colors.primaryText)
@@ -267,6 +270,9 @@ struct OthersProfileView: View {
                     .padding(.bottom, 32)
                 }
             }
+        }
+        .sheet(isPresented: $isShowingMoreSheet) {
+            OthersProfileMoreSheetView()
         }
         .task(id: userID) {
             guard let userID else { return }
@@ -742,5 +748,70 @@ struct OthersProfileView: View {
         otherUserID: UUID
     ) -> String {
         "friendRequestStatus.\(currentUserID.uuidString).\(otherUserID.uuidString)"
+    }
+}
+
+private struct OthersProfileMoreSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Button(action: {}) {
+                        HStack {
+                            Text("Unfriend")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    Button(action: {}) {
+                        HStack {
+                            Text("Block")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
+                Spacer()
+            }
+            .padding(20)
+        }
+        .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
+        .presentationDragIndicator(.hidden)
     }
 }

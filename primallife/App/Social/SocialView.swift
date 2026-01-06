@@ -74,11 +74,30 @@ private enum SocialPlanListCache {
     }
 }
 
+private enum FriendListCache {
+    static var latestFriends: [UserProfile] = []
+    static var friendsByUser: [UUID: [UserProfile]] = [:]
+
+    static func cachedFriends(for userID: UUID?) -> [UserProfile] {
+        guard let userID else { return latestFriends }
+        return friendsByUser[userID] ?? latestFriends
+    }
+
+    static func update(_ friends: [UserProfile], for userID: UUID) {
+        friendsByUser[userID] = friends
+        latestFriends = friends
+    }
+}
+
 private enum SocialPlanImageCache {
     static var images: [URL: Image] = [:]
 }
 
 private enum TribeChatImageCache {
+    static var images: [URL: Image] = [:]
+}
+
+private enum FriendAvatarImageCache {
     static var images: [URL: Image] = [:]
 }
 
@@ -88,8 +107,9 @@ struct MessagesView: View {
     @State private var activePlans: [SocialPlan] = SocialPlanListCache.cachedPlans(for: nil)
     @State private var planImageCache: [URL: Image] = SocialPlanImageCache.images
     @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
+    @State private var friendImageCache: [URL: Image] = FriendAvatarImageCache.images
     @State private var isLoadingTribeChats = false
-    @State private var friends: [UserProfile] = []
+    @State private var friends: [UserProfile] = FriendListCache.cachedFriends(for: nil)
     @Environment(\.supabaseClient) private var supabase
     
     var body: some View {
@@ -606,6 +626,11 @@ struct MessagesView: View {
               let currentUserID = supabase.auth.currentUser?.id
         else { return }
 
+        let cachedFriends = FriendListCache.cachedFriends(for: currentUserID)
+        if friends.isEmpty, !cachedFriends.isEmpty {
+            friends = cachedFriends
+        }
+
         do {
             let userRows: [FriendRow] = try await supabase
                 .from("friends")
@@ -624,6 +649,7 @@ struct MessagesView: View {
             let friendIDs = Set(userRows.map { $0.friendID } + friendRows.map { $0.userID })
             if friendIDs.isEmpty {
                 friends = []
+                FriendListCache.update([], for: currentUserID)
                 return
             }
 
@@ -635,8 +661,11 @@ struct MessagesView: View {
                 .value
 
             friends = profiles
+            FriendListCache.update(profiles, for: currentUserID)
         } catch {
-            return
+            if friends.isEmpty {
+                friends = FriendListCache.cachedFriends(for: currentUserID)
+            }
         }
     }
 
@@ -668,18 +697,41 @@ struct MessagesView: View {
     @ViewBuilder
     private func friendAvatar(for friend: UserProfile) -> some View {
         if let avatarURL = friend.avatarURL(using: supabase) {
-            AsyncImage(url: avatarURL) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Colors.secondaryText.opacity(0.3)
+            if let cachedImage = cachedFriendImage(for: avatarURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AsyncImage(url: avatarURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .onAppear {
+                                if friendImageCache[avatarURL] == nil {
+                                    cacheFriendImage(image, for: avatarURL)
+                                }
+                            }
+                    case .empty:
+                        Colors.secondaryText.opacity(0.3)
+                    default:
+                        Colors.secondaryText.opacity(0.3)
+                    }
                 }
             }
         } else {
             Colors.secondaryText.opacity(0.3)
         }
+    }
+
+    private func cachedFriendImage(for url: URL) -> Image? {
+        friendImageCache[url]
+    }
+
+    private func cacheFriendImage(_ image: Image, for url: URL) {
+        friendImageCache[url] = image
+        FriendAvatarImageCache.images[url] = image
     }
 
     private func friendOriginDisplay(for friend: UserProfile) -> String? {

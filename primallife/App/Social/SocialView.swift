@@ -162,7 +162,7 @@ struct MessagesView: View {
 
                                 if !friends.isEmpty {
                                     VStack(spacing: 12) {
-                                        ForEach(friends) { friend in
+                                        ForEach(Array(friends.prefix(3))) { friend in
                                             NavigationLink {
                                                 OthersProfileView(userID: friend.id)
                                             } label: {

@@ -20,6 +20,9 @@ final class ProfileStore: ObservableObject {
     @Published var errorMessage: String?
     @Published var cachedAvatarImage: Image?
     @Published var cachedAvatarURL: URL?
+    @Published var cachedFriends: [UserProfile] = []
+    @Published var hasLoadedFriends = false
+    @Published var cachedFriendImages: [URL: Image] = [:]
     
     func loadProfile(for userID: UUID, supabase: SupabaseClient?) async {
         guard let supabase else { return }
@@ -49,11 +52,18 @@ final class ProfileStore: ObservableObject {
         errorMessage = nil
         cachedAvatarImage = nil
         cachedAvatarURL = nil
+        cachedFriends = []
+        hasLoadedFriends = false
+        cachedFriendImages = [:]
     }
 
     func cacheAvatar(_ image: Image, url: URL) {
         cachedAvatarImage = image
         cachedAvatarURL = url
+    }
+
+    func cacheFriendImage(_ image: Image, url: URL) {
+        cachedFriendImages[url] = image
     }
 }
 

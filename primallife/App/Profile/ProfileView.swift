@@ -102,13 +102,15 @@ struct ProfileView: View {
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
-    @State private var friends: [UserProfile] = []
-    @State private var friendImageCache: [URL: Image] = [:]
     
     private let avatarSize: CGFloat = 140
     
     private var profile: UserProfile? {
         profileStore.profile
+    }
+
+    private var friends: [UserProfile] {
+        profileStore.cachedFriends
     }
     
     private var originDisplay: String? {
@@ -352,6 +354,10 @@ struct ProfileView: View {
               let currentUserID = supabase.auth.currentUser?.id
         else { return }
 
+        if profileStore.hasLoadedFriends {
+            return
+        }
+
         do {
             let userRows: [FriendRow] = try await supabase
                 .from("friends")
@@ -369,7 +375,8 @@ struct ProfileView: View {
 
             let friendIDs = Set(userRows.map { $0.friendID } + friendRows.map { $0.userID })
             if friendIDs.isEmpty {
-                friends = []
+                profileStore.cachedFriends = []
+                profileStore.hasLoadedFriends = true
                 return
             }
 
@@ -380,7 +387,8 @@ struct ProfileView: View {
                 .execute()
                 .value
 
-            friends = profiles
+            profileStore.cachedFriends = profiles
+            profileStore.hasLoadedFriends = true
         } catch {
             return
         }
@@ -461,8 +469,8 @@ private extension ProfileView {
                             .resizable()
                             .scaledToFill()
                             .onAppear {
-                                if friendImageCache[avatarURL] == nil {
-                                    cacheFriendImage(image, for: avatarURL)
+                                if profileStore.cachedFriendImages[avatarURL] == nil {
+                                    profileStore.cacheFriendImage(image, url: avatarURL)
                                 }
                             }
                     case .empty:
@@ -478,11 +486,7 @@ private extension ProfileView {
     }
 
     private func cachedFriendImage(for url: URL) -> Image? {
-        friendImageCache[url]
-    }
-
-    private func cacheFriendImage(_ image: Image, for url: URL) {
-        friendImageCache[url] = image
+        profileStore.cachedFriendImages[url]
     }
 
     private func friendOriginDisplay(for friend: UserProfile) -> String? {

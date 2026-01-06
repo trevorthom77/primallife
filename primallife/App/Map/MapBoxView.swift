@@ -650,6 +650,26 @@ struct MapBoxView: View {
         }
     }
 
+    private func fetchBlockedUserIDs(for userID: UUID, supabase: SupabaseClient) async throws -> Set<String> {
+        let outgoing: [BlockedUserRow] = try await supabase
+            .from("blocks")
+            .select("blocked_id")
+            .eq("blocker_id", value: userID.uuidString)
+            .execute()
+            .value
+
+        let incoming: [BlockingUserRow] = try await supabase
+            .from("blocks")
+            .select("blocker_id")
+            .eq("blocked_id", value: userID.uuidString)
+            .execute()
+            .value
+
+        let outgoingIDs = outgoing.map { $0.blockedID.lowercased() }
+        let incomingIDs = incoming.map { $0.blockerID.lowercased() }
+        return Set(outgoingIDs + incomingIDs)
+    }
+
     private func fetchOtherLocations() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         guard let coordinate = userCoordinate else { return }
@@ -680,8 +700,18 @@ struct MapBoxView: View {
                 }
                 return
             }
+
+            let blockedUserIDs = try await fetchBlockedUserIDs(for: userID, supabase: supabase)
+            let visibleRows = nearbyRows.filter { !blockedUserIDs.contains($0.id.lowercased()) }
+
+            guard !visibleRows.isEmpty else {
+                await MainActor.run {
+                    otherUserLocations = []
+                }
+                return
+            }
             
-            let ids = nearbyRows.map { $0.id }
+            let ids = visibleRows.map { $0.id }
             
             let avatars: [UserAvatar] = try await supabase
                 .from("onboarding")
@@ -693,7 +723,7 @@ struct MapBoxView: View {
             let avatarLookup = Dictionary(uniqueKeysWithValues: avatars.map { ($0.id, $0.avatarPath) })
             
             await MainActor.run {
-                otherUserLocations = nearbyRows.map { row in
+                otherUserLocations = visibleRows.map { row in
                     OtherUserLocation(
                         id: row.id,
                         latitude: row.latitude,
@@ -811,6 +841,22 @@ private struct UserLocation: Identifiable, Decodable {
     
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+private struct BlockedUserRow: Decodable {
+    let blockedID: String
+
+    enum CodingKeys: String, CodingKey {
+        case blockedID = "blocked_id"
+    }
+}
+
+private struct BlockingUserRow: Decodable {
+    let blockerID: String
+
+    enum CodingKeys: String, CodingKey {
+        case blockerID = "blocker_id"
     }
 }
 

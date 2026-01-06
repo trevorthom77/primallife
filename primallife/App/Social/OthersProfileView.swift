@@ -22,6 +22,7 @@ struct OthersProfileView: View {
     @State private var isShowingCancelRequestConfirm = false
     @State private var isShowingMoreSheet = false
     @State private var isShowingUnfriendConfirm = false
+    @State private var isShowingBlockConfirm = false
     @State private var hasBlockedUser = false
     @State private var isBlockedByUser = false
 
@@ -280,6 +281,25 @@ struct OthersProfileView: View {
                 )
             }
         }
+        .overlay {
+            if isShowingBlockConfirm {
+                confirmationOverlay(
+                    title: "Block",
+                    message: "Block this user?",
+                    confirmTitle: "Block",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingBlockConfirm = false
+                        Task {
+                            _ = await blockUser()
+                        }
+                    },
+                    cancelAction: {
+                        isShowingBlockConfirm = false
+                    }
+                )
+            }
+        }
         .sheet(isPresented: $isShowingSeeAllSheet) {
             ZStack {
                 Colors.background
@@ -316,9 +336,7 @@ struct OthersProfileView: View {
                 },
                 blockAction: {
                     isShowingMoreSheet = false
-                    Task {
-                        _ = await blockUser()
-                    }
+                    isShowingBlockConfirm = true
                 }
             )
         }

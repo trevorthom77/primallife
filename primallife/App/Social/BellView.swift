@@ -52,15 +52,25 @@ struct BellView: View {
                 .padding(.vertical, 16)
 
                 ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(requests) { request in
-                            requestCard(request)
+                    if requests.isEmpty {
+                        VStack(spacing: 12) {
+                            Text("No notifications yet")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(requests) { request in
+                                requestCard(request)
+                            }
+                        }
+                        .padding(.top, 12)
+                        .padding(.bottom, 32)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 12)
-                    .padding(.bottom, 32)
                 }
+                .padding(.horizontal, 24)
                 .scrollIndicators(.hidden)
             }
         }

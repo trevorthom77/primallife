@@ -98,11 +98,12 @@ struct ProfileView: View {
     let trips: [ProfileTrip]
     let countries: [ProfileCountry]
     let tribes: [ProfileTribe]
-    let friends: [ProfileFriend]
     
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
+    @State private var friends: [UserProfile] = []
+    @State private var friendImageCache: [URL: Image] = [:]
     
     private let avatarSize: CGFloat = 140
     
@@ -310,10 +311,21 @@ struct ProfileView: View {
                                 .foregroundStyle(Colors.accent)
                         }
                         
-                        VStack(spacing: 10) {
-                            ForEach(friends) { friend in
-                                friendRow(friend)
+                        if !friends.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(Array(friends.prefix(3))) { friend in
+                                    NavigationLink {
+                                        OthersProfileView(userID: friend.id)
+                                    } label: {
+                                        friendCard(friend)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
+                        } else {
+                            Text("No friends yet")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -329,6 +341,49 @@ struct ProfileView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .task {
+            await loadFriends()
+        }
+    }
+
+    @MainActor
+    private func loadFriends() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        do {
+            let userRows: [FriendRow] = try await supabase
+                .from("friends")
+                .select("user_id, friend_id")
+                .eq("user_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            let friendRows: [FriendRow] = try await supabase
+                .from("friends")
+                .select("user_id, friend_id")
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            let friendIDs = Set(userRows.map { $0.friendID } + friendRows.map { $0.userID })
+            if friendIDs.isEmpty {
+                friends = []
+                return
+            }
+
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .in("id", values: friendIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            friends = profiles
+        } catch {
+            return
+        }
     }
 }
 
@@ -364,6 +419,77 @@ private extension ProfileView {
     
     var placeholderAvatar: some View {
         Color.clear
+    }
+
+    private func friendCard(_ friend: UserProfile) -> some View {
+        HStack(spacing: 12) {
+            friendAvatar(for: friend)
+                .frame(width: 44, height: 44)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(friend.fullName)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                if let origin = friendOriginDisplay(for: friend) {
+                    Text(origin)
+                        .font(.custom(Fonts.regular, size: 14))
+                        .foregroundStyle(Colors.secondaryText)
+                }
+            }
+
+            Spacer()
+        }
+        .padding()
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func friendAvatar(for friend: UserProfile) -> some View {
+        if let avatarURL = friend.avatarURL(using: supabase) {
+            if let cachedImage = cachedFriendImage(for: avatarURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AsyncImage(url: avatarURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .onAppear {
+                                if friendImageCache[avatarURL] == nil {
+                                    cacheFriendImage(image, for: avatarURL)
+                                }
+                            }
+                    case .empty:
+                        Colors.secondaryText.opacity(0.3)
+                    default:
+                        Colors.secondaryText.opacity(0.3)
+                    }
+                }
+            }
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
+    }
+
+    private func cachedFriendImage(for url: URL) -> Image? {
+        friendImageCache[url]
+    }
+
+    private func cacheFriendImage(_ image: Image, for url: URL) {
+        friendImageCache[url] = image
+    }
+
+    private func friendOriginDisplay(for friend: UserProfile) -> String? {
+        guard let flag = friend.originFlag, let name = friend.originName else {
+            return nil
+        }
+        return "\(flag) \(name)"
     }
 }
 
@@ -412,43 +538,14 @@ private func counterCard(title: String, value: String) -> some View {
     .clipShape(RoundedRectangle(cornerRadius: 16))
 }
 
-private func friendRow(_ friend: ProfileFriend) -> some View {
-    HStack(spacing: 12) {
-        Image(friend.imageName)
-            .resizable()
-            .scaledToFill()
-            .frame(width: 44, height: 44)
-            .clipShape(Circle())
-            .overlay {
-                Circle()
-                    .stroke(Colors.card, lineWidth: 3)
-            }
-        
-        VStack(alignment: .leading, spacing: 4) {
-            Text(friend.name)
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-            
-            Text(friend.status)
-                .font(.custom(Fonts.regular, size: 14))
-                .foregroundStyle(Colors.secondaryText)
-        }
-        
-        Spacer()
-    }
-    .padding()
-    .background(Colors.card)
-    .clipShape(RoundedRectangle(cornerRadius: 16))
-}
-
-struct ProfileFriend: Identifiable {
+struct ProfileTribe: Identifiable {
     let id = UUID()
     let imageName: String
     let name: String
     let status: String
 }
 
-struct ProfileTribe: Identifiable {
+struct ProfileFriend: Identifiable {
     let id = UUID()
     let imageName: String
     let name: String
@@ -471,6 +568,16 @@ struct ProfileTrip: Identifiable {
     let imageQuery: String
 }
 
+private struct FriendRow: Decodable {
+    let userID: UUID
+    let friendID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case friendID = "friend_id"
+    }
+}
+
 #Preview {
     ProfileView(
         name: "Mia",
@@ -491,11 +598,6 @@ struct ProfileTrip: Identifiable {
         tribes: [
             ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
             ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
-        ],
-        friends: [
-            ProfileFriend(imageName: "profile1", name: "Ava", status: "Online"),
-            ProfileFriend(imageName: "profile2", name: "Maya", status: "Planning"),
-            ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
         ]
     )
     .environmentObject(ProfileStore())

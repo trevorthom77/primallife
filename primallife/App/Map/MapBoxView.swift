@@ -471,8 +471,7 @@ struct MapBoxView: View {
                 worldPercent: 0,
                 trips: [],
                 countries: [],
-                tribes: [],
-                friends: []
+                tribes: []
             )
         } else if profileStore.isLoading {
             profileLoadingView

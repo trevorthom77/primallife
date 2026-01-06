@@ -89,6 +89,7 @@ struct MessagesView: View {
     @State private var planImageCache: [URL: Image] = SocialPlanImageCache.images
     @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
     @State private var isLoadingTribeChats = false
+    @State private var friends: [UserProfile] = []
     @Environment(\.supabaseClient) private var supabase
     
     var body: some View {
@@ -159,7 +160,13 @@ struct MessagesView: View {
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
 
-                                friendCard
+                                if !friends.isEmpty {
+                                    VStack(spacing: 12) {
+                                        ForEach(friends) { friend in
+                                            friendCard(friend)
+                                        }
+                                    }
+                                }
                             }
                             
                         }
@@ -178,6 +185,7 @@ struct MessagesView: View {
             }
             .task {
                 await loadJoinedTribeChats()
+                await loadFriends()
             }
         }
     }
@@ -583,20 +591,62 @@ struct MessagesView: View {
         }
     }
     
-    private var friendCard: some View {
+    @MainActor
+    private func loadFriends() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        do {
+            let userRows: [FriendRow] = try await supabase
+                .from("friends")
+                .select("user_id, friend_id")
+                .eq("user_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            let friendRows: [FriendRow] = try await supabase
+                .from("friends")
+                .select("user_id, friend_id")
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            let friendIDs = Set(userRows.map { $0.friendID } + friendRows.map { $0.userID })
+            if friendIDs.isEmpty {
+                friends = []
+                return
+            }
+
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .in("id", values: friendIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            friends = profiles
+        } catch {
+            return
+        }
+    }
+
+    private func friendCard(_ friend: UserProfile) -> some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(Colors.accent)
+            friendAvatar(for: friend)
                 .frame(width: 44, height: 44)
+                .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Ava")
+                Text(friend.fullName)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
 
-                Text("🇦🇺 Australia")
-                    .font(.custom(Fonts.regular, size: 14))
-                    .foregroundStyle(Colors.secondaryText)
+                if let origin = friendOriginDisplay(for: friend) {
+                    Text(origin)
+                        .font(.custom(Fonts.regular, size: 14))
+                        .foregroundStyle(Colors.secondaryText)
+                }
             }
 
             Spacer()
@@ -604,6 +654,30 @@ struct MessagesView: View {
         .padding()
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func friendAvatar(for friend: UserProfile) -> some View {
+        if let avatarURL = friend.avatarURL(using: supabase) {
+            AsyncImage(url: avatarURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
+    }
+
+    private func friendOriginDisplay(for friend: UserProfile) -> String? {
+        guard let flag = friend.originFlag, let name = friend.originName else {
+            return nil
+        }
+        return "\(flag) \(name)"
     }
     
 }
@@ -852,6 +926,16 @@ private struct TribeChatMessageRow: Decodable {
             )
         }
         createdAt = createdAtDate
+    }
+}
+
+private struct FriendRow: Decodable {
+    let userID: UUID
+    let friendID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case friendID = "friend_id"
     }
 }
 

@@ -20,6 +20,7 @@ struct OthersProfileView: View {
     @State private var isFriend = false
     @State private var isShowingCancelRequestConfirm = false
     @State private var isShowingMoreSheet = false
+    @State private var isShowingUnfriendConfirm = false
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
@@ -244,6 +245,25 @@ struct OthersProfileView: View {
                 )
             }
         }
+        .overlay {
+            if isShowingUnfriendConfirm {
+                confirmationOverlay(
+                    title: "Unfriend",
+                    message: "Remove this friend?",
+                    confirmTitle: "Unfriend",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingUnfriendConfirm = false
+                        Task {
+                            _ = await unfriend()
+                        }
+                    },
+                    cancelAction: {
+                        isShowingUnfriendConfirm = false
+                    }
+                )
+            }
+        }
         .sheet(isPresented: $isShowingSeeAllSheet) {
             ZStack {
                 Colors.background
@@ -272,7 +292,12 @@ struct OthersProfileView: View {
             }
         }
         .sheet(isPresented: $isShowingMoreSheet) {
-            OthersProfileMoreSheetView()
+            OthersProfileMoreSheetView(
+                unfriendAction: {
+                    isShowingMoreSheet = false
+                    isShowingUnfriendConfirm = true
+                }
+            )
         }
         .task(id: userID) {
             guard let userID else { return }
@@ -628,6 +653,48 @@ struct OthersProfileView: View {
         }
     }
 
+    private func unfriend() async -> Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let otherUserID = userID,
+              currentUserID != otherUserID
+        else { return false }
+
+        do {
+            try await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: currentUserID.uuidString)
+                .eq("friend_id", value: otherUserID.uuidString)
+                .execute()
+
+            try await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: otherUserID.uuidString)
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+
+            await MainActor.run {
+                isFriend = false
+                hasRequestedFriend = false
+            }
+            Self.cacheFriendStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            Self.cacheFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: otherUserID
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private func confirmationOverlay(
         title: String,
         message: String,
@@ -753,6 +820,7 @@ struct OthersProfileView: View {
 
 private struct OthersProfileMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    let unfriendAction: () -> Void
 
     var body: some View {
         ZStack {
@@ -771,7 +839,7 @@ private struct OthersProfileMoreSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Button(action: {}) {
+                    Button(action: unfriendAction) {
                         HStack {
                             Text("Unfriend")
                                 .font(.travelDetail)

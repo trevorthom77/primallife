@@ -283,12 +283,12 @@ struct BellView: View {
         }
 
         do {
+            let pair = orderedFriendPair(currentUserID: currentUserID, otherUserID: request.requesterID)
             try await supabase
                 .from("friends")
-                .insert([
-                    FriendInsert(userID: currentUserID, friendID: request.requesterID),
-                    FriendInsert(userID: request.requesterID, friendID: currentUserID)
-                ])
+                .insert(
+                    FriendInsert(userID: pair.userID, friendID: pair.friendID)
+                )
                 .execute()
 
             try await supabase
@@ -327,6 +327,16 @@ struct BellView: View {
         } catch {
             return
         }
+    }
+
+    private func orderedFriendPair(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> (userID: UUID, friendID: UUID) {
+        if currentUserID.uuidString <= otherUserID.uuidString {
+            return (currentUserID, otherUserID)
+        }
+        return (otherUserID, currentUserID)
     }
 }
 

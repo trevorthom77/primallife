@@ -453,6 +453,16 @@ struct OthersProfileView: View {
         return start == end ? start : "\(start)–\(end)"
     }
 
+    private func orderedFriendPair(
+        currentUserID: UUID,
+        otherUserID: UUID
+    ) -> (userID: UUID, friendID: UUID) {
+        if currentUserID.uuidString <= otherUserID.uuidString {
+            return (currentUserID, otherUserID)
+        }
+        return (otherUserID, currentUserID)
+    }
+
     private func loadFriendStatus(for otherUserID: UUID) async {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id,
@@ -465,11 +475,12 @@ struct OthersProfileView: View {
         }
 
         do {
+            let pair = orderedFriendPair(currentUserID: currentUserID, otherUserID: otherUserID)
             let rows: [FriendStatusRow] = try await supabase
                 .from("friends")
                 .select("friend_id")
-                .eq("user_id", value: currentUserID.uuidString)
-                .eq("friend_id", value: otherUserID.uuidString)
+                .eq("user_id", value: pair.userID.uuidString)
+                .eq("friend_id", value: pair.friendID.uuidString)
                 .limit(1)
                 .execute()
                 .value
@@ -552,11 +563,12 @@ struct OthersProfileView: View {
         }
 
         do {
+            let pair = orderedFriendPair(currentUserID: currentUserID, otherUserID: receiverID)
             let existingFriends: [FriendStatusRow] = try await supabase
                 .from("friends")
                 .select("friend_id")
-                .eq("user_id", value: currentUserID.uuidString)
-                .eq("friend_id", value: receiverID.uuidString)
+                .eq("user_id", value: pair.userID.uuidString)
+                .eq("friend_id", value: pair.friendID.uuidString)
                 .limit(1)
                 .execute()
                 .value
@@ -662,18 +674,12 @@ struct OthersProfileView: View {
         else { return false }
 
         do {
+            let pair = orderedFriendPair(currentUserID: currentUserID, otherUserID: otherUserID)
             try await supabase
                 .from("friends")
                 .delete()
-                .eq("user_id", value: currentUserID.uuidString)
-                .eq("friend_id", value: otherUserID.uuidString)
-                .execute()
-
-            try await supabase
-                .from("friends")
-                .delete()
-                .eq("user_id", value: otherUserID.uuidString)
-                .eq("friend_id", value: currentUserID.uuidString)
+                .eq("user_id", value: pair.userID.uuidString)
+                .eq("friend_id", value: pair.friendID.uuidString)
                 .execute()
 
             await MainActor.run {

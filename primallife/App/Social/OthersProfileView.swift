@@ -17,6 +17,7 @@ struct OthersProfileView: View {
     @State private var isLoadingTrips = false
     @State private var isShowingSeeAllSheet = false
     @State private var hasRequestedFriend = false
+    @State private var hasIncomingFriendRequest = false
     @State private var isFriend = false
     @State private var isShowingCancelRequestConfirm = false
     @State private var isShowingMoreSheet = false
@@ -77,7 +78,11 @@ struct OthersProfileView: View {
                     
                     HStack(spacing: 12) {
                         Button(action: {
-                            if hasRequestedFriend {
+                            if hasIncomingFriendRequest {
+                                Task {
+                                    _ = await acceptFriendRequest()
+                                }
+                            } else if hasRequestedFriend {
                                 isShowingCancelRequestConfirm = true
                             } else {
                                 Task {
@@ -341,6 +346,9 @@ struct OthersProfileView: View {
         if isFriend {
             return "Friends"
         }
+        if hasIncomingFriendRequest {
+            return "Accept"
+        }
         return hasRequestedFriend ? "Requested" : "Add Friend"
     }
 
@@ -506,12 +514,13 @@ struct OthersProfileView: View {
         else {
             await MainActor.run {
                 hasRequestedFriend = false
+                hasIncomingFriendRequest = false
             }
             return
         }
 
         do {
-            let rows: [FriendRequestStatusRow] = try await supabase
+            let outgoingRows: [FriendRequestStatusRow] = try await supabase
                 .from("friend_requests")
                 .select("requester_id, status")
                 .eq("requester_id", value: currentUserID.uuidString)
@@ -521,16 +530,83 @@ struct OthersProfileView: View {
                 .execute()
                 .value
 
+            let incomingRows: [FriendRequestStatusRow] = try await supabase
+                .from("friend_requests")
+                .select("requester_id, status")
+                .eq("requester_id", value: otherUserID.uuidString)
+                .eq("receiver_id", value: currentUserID.uuidString)
+                .eq("status", value: "pending")
+                .limit(1)
+                .execute()
+                .value
+
+            let requested = !outgoingRows.isEmpty
+            let incoming = !incomingRows.isEmpty
             await MainActor.run {
-                hasRequestedFriend = !rows.isEmpty
+                hasRequestedFriend = requested
+                hasIncomingFriendRequest = incoming
             }
             Self.cacheFriendRequestStatus(
-                !rows.isEmpty,
+                requested,
                 currentUserID: currentUserID,
                 otherUserID: otherUserID
             )
         } catch {
             return
+        }
+    }
+
+    private func acceptFriendRequest() async -> Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let requesterID = userID,
+              currentUserID != requesterID
+        else { return false }
+
+        struct FriendInsert: Encodable {
+            let userID: UUID
+            let friendID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case userID = "user_id"
+                case friendID = "friend_id"
+            }
+        }
+
+        do {
+            let pair = orderedFriendPair(currentUserID: currentUserID, otherUserID: requesterID)
+            try await supabase
+                .from("friends")
+                .insert(
+                    FriendInsert(userID: pair.userID, friendID: pair.friendID)
+                )
+                .execute()
+
+            try await supabase
+                .from("friend_requests")
+                .update(["status": "accepted"])
+                .eq("requester_id", value: requesterID.uuidString)
+                .eq("receiver_id", value: currentUserID.uuidString)
+                .execute()
+
+            await MainActor.run {
+                isFriend = true
+                hasRequestedFriend = false
+                hasIncomingFriendRequest = false
+            }
+            Self.cacheFriendStatus(
+                true,
+                currentUserID: currentUserID,
+                otherUserID: requesterID
+            )
+            Self.cacheFriendRequestStatus(
+                false,
+                currentUserID: currentUserID,
+                otherUserID: requesterID
+            )
+            return true
+        } catch {
+            return false
         }
     }
 

@@ -86,13 +86,22 @@ struct OthersProfileView: View {
                                 }
                             }
                         }) {
-                            Text(friendButtonTitle)
-                                .font(.custom(Fonts.semibold, size: 16))
-                                .foregroundStyle(Colors.tertiaryText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Colors.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            ZStack {
+                                if isFriend {
+                                    Image("friends")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: 20)
+                                } else {
+                                    Text(friendButtonTitle)
+                                        .font(.custom(Fonts.semibold, size: 16))
+                                        .foregroundStyle(Colors.primaryText)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
                         .opacity(hasRequestedFriend && !isFriend ? 0.6 : 1)

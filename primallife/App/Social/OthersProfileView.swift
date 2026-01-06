@@ -899,6 +899,34 @@ struct OthersProfileView: View {
                 )
                 .execute()
 
+            _ = try? await supabase
+                .from("friend_requests")
+                .delete()
+                .eq("requester_id", value: currentUserID.uuidString)
+                .eq("receiver_id", value: otherUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friend_requests")
+                .delete()
+                .eq("requester_id", value: otherUserID.uuidString)
+                .eq("receiver_id", value: currentUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: currentUserID.uuidString)
+                .eq("friend_id", value: otherUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: otherUserID.uuidString)
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+
             await MainActor.run {
                 hasBlockedUser = true
                 isFriend = false

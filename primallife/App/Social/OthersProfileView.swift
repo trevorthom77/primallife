@@ -293,6 +293,7 @@ struct OthersProfileView: View {
         }
         .sheet(isPresented: $isShowingMoreSheet) {
             OthersProfileMoreSheetView(
+                isFriend: isFriend,
                 unfriendAction: {
                     isShowingMoreSheet = false
                     isShowingUnfriendConfirm = true
@@ -820,6 +821,7 @@ struct OthersProfileView: View {
 
 private struct OthersProfileMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    let isFriend: Bool
     let unfriendAction: () -> Void
 
     var body: some View {
@@ -839,22 +841,24 @@ private struct OthersProfileMoreSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Button(action: unfriendAction) {
-                        HStack {
-                            Text("Unfriend")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                    if isFriend {
+                        Button(action: unfriendAction) {
+                            HStack {
+                                Text("Unfriend")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
 
-                            Spacer()
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
-                    .buttonStyle(.plain)
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
                     Button(action: {}) {
                         HStack {

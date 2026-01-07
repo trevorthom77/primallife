@@ -303,7 +303,7 @@ struct ProfileView: View {
                         }
 
                         VStack(spacing: 12) {
-                            let displayedCountries = Array(currentCountries.prefix(2))
+                            let displayedCountries = Array(currentCountries.prefix(1))
 
                             ForEach(displayedCountries) { country in
                                 TravelCard(
@@ -430,7 +430,7 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $isCountrySheetPresented) {
-            CountryPickerSheet { selectedIDs in
+            CountryPickerSheet(initialSelectedIDs: userCountryIDs) { selectedIDs in
                 Task {
                     await addCountries(selectedIDs)
                 }
@@ -778,7 +778,7 @@ private struct CountryPickerSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
-    @State private var selectedCountryIDs: Set<String> = []
+    @State private var selectedCountryIDs: Set<String>
     
     private var filteredCountries: [Country] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
@@ -788,6 +788,11 @@ private struct CountryPickerSheet: View {
         return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
     
+    init(initialSelectedIDs: Set<String>, onSave: @escaping (Set<String>) -> Void) {
+        self.onSave = onSave
+        _selectedCountryIDs = State(initialValue: initialSelectedIDs)
+    }
+
     var body: some View {
         ZStack {
             Colors.background

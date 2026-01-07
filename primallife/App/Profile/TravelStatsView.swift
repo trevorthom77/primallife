@@ -14,6 +14,15 @@ struct TravelStatsView: View {
     ]
     
     var body: some View {
+        let visitedISOSet = Set(countries.map { $0.isoCode.uppercased() })
+        let totalsByContinent = Dictionary(grouping: CountryDatabase.all, by: { $0.continent })
+            .mapValues { $0.count }
+        let visitedByContinent = Dictionary(
+            grouping: CountryDatabase.all.filter { visitedISOSet.contains($0.isoCode.uppercased()) },
+            by: { $0.continent }
+        )
+        .mapValues { $0.count }
+
         ZStack {
             Colors.background
                 .ignoresSafeArea()
@@ -48,6 +57,12 @@ struct TravelStatsView: View {
 
                     VStack(spacing: 12) {
                         ForEach(continents, id: \.self) { continent in
+                            let total = totalsByContinent[continent, default: 0]
+                            let visitedCount = visitedByContinent[continent, default: 0]
+                            let percent = total == 0
+                                ? 0
+                                : Int((Double(visitedCount) / Double(total)) * 100)
+
                             VStack(alignment: .leading, spacing: 8) {
                                 TravelCard(
                                     flag: "",
@@ -60,9 +75,9 @@ struct TravelStatsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 HStack {
-                                    Text("0 Countries")
+                                    Text("\(visitedCount) Countries")
                                     Spacer()
-                                    Text("\(Int.random(in: 0...100))%")
+                                    Text("\(percent)%")
                                 }
                                 .font(.tripsfont)
                                 .foregroundStyle(Colors.secondaryText)

@@ -572,6 +572,7 @@ struct ProfileView: View {
                 return ProfileCountry(
                     flag: country.flag,
                     name: country.name,
+                    isoCode: country.isoCode,
                     note: "",
                     imageQuery: country.name
                 )
@@ -944,6 +945,7 @@ struct ProfileCountry: Identifiable {
     let id = UUID()
     let flag: String
     let name: String
+    let isoCode: String
     let note: String
     let imageQuery: String
 }

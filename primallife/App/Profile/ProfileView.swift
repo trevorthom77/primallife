@@ -1053,28 +1053,3 @@ private struct ProfileTribeRow: Decodable {
         createdAt = decodedCreatedAt
     }
 }
-
-#Preview {
-    ProfileView(
-        name: "Mia",
-        homeCountry: "Australia",
-        countryFlag: "🇦🇺",
-        tripsCount: 14,
-        countriesCount: 9,
-        worldPercent: 8,
-        trips: [
-            ProfileTrip(flag: "🇮🇩", location: "Bali", dates: "May 12–18", imageQuery: "Bali beach"),
-            ProfileTrip(flag: "🇺🇸", location: "Big Sur", dates: "Jun 18–20", imageQuery: "Big Sur coast"),
-            ProfileTrip(flag: "🇨🇭", location: "Swiss Alps", dates: "Jul 8–15", imageQuery: "Swiss Alps mountains")
-        ],
-        countries: [
-            ProfileCountry(flag: "🇯🇵", name: "Japan", note: "May 12–18", imageQuery: "Japan skyline"),
-            ProfileCountry(flag: "🇮🇹", name: "Italy", note: "Jun 18–20", imageQuery: "Italy coast")
-        ],
-        tribes: [
-            ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
-            ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
-        ]
-    )
-    .environmentObject(ProfileStore())
-}

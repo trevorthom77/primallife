@@ -650,6 +650,7 @@ private extension ProfileView {
 
 private struct CountryPickerSheet: View {
     @State private var searchText = ""
+    @State private var selectedCountryIDs: Set<String> = []
     
     private var filteredCountries: [Country] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
@@ -665,11 +666,6 @@ private struct CountryPickerSheet: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
-                Text("Countries")
-                    .font(.travelTitle)
-                    .foregroundStyle(Colors.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(Colors.secondaryText)
@@ -691,17 +687,28 @@ private struct CountryPickerSheet: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredCountries) { country in
-                            HStack(spacing: 12) {
-                                Text(country.flag)
-                                    .font(.travelTitle)
-                                Text(country.name)
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
+                            let isSelected = selectedCountryIDs.contains(country.id)
+                            
+                            Button {
+                                if isSelected {
+                                    selectedCountryIDs.remove(country.id)
+                                } else {
+                                    selectedCountryIDs.insert(country.id)
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(country.flag)
+                                        .font(.travelTitle)
+                                    Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Colors.card)
-                            .cornerRadius(12)
+                            .buttonStyle(.plain)
                         }
                     }
                 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct TravelStatsView: View {
     @Environment(\.dismiss) private var dismiss
     let countries: [ProfileCountry]
+    let onDeleteCountry: (ProfileCountry) -> Void
     @State private var selectedCountry: ProfileCountry?
     private let continents = [
         "Africa",
@@ -110,7 +111,9 @@ struct TravelStatsView: View {
         }
         .navigationBarBackButtonHidden(true)
         .sheet(item: $selectedCountry) { country in
-            TravelStatsMoreSheetView(country: country)
+            TravelStatsMoreSheetView(country: country) {
+                onDeleteCountry(country)
+            }
         }
     }
 }
@@ -119,6 +122,7 @@ private struct TravelStatsMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingDeleteConfirm = false
     let country: ProfileCountry
+    let onDelete: () -> Void
 
     var body: some View {
         ZStack {
@@ -178,6 +182,7 @@ private struct TravelStatsMoreSheetView: View {
                     isDestructive: true,
                     confirmAction: {
                         isShowingDeleteConfirm = false
+                        onDelete()
                         dismiss()
                     },
                     cancelAction: {

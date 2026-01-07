@@ -294,7 +294,11 @@ struct ProfileView: View {
                             Spacer()
 
                             NavigationLink {
-                                TravelStatsView(countries: currentCountries)
+                                TravelStatsView(countries: currentCountries) { country in
+                                    Task {
+                                        await deleteCountry(country)
+                                    }
+                                }
                             } label: {
                                 Text("See More")
                                     .font(.travelDetail)
@@ -609,6 +613,32 @@ struct ProfileView: View {
                     .execute()
             }
             await loadUserCountries()
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func deleteCountry(_ country: ProfileCountry) async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id
+        else { return }
+
+        let isoCode = country.isoCode.uppercased()
+
+        do {
+            try await supabase
+                .from("user_countries")
+                .delete()
+                .eq("id", value: userID.uuidString)
+                .eq("country_iso", value: isoCode)
+                .execute()
+
+            let updatedCountries = currentCountries.filter {
+                $0.isoCode.uppercased() != isoCode
+            }
+            userCountries = updatedCountries
+            userCountryIDs = Set(updatedCountries.map { $0.isoCode.uppercased() })
         } catch {
             return
         }

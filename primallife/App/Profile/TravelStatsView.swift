@@ -3,6 +3,15 @@ import SwiftUI
 struct TravelStatsView: View {
     @Environment(\.dismiss) private var dismiss
     let countries: [ProfileCountry]
+    private let continents = [
+        "Africa",
+        "Antarctica",
+        "Asia",
+        "Europe",
+        "North America",
+        "Oceania",
+        "South America"
+    ]
     
     var body: some View {
         ZStack {
@@ -19,10 +28,6 @@ struct TravelStatsView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
                     
-                    Text("Continents")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-                    
                     VStack(spacing: 12) {
                         ForEach(countries) { country in
                             TravelCard(
@@ -30,6 +35,24 @@ struct TravelStatsView: View {
                                 location: country.name,
                                 dates: country.note,
                                 imageQuery: country.imageQuery,
+                                showsParticipants: false,
+                                height: 150
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+
+                    Text("Continents")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    VStack(spacing: 12) {
+                        ForEach(continents, id: \.self) { continent in
+                            TravelCard(
+                                flag: "",
+                                location: continent,
+                                dates: "",
+                                imageQuery: continent,
                                 showsParticipants: false,
                                 height: 150
                             )

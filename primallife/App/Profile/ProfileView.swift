@@ -552,12 +552,8 @@ private extension ProfileView {
 private func tribeRow(_ tribe: ProfileTribe) -> some View {
     HStack(spacing: 12) {
         tribeImage(for: tribe)
-            .frame(width: 44, height: 44)
-            .clipShape(Circle())
-            .overlay {
-                Circle()
-                    .stroke(Colors.card, lineWidth: 3)
-            }
+            .frame(width: 48, height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         
         VStack(alignment: .leading, spacing: 4) {
             Text(tribe.name)
@@ -565,8 +561,9 @@ private func tribeRow(_ tribe: ProfileTribe) -> some View {
                 .foregroundStyle(Colors.primaryText)
             
             Text(tribe.status)
-                .font(.custom(Fonts.regular, size: 14))
+                .font(.travelBody)
                 .foregroundStyle(Colors.secondaryText)
+                .lineLimit(1)
         }
         
         Spacer()
@@ -585,7 +582,7 @@ private func tribeImage(for tribe: ProfileTribe) -> some View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Colors.secondaryText.opacity(0.3)
+                Colors.card
             }
         }
     } else if !tribe.imageName.isEmpty {
@@ -593,7 +590,7 @@ private func tribeImage(for tribe: ProfileTribe) -> some View {
             .resizable()
             .scaledToFill()
     } else {
-        Colors.secondaryText.opacity(0.3)
+        Colors.card
     }
 }
 

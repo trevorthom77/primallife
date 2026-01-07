@@ -261,9 +261,9 @@ struct ProfileView: View {
 
                             Spacer()
 
-                            Button("See All") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
+                            Button { } label: {
+                                SeeAllButton()
+                            }
                         }
 
                         VStack(spacing: 12) {
@@ -344,9 +344,9 @@ struct ProfileView: View {
                             
                             Spacer()
                             
-                            Button("See All") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
+                            Button { } label: {
+                                SeeAllButton()
+                            }
                         }
                         
                         if !displayedTribes.isEmpty {
@@ -395,9 +395,9 @@ struct ProfileView: View {
                             
                             Spacer()
                             
-                            Button("See All") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
+                            Button { } label: {
+                                SeeAllButton()
+                            }
                         }
                         
                         if !friends.isEmpty {

@@ -137,9 +137,9 @@ struct MessagesView: View {
 
                                     Spacer()
 
-                                    Button("See All") { }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
+                                    Button { } label: {
+                                        SeeAllButton()
+                                    }
                                 }
 
                                 if !joinedTribeChats.isEmpty {

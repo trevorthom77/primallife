@@ -190,11 +190,11 @@ struct OthersProfileView: View {
 
                                 Spacer()
 
-                                Button("See All") {
+                                Button {
                                     isShowingSeeAllSheet = true
+                                } label: {
+                                    SeeAllButton()
                                 }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
                             }
 
                             if isLoadingTrips && trips.isEmpty {

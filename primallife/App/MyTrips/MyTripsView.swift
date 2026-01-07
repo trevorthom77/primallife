@@ -453,11 +453,11 @@ struct MyTripsView: View {
                                     
                                     Spacer()
                                     
-                                    Button("See All") {
+                                    Button {
                                         isShowingUpcomingTripsSheet = true
+                                    } label: {
+                                        SeeAllButton()
                                     }
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.accent)
                                 }
                                 
                                 TabView(selection: $selectedTripIndex) {
@@ -546,7 +546,7 @@ struct MyTripsView: View {
                                     
                                     Spacer()
                                     
-                                    NavigationLink("See All") {
+                                    NavigationLink {
                                         UpcomingTripsFullView(
                                             trip: trip,
                                             prefetchedDetails: tripImageDetails[trip.id],
@@ -554,9 +554,9 @@ struct MyTripsView: View {
                                             tribeImageURLCache: $tribeImageURLCache,
                                             startOnTribesTab: true
                                         )
+                                    } label: {
+                                        SeeAllButton()
                                     }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
                                 }
                                 .padding(.top, 16)
                                 
@@ -694,9 +694,9 @@ struct MyTripsView: View {
 
                                         Spacer()
 
-                                        Button("See All") { }
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.accent)
+                                        Button { } label: {
+                                            SeeAllButton()
+                                        }
                                     }
 
                                     VStack(alignment: .leading, spacing: 8) {
@@ -722,16 +722,16 @@ struct MyTripsView: View {
                                     
                                     Spacer()
                                     
-                                    NavigationLink("See All") {
+                                    NavigationLink {
                                         UpcomingTripsFullView(
                                             trip: trip,
                                             prefetchedDetails: tripImageDetails[trip.id],
                                             tribeImageCache: $tribeImageCache,
                                             tribeImageURLCache: $tribeImageURLCache
                                         )
+                                    } label: {
+                                        SeeAllButton()
                                     }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
                                 }
                                 .padding(.top, 16)
 

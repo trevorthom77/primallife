@@ -124,6 +124,7 @@ struct ProfileView: View {
     @State private var joinedTribes: [ProfileTribe] = []
     @State private var isLoadingTribes = false
     @State private var tribeImageCache: [URL: Image] = ProfileTribeImageCache.images
+    @State private var isCountrySheetPresented = false
     
     private let avatarSize: CGFloat = 140
     
@@ -285,7 +286,7 @@ struct ProfileView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
 
-                            Button(action: { }) {
+                            Button(action: { isCountrySheetPresented = true }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "plus")
                                         .font(.system(size: 16, weight: .semibold))
@@ -367,6 +368,9 @@ struct ProfileView: View {
                 Color.clear
                     .frame(height: 96)
             }
+        }
+        .sheet(isPresented: $isCountrySheetPresented) {
+            CountryPickerSheet()
         }
         .navigationBarBackButtonHidden(true)
         .task {
@@ -641,6 +645,72 @@ private extension ProfileView {
     private func cacheTribeImage(_ image: Image, for url: URL) {
         tribeImageCache[url] = image
         ProfileTribeImageCache.images[url] = image
+    }
+}
+
+private struct CountryPickerSheet: View {
+    @State private var searchText = ""
+    
+    private var filteredCountries: [Country] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        if query.isEmpty {
+            return CountryDatabase.all
+        }
+        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+    
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                Text("Countries")
+                    .font(.travelTitle)
+                    .foregroundStyle(Colors.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField(
+                        "",
+                        text: $searchText,
+                        prompt: Text("Search country")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                    )
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+                
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredCountries) { country in
+                            HStack(spacing: 12) {
+                                Text(country.flag)
+                                    .font(.travelTitle)
+                                Text(country.name)
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Colors.card)
+                            .cornerRadius(12)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
     }
 }
 

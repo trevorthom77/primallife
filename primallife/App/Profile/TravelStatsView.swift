@@ -74,39 +74,62 @@ struct TravelStatsView: View {
                         }
                     }
 
-                    Text("Continents")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Continents")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
 
-                    VStack(spacing: 12) {
                         ForEach(continents, id: \.self) { continent in
                             let total = totalsByContinent[continent, default: 0]
                             let visitedCount = visitedByContinent[continent, default: 0]
-                            let percent = total == 0
-                                ? 0
-                                : Int((Double(visitedCount) / Double(total)) * 100)
+                            let percent = total == 0 ? 0 : Double(visitedCount) / Double(total)
 
-                            VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 16) {
                                 TravelCard(
                                     flag: "",
-                                    location: continent,
+                                    location: "",
                                     dates: "",
                                     imageQuery: continent,
                                     showsParticipants: false,
-                                    height: 150
+                                    height: 60
                                 )
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                
-                                HStack {
-                                    Text("\(visitedCount) \(visitedCount == 1 ? "Country" : "Countries")")
-                                    Spacer()
-                                    Text("\(percent)%")
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(continent)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    Text("\(visitedCount) of \(total) Countries")
+                                        .font(.badgeDetail)
+                                        .foregroundStyle(Colors.secondaryText)
                                 }
-                                .font(.tripsfont)
-                                .foregroundStyle(Colors.secondaryText)
-                                .frame(maxWidth: .infinity)
+
+                                Spacer()
+
+                                ZStack {
+                                    Circle()
+                                        .stroke(Colors.secondaryText.opacity(0.2), lineWidth: 5)
+
+                                    Circle()
+                                        .trim(from: 0, to: percent)
+                                        .stroke(
+                                            percent >= 1 ? Colors.girlsPink : Colors.accent,
+                                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                                        )
+                                        .rotationEffect(.degrees(-90))
+
+                                    Text("\(Int(percent * 100))%")
+                                        .font(.badgeDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                }
+                                .frame(width: 45, height: 45)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: Colors.primaryText.opacity(0.05), radius: 5, x: 0, y: 2)
                         }
                     }
                 }

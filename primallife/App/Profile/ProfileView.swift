@@ -288,7 +288,7 @@ struct ProfileView: View {
                                     .font(.travelBody)
                                     .foregroundStyle(Colors.secondaryText)
                             } else {
-                                let displayedTrips = Array(currentTrips.prefix(2))
+                                let displayedTrips = Array(currentTrips.prefix(1))
 
                                 ForEach(displayedTrips) { trip in
                                     TravelCard(
@@ -383,7 +383,7 @@ struct ProfileView: View {
                         
                         if !displayedTribes.isEmpty {
                             VStack(spacing: 10) {
-                                ForEach(displayedTribes) { tribe in
+                                ForEach(Array(displayedTribes.prefix(3))) { tribe in
                                     NavigationLink {
                                         TribesSocialView(
                                             imageURL: tribe.photoURL,

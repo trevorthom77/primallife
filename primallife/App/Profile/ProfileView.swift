@@ -102,6 +102,8 @@ struct ProfileView: View {
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
+    @State private var joinedTribes: [ProfileTribe] = []
+    @State private var isLoadingTribes = false
     
     private let avatarSize: CGFloat = 140
     
@@ -111,6 +113,10 @@ struct ProfileView: View {
 
     private var friends: [UserProfile] {
         profileStore.cachedFriends
+    }
+
+    private var displayedTribes: [ProfileTribe] {
+        joinedTribes.isEmpty ? tribes : joinedTribes
     }
     
     private var originDisplay: String? {
@@ -292,7 +298,7 @@ struct ProfileView: View {
                         }
                         
                         VStack(spacing: 10) {
-                            ForEach(tribes) { tribe in
+                            ForEach(displayedTribes) { tribe in
                                 tribeRow(tribe)
                             }
                         }
@@ -345,6 +351,7 @@ struct ProfileView: View {
         .navigationBarBackButtonHidden(true)
         .task {
             await loadFriends()
+            await loadTribes()
         }
     }
 
@@ -389,6 +396,51 @@ struct ProfileView: View {
 
             profileStore.cachedFriends = profiles
             profileStore.hasLoadedFriends = true
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadTribes() async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id,
+              !isLoadingTribes else { return }
+
+        isLoadingTribes = true
+        defer { isLoadingTribes = false }
+
+        do {
+            let joinRows: [ProfileTribeJoinRow] = try await supabase
+                .from("tribes_join")
+                .select("tribe_id")
+                .eq("id", value: userID.uuidString)
+                .execute()
+                .value
+
+            let tribeIDs = joinRows.map { $0.tribeID }
+            if tribeIDs.isEmpty {
+                joinedTribes = []
+                return
+            }
+
+            let tribeIDStrings = tribeIDs.map { $0.uuidString }
+            let tribes: [ProfileTribeRow] = try await supabase
+                .from("tribes")
+                .select("id, name, destination, photo_url")
+                .in("id", values: tribeIDStrings)
+                .execute()
+                .value
+
+            joinedTribes = tribes.map { tribe in
+                ProfileTribe(
+                    id: tribe.id,
+                    imageName: "",
+                    name: tribe.name,
+                    status: tribe.destination,
+                    photoURL: tribe.photoURL
+                )
+            }
         } catch {
             return
         }
@@ -499,9 +551,7 @@ private extension ProfileView {
 
 private func tribeRow(_ tribe: ProfileTribe) -> some View {
     HStack(spacing: 12) {
-        Image(tribe.imageName)
-            .resizable()
-            .scaledToFill()
+        tribeImage(for: tribe)
             .frame(width: 44, height: 44)
             .clipShape(Circle())
             .overlay {
@@ -526,6 +576,27 @@ private func tribeRow(_ tribe: ProfileTribe) -> some View {
     .clipShape(RoundedRectangle(cornerRadius: 16))
 }
 
+@ViewBuilder
+private func tribeImage(for tribe: ProfileTribe) -> some View {
+    if let photoURL = tribe.photoURL {
+        AsyncImage(url: photoURL) { phase in
+            if let image = phase.image {
+                image
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Colors.secondaryText.opacity(0.3)
+            }
+        }
+    } else if !tribe.imageName.isEmpty {
+        Image(tribe.imageName)
+            .resizable()
+            .scaledToFill()
+    } else {
+        Colors.secondaryText.opacity(0.3)
+    }
+}
+
 private func counterCard(title: String, value: String) -> some View {
     VStack(alignment: .leading, spacing: 6) {
         Text(value)
@@ -543,10 +614,19 @@ private func counterCard(title: String, value: String) -> some View {
 }
 
 struct ProfileTribe: Identifiable {
-    let id = UUID()
+    let id: UUID
     let imageName: String
     let name: String
     let status: String
+    let photoURL: URL?
+
+    init(id: UUID = UUID(), imageName: String, name: String, status: String, photoURL: URL? = nil) {
+        self.id = id
+        self.imageName = imageName
+        self.name = name
+        self.status = status
+        self.photoURL = photoURL
+    }
 }
 
 struct ProfileFriend: Identifiable {
@@ -579,6 +659,41 @@ private struct FriendRow: Decodable {
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
         case friendID = "friend_id"
+    }
+}
+
+private struct ProfileTribeJoinRow: Decodable {
+    let tribeID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case tribeID = "tribe_id"
+    }
+}
+
+private struct ProfileTribeRow: Decodable {
+    let id: UUID
+    let name: String
+    let destination: String
+    let photoURL: URL?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case destination
+        case photoURL = "photo_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        destination = try container.decodeIfPresent(String.self, forKey: .destination) ?? ""
+
+        if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
+            photoURL = URL(string: photoURLString)
+        } else {
+            photoURL = nil
+        }
     }
 }
 

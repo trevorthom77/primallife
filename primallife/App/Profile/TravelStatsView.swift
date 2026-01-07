@@ -15,6 +15,14 @@ struct TravelStatsView: View {
                         dismiss()
                     }
                     
+                    Text("Countries")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+                    
+                    Text("Continents")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+                    
                     VStack(spacing: 12) {
                         ForEach(countries) { country in
                             TravelCard(

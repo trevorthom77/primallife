@@ -8,6 +8,25 @@
 import SwiftUI
 import Supabase
 
+private enum ProfileTribeListCache {
+    static var latestTribes: [ProfileTribe] = []
+    static var tribesByUser: [UUID: [ProfileTribe]] = [:]
+
+    static func cachedTribes(for userID: UUID?) -> [ProfileTribe] {
+        guard let userID else { return latestTribes }
+        return tribesByUser[userID] ?? latestTribes
+    }
+
+    static func update(_ tribes: [ProfileTribe], for userID: UUID) {
+        tribesByUser[userID] = tribes
+        latestTribes = tribes
+    }
+}
+
+private enum ProfileTribeImageCache {
+    static var images: [URL: Image] = [:]
+}
+
 struct UserProfile: Decodable, Identifiable {
     let id: UUID
     let fullName: String
@@ -104,6 +123,7 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var joinedTribes: [ProfileTribe] = []
     @State private var isLoadingTribes = false
+    @State private var tribeImageCache: [URL: Image] = ProfileTribeImageCache.images
     
     private let avatarSize: CGFloat = 140
     
@@ -407,6 +427,11 @@ struct ProfileView: View {
               let userID = supabase.auth.currentUser?.id,
               !isLoadingTribes else { return }
 
+        let cachedTribes = ProfileTribeListCache.cachedTribes(for: userID)
+        if joinedTribes.isEmpty, !cachedTribes.isEmpty {
+            joinedTribes = cachedTribes
+        }
+
         isLoadingTribes = true
         defer { isLoadingTribes = false }
 
@@ -421,6 +446,7 @@ struct ProfileView: View {
             let tribeIDs = joinRows.map { $0.tribeID }
             if tribeIDs.isEmpty {
                 joinedTribes = []
+                ProfileTribeListCache.update([], for: userID)
                 return
             }
 
@@ -441,6 +467,7 @@ struct ProfileView: View {
                     photoURL: tribe.photoURL
                 )
             }
+            ProfileTribeListCache.update(joinedTribes, for: userID)
         } catch {
             return
         }
@@ -547,50 +574,73 @@ private extension ProfileView {
         }
         return "\(flag) \(name)"
     }
-}
 
-private func tribeRow(_ tribe: ProfileTribe) -> some View {
-    HStack(spacing: 12) {
-        tribeImage(for: tribe)
-            .frame(width: 48, height: 48)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        
-        VStack(alignment: .leading, spacing: 4) {
-            Text(tribe.name)
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-            
-            Text(tribe.status)
-                .font(.travelBody)
-                .foregroundStyle(Colors.secondaryText)
-                .lineLimit(1)
+    private func tribeRow(_ tribe: ProfileTribe) -> some View {
+        HStack(spacing: 12) {
+            tribeImage(for: tribe)
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(tribe.name)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(tribe.status)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .lineLimit(1)
+            }
+
+            Spacer()
         }
-        
-        Spacer()
+        .padding()
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
-    .padding()
-    .background(Colors.card)
-    .clipShape(RoundedRectangle(cornerRadius: 16))
-}
 
-@ViewBuilder
-private func tribeImage(for tribe: ProfileTribe) -> some View {
-    if let photoURL = tribe.photoURL {
-        AsyncImage(url: photoURL) { phase in
-            if let image = phase.image {
-                image
+    @ViewBuilder
+    private func tribeImage(for tribe: ProfileTribe) -> some View {
+        if let photoURL = tribe.photoURL {
+            if let cachedImage = cachedTribeImage(for: photoURL) {
+                cachedImage
                     .resizable()
                     .scaledToFill()
             } else {
-                Colors.card
+                AsyncImage(url: photoURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .onAppear {
+                                if tribeImageCache[photoURL] == nil {
+                                    cacheTribeImage(image, for: photoURL)
+                                }
+                            }
+                    case .empty:
+                        Colors.card
+                    default:
+                        Colors.card
+                    }
+                }
             }
+        } else if !tribe.imageName.isEmpty {
+            Image(tribe.imageName)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Colors.card
         }
-    } else if !tribe.imageName.isEmpty {
-        Image(tribe.imageName)
-            .resizable()
-            .scaledToFill()
-    } else {
-        Colors.card
+    }
+
+    private func cachedTribeImage(for url: URL) -> Image? {
+        tribeImageCache[url]
+    }
+
+    private func cacheTribeImage(_ image: Image, for url: URL) {
+        tribeImageCache[url] = image
+        ProfileTribeImageCache.images[url] = image
     }
 }
 

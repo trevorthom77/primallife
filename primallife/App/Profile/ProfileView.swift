@@ -133,7 +133,6 @@ struct ProfileView: View {
     let countryFlag: String
     let tripsCount: Int
     let countriesCount: Int
-    let worldPercent: Int
     let trips: [ProfileTrip]
     let countries: [ProfileCountry]
     let tribes: [ProfileTribe]
@@ -169,6 +168,16 @@ struct ProfileView: View {
 
     private var currentCountriesCount: Int {
         userCountries.isEmpty ? countriesCount : userCountries.count
+    }
+
+    private var worldPercent: Int {
+        let totalCountries = CountryDatabase.all.count
+        guard totalCountries > 0 else { return 0 }
+
+        let visitedISOSet = Set(currentCountries.map { $0.isoCode.uppercased() })
+        let visitedCount = CountryDatabase.all.filter { visitedISOSet.contains($0.isoCode.uppercased()) }.count
+
+        return Int((Double(visitedCount) / Double(totalCountries)) * 100)
     }
     
     private var originDisplay: String? {
@@ -309,16 +318,22 @@ struct ProfileView: View {
                         VStack(spacing: 12) {
                             let displayedCountries = Array(currentCountries.prefix(1))
 
-                            ForEach(displayedCountries) { country in
-                                TravelCard(
-                                    flag: country.flag,
-                                    location: country.name,
-                                    dates: country.note,
-                                    imageQuery: country.imageQuery,
-                                    showsParticipants: false,
-                                    height: 150
-                                )
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if currentCountries.isEmpty {
+                                Text("No countries yet.")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                ForEach(displayedCountries) { country in
+                                    TravelCard(
+                                        flag: country.flag,
+                                        location: country.name,
+                                        dates: country.note,
+                                        imageQuery: country.imageQuery,
+                                        showsParticipants: false,
+                                        height: 150
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
                             }
 
                             Button(action: { isCountrySheetPresented = true }) {

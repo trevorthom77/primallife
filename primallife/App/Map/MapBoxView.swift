@@ -466,7 +466,6 @@ struct MapBoxView: View {
                 countryFlag: profile.originFlag ?? "",
                 tripsCount: 0,
                 countriesCount: 0,
-                worldPercent: 0,
                 trips: [],
                 countries: [],
                 tribes: []

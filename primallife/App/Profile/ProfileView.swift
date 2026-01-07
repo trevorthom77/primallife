@@ -145,6 +145,9 @@ struct ProfileView: View {
     @State private var isLoadingTribes = false
     @State private var tribeImageCache: [URL: Image] = ProfileTribeImageCache.images
     @State private var isCountrySheetPresented = false
+    @State private var userCountries: [ProfileCountry] = []
+    @State private var userCountryIDs: Set<String> = []
+    @State private var isLoadingCountries = false
     
     private let avatarSize: CGFloat = 140
     
@@ -158,6 +161,14 @@ struct ProfileView: View {
 
     private var displayedTribes: [ProfileTribe] {
         joinedTribes.isEmpty ? tribes : joinedTribes
+    }
+
+    private var currentCountries: [ProfileCountry] {
+        userCountries.isEmpty ? countries : userCountries
+    }
+
+    private var currentCountriesCount: Int {
+        userCountries.isEmpty ? countriesCount : userCountries.count
     }
     
     private var originDisplay: String? {
@@ -238,7 +249,7 @@ struct ProfileView: View {
                     
                     HStack(spacing: 12) {
                         counterCard(title: "Trips", value: "\(tripsCount)")
-                        counterCard(title: "Countries", value: "\(countriesCount)")
+                        counterCard(title: "Countries", value: "\(currentCountriesCount)")
                         counterCard(title: "World", value: "\(worldPercent)%")
                     }
 
@@ -292,7 +303,7 @@ struct ProfileView: View {
                         }
 
                         VStack(spacing: 12) {
-                            let displayedCountries = Array(countries.prefix(2))
+                            let displayedCountries = Array(currentCountries.prefix(2))
 
                             ForEach(displayedCountries) { country in
                                 TravelCard(
@@ -419,12 +430,17 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $isCountrySheetPresented) {
-            CountryPickerSheet()
+            CountryPickerSheet { selectedIDs in
+                Task {
+                    await addCountries(selectedIDs)
+                }
+            }
         }
         .navigationBarBackButtonHidden(true)
         .task {
             await loadFriends()
             await loadTribes()
+            await loadUserCountries()
         }
     }
 
@@ -527,6 +543,60 @@ struct ProfileView: View {
                 )
             }
             ProfileTribeListCache.update(joinedTribes, for: userID)
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadUserCountries() async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id,
+              !isLoadingCountries else { return }
+
+        isLoadingCountries = true
+        defer { isLoadingCountries = false }
+
+        do {
+            let rows: [UserCountryRow] = try await supabase
+                .from("user_countries")
+                .select("id, country_iso")
+                .eq("id", value: userID.uuidString)
+                .execute()
+                .value
+
+            let isoCodes = rows.map { $0.countryISO.uppercased() }
+            userCountryIDs = Set(isoCodes)
+            userCountries = isoCodes.compactMap { isoCode in
+                guard let country = CountryDatabase.all.first(where: { $0.id == isoCode }) else { return nil }
+                return ProfileCountry(
+                    flag: country.flag,
+                    name: country.name,
+                    note: "",
+                    imageQuery: country.name
+                )
+            }
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func addCountries(_ selectedIDs: Set<String>) async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id
+        else { return }
+
+        let newCountryIDs = selectedIDs.subtracting(userCountryIDs)
+        guard !newCountryIDs.isEmpty else { return }
+
+        do {
+            let payload = newCountryIDs.map { UserCountryInsert(id: userID, countryISO: $0) }
+            try await supabase
+                .from("user_countries")
+                .insert(payload)
+                .execute()
+            await loadUserCountries()
         } catch {
             return
         }
@@ -704,6 +774,9 @@ private extension ProfileView {
 }
 
 private struct CountryPickerSheet: View {
+    let onSave: (Set<String>) -> Void
+
+    @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var selectedCountryIDs: Set<String> = []
     
@@ -724,10 +797,13 @@ private struct CountryPickerSheet: View {
                 HStack {
                     Spacer()
 
-                    Button("Save") { }
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.accent)
-                        .buttonStyle(.plain)
+                    Button("Save") {
+                        onSave(selectedCountryIDs)
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
                 }
 
                 HStack(spacing: 10) {
@@ -879,6 +955,26 @@ private struct ProfileTribeJoinRow: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case tribeID = "tribe_id"
+    }
+}
+
+private struct UserCountryRow: Decodable {
+    let id: UUID
+    let countryISO: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case countryISO = "country_iso"
+    }
+}
+
+private struct UserCountryInsert: Encodable {
+    let id: UUID
+    let countryISO: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case countryISO = "country_iso"
     }
 }
 

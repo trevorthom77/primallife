@@ -8,6 +8,26 @@
 import SwiftUI
 import Supabase
 
+private let profileTribeDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+private let profileTribeTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let profileTribeTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 private enum ProfileTribeListCache {
     static var latestTribes: [ProfileTribe] = []
     static var tribesByUser: [UUID: [ProfileTribe]] = [:]
@@ -320,7 +340,30 @@ struct ProfileView: View {
                         
                         VStack(spacing: 10) {
                             ForEach(displayedTribes) { tribe in
-                                tribeRow(tribe)
+                                NavigationLink {
+                                    TribesSocialView(
+                                        imageURL: tribe.photoURL,
+                                        title: tribe.name,
+                                        location: tribe.status,
+                                        flag: "",
+                                        endDate: tribe.endDate,
+                                        createdAt: tribe.createdAt,
+                                        gender: tribe.gender,
+                                        aboutText: tribe.aboutText,
+                                        interests: tribe.interests,
+                                        placeName: tribe.status,
+                                        tribeID: tribe.id,
+                                        createdBy: nil,
+                                        createdByAvatarPath: nil,
+                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
+                                        onDelete: nil,
+                                        onBack: nil,
+                                        initialHeaderImage: tribe.photoURL.flatMap { cachedTribeImage(for: $0) }
+                                    )
+                                } label: {
+                                    tribeRow(tribe)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -457,7 +500,7 @@ struct ProfileView: View {
             let tribeIDStrings = tribeIDs.map { $0.uuidString }
             let tribes: [ProfileTribeRow] = try await supabase
                 .from("tribes")
-                .select("id, name, destination, photo_url")
+                .select("id, owner_id, name, destination, photo_url, end_date, created_at, gender, description, interests")
                 .in("id", values: tribeIDStrings)
                 .execute()
                 .value
@@ -465,10 +508,16 @@ struct ProfileView: View {
             joinedTribes = tribes.map { tribe in
                 ProfileTribe(
                     id: tribe.id,
+                    ownerID: tribe.ownerID,
                     imageName: "",
                     name: tribe.name,
                     status: tribe.destination,
-                    photoURL: tribe.photoURL
+                    photoURL: tribe.photoURL,
+                    endDate: tribe.endDate,
+                    createdAt: tribe.createdAt,
+                    gender: tribe.gender,
+                    aboutText: tribe.aboutText,
+                    interests: tribe.interests
                 )
             }
             ProfileTribeListCache.update(joinedTribes, for: userID)
@@ -748,17 +797,41 @@ private func counterCard(title: String, value: String) -> some View {
 
 struct ProfileTribe: Identifiable {
     let id: UUID
+    let ownerID: UUID
     let imageName: String
     let name: String
     let status: String
     let photoURL: URL?
+    let endDate: Date
+    let createdAt: Date
+    let gender: String
+    let aboutText: String?
+    let interests: [String]
 
-    init(id: UUID = UUID(), imageName: String, name: String, status: String, photoURL: URL? = nil) {
+    init(
+        id: UUID = UUID(),
+        ownerID: UUID = UUID(),
+        imageName: String,
+        name: String,
+        status: String,
+        photoURL: URL? = nil,
+        endDate: Date = Date(),
+        createdAt: Date = Date(),
+        gender: String = "",
+        aboutText: String? = nil,
+        interests: [String] = []
+    ) {
         self.id = id
+        self.ownerID = ownerID
         self.imageName = imageName
         self.name = name
         self.status = status
         self.photoURL = photoURL
+        self.endDate = endDate
+        self.createdAt = createdAt
+        self.gender = gender
+        self.aboutText = aboutText
+        self.interests = interests
     }
 }
 
@@ -805,28 +878,61 @@ private struct ProfileTribeJoinRow: Decodable {
 
 private struct ProfileTribeRow: Decodable {
     let id: UUID
+    let ownerID: UUID
     let name: String
     let destination: String
     let photoURL: URL?
+    let endDate: Date
+    let createdAt: Date
+    let gender: String
+    let aboutText: String?
+    let interests: [String]
 
     enum CodingKeys: String, CodingKey {
         case id
+        case ownerID = "owner_id"
         case name
         case destination
         case photoURL = "photo_url"
+        case endDate = "end_date"
+        case createdAt = "created_at"
+        case gender
+        case aboutText = "description"
+        case interests
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
+        ownerID = try container.decode(UUID.self, forKey: .ownerID)
         name = try container.decode(String.self, forKey: .name)
         destination = try container.decodeIfPresent(String.self, forKey: .destination) ?? ""
+        gender = try container.decode(String.self, forKey: .gender)
+        aboutText = try container.decodeIfPresent(String.self, forKey: .aboutText)
+        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
 
         if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
             photoURL = URL(string: photoURLString)
         } else {
             photoURL = nil
         }
+
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        guard let decodedEndDate = profileTribeDateFormatter.date(from: endDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.endDate], debugDescription: "Invalid end date format")
+            )
+        }
+        endDate = decodedEndDate
+
+        let createdAtString = try container.decode(String.self, forKey: .createdAt)
+        guard let decodedCreatedAt = profileTribeTimestampFormatterWithFractional.date(from: createdAtString)
+            ?? profileTribeTimestampFormatter.date(from: createdAtString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
+            )
+        }
+        createdAt = decodedCreatedAt
     }
 }
 

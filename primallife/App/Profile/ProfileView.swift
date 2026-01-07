@@ -666,6 +666,15 @@ private struct CountryPickerSheet: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Save") { }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                        .buttonStyle(.plain)
+                }
+
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(Colors.secondaryText)

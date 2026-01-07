@@ -338,33 +338,39 @@ struct ProfileView: View {
                                 .foregroundStyle(Colors.accent)
                         }
                         
-                        VStack(spacing: 10) {
-                            ForEach(displayedTribes) { tribe in
-                                NavigationLink {
-                                    TribesSocialView(
-                                        imageURL: tribe.photoURL,
-                                        title: tribe.name,
-                                        location: tribe.status,
-                                        flag: "",
-                                        endDate: tribe.endDate,
-                                        createdAt: tribe.createdAt,
-                                        gender: tribe.gender,
-                                        aboutText: tribe.aboutText,
-                                        interests: tribe.interests,
-                                        placeName: tribe.status,
-                                        tribeID: tribe.id,
-                                        createdBy: nil,
-                                        createdByAvatarPath: nil,
-                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
-                                        onDelete: nil,
-                                        onBack: nil,
-                                        initialHeaderImage: tribe.photoURL.flatMap { cachedTribeImage(for: $0) }
-                                    )
-                                } label: {
-                                    tribeRow(tribe)
+                        if !displayedTribes.isEmpty {
+                            VStack(spacing: 10) {
+                                ForEach(displayedTribes) { tribe in
+                                    NavigationLink {
+                                        TribesSocialView(
+                                            imageURL: tribe.photoURL,
+                                            title: tribe.name,
+                                            location: tribe.status,
+                                            flag: "",
+                                            endDate: tribe.endDate,
+                                            createdAt: tribe.createdAt,
+                                            gender: tribe.gender,
+                                            aboutText: tribe.aboutText,
+                                            interests: tribe.interests,
+                                            placeName: tribe.status,
+                                            tribeID: tribe.id,
+                                            createdBy: nil,
+                                            createdByAvatarPath: nil,
+                                            isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
+                                            onDelete: nil,
+                                            onBack: nil,
+                                            initialHeaderImage: tribe.photoURL.flatMap { cachedTribeImage(for: $0) }
+                                        )
+                                    } label: {
+                                        tribeRow(tribe)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                        } else {
+                            Text("No tribes yet.")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -29,10 +29,8 @@ struct TribesSocialView: View {
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
     private let customPlaceImageNames = [
-        "florida",
         "italy",
         "greece",
-        "california",
         "puerto rico",
         "costa rica"
     ]

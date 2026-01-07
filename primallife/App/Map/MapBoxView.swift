@@ -50,10 +50,8 @@ struct MapBoxView: View {
     ]
     
     private let customPlaceImageNames = [
-        "florida",
         "italy",
         "greece",
-        "california",
         "puerto rico",
         "costa rica"
     ]

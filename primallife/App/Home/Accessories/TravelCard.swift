@@ -23,10 +23,8 @@ struct TravelCard: View {
     @State private var didApplyPrefetch = false
     
     private let customImageNames = [
-        "florida",
         "italy",
         "greece",
-        "california",
         "puerto rico",
         "costa rica"
     ]

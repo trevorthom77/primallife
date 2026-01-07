@@ -76,10 +76,8 @@ private struct UpcomingTripPlaceCard: View {
     let onMoreTapped: () -> Void
 
     private let customImageNames = [
-        "florida",
         "italy",
         "greece",
-        "california",
         "puerto rico",
         "costa rica"
     ]

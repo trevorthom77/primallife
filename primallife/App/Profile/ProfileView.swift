@@ -294,7 +294,7 @@ struct ProfileView: View {
                             Spacer()
 
                             NavigationLink {
-                                TravelStatsView()
+                                TravelStatsView(countries: currentCountries)
                             } label: {
                                 Text("See More")
                                     .font(.travelDetail)

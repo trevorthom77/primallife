@@ -48,14 +48,26 @@ struct TravelStatsView: View {
 
                     VStack(spacing: 12) {
                         ForEach(continents, id: \.self) { continent in
-                            TravelCard(
-                                flag: "",
-                                location: continent,
-                                dates: "",
-                                imageQuery: continent,
-                                showsParticipants: false,
-                                height: 150
-                            )
+                            VStack(alignment: .leading, spacing: 8) {
+                                TravelCard(
+                                    flag: "",
+                                    location: continent,
+                                    dates: "",
+                                    imageQuery: continent,
+                                    showsParticipants: false,
+                                    height: 150
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                HStack {
+                                    Text("0 Countries")
+                                    Spacer()
+                                    Text("\(Int.random(in: 0...100))%")
+                                }
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.secondaryText)
+                                .frame(maxWidth: .infinity)
+                            }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }

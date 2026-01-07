@@ -147,6 +147,9 @@ struct ProfileView: View {
     @State private var userCountries: [ProfileCountry] = []
     @State private var userCountryIDs: Set<String> = []
     @State private var isLoadingCountries = false
+    @State private var pastTrips: [ProfileTrip] = []
+    @State private var isLoadingPastTrips = false
+    @State private var hasLoadedPastTrips = false
     
     private let avatarSize: CGFloat = 140
     
@@ -168,6 +171,10 @@ struct ProfileView: View {
 
     private var currentCountriesCount: Int {
         userCountries.isEmpty ? countriesCount : userCountries.count
+    }
+
+    private var currentTrips: [ProfileTrip] {
+        hasLoadedPastTrips ? pastTrips : trips
     }
 
     private var worldPercent: Int {
@@ -276,18 +283,24 @@ struct ProfileView: View {
                         }
 
                         VStack(spacing: 12) {
-                            let displayedTrips = Array(trips.prefix(2))
+                            if currentTrips.isEmpty {
+                                Text("No past trips yet.")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                let displayedTrips = Array(currentTrips.prefix(2))
 
-                            ForEach(displayedTrips) { trip in
-                                TravelCard(
-                                    flag: trip.flag,
-                                    location: trip.location,
-                                    dates: trip.dates,
-                                    imageQuery: trip.imageQuery,
-                                    showsParticipants: false,
-                                    height: 150
-                                )
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                ForEach(displayedTrips) { trip in
+                                    TravelCard(
+                                        flag: trip.flag,
+                                        location: trip.location,
+                                        dates: trip.dates,
+                                        imageQuery: trip.imageQuery,
+                                        showsParticipants: false,
+                                        height: 150
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
                             }
                         }
                     }
@@ -459,6 +472,7 @@ struct ProfileView: View {
         .task {
             await loadFriends()
             await loadTribes()
+            await loadPastTrips()
             await loadUserCountries()
         }
     }
@@ -562,6 +576,34 @@ struct ProfileView: View {
                 )
             }
             ProfileTribeListCache.update(joinedTribes, for: userID)
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadPastTrips() async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id,
+              !isLoadingPastTrips else { return }
+
+        isLoadingPastTrips = true
+        defer { isLoadingPastTrips = false }
+
+        do {
+            let fetchedTrips: [Trip] = try await supabase
+                .from("mytrips")
+                .select()
+                .eq("user_id", value: userID.uuidString)
+                .order("return_date", ascending: false)
+                .execute()
+                .value
+
+            let startOfToday = Calendar.current.startOfDay(for: Date())
+            pastTrips = fetchedTrips
+                .filter { $0.returnDate < startOfToday }
+                .map { profileTrip(from: $0) }
+            hasLoadedPastTrips = true
         } catch {
             return
         }
@@ -692,6 +734,38 @@ private extension ProfileView {
     
     var placeholderAvatar: some View {
         Color.clear
+    }
+
+    private func profileTrip(from trip: Trip) -> ProfileTrip {
+        ProfileTrip(
+            flag: tripFlag(for: trip),
+            location: tripLocation(for: trip),
+            dates: tripDateRange(for: trip),
+            imageQuery: tripImageQuery(for: trip)
+        )
+    }
+
+    private func tripFlag(for trip: Trip) -> String {
+        let emojiScalars = trip.destination.unicodeScalars.filter { $0.properties.isEmoji }
+        return String(String.UnicodeScalarView(emojiScalars))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func tripLocation(for trip: Trip) -> String {
+        let filteredScalars = trip.destination.unicodeScalars.filter { !$0.properties.isEmoji }
+        return String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func tripImageQuery(for trip: Trip) -> String {
+        let cleaned = tripLocation(for: trip)
+        return cleaned.isEmpty ? trip.destination : cleaned
+    }
+
+    private func tripDateRange(for trip: Trip) -> String {
+        let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
+        let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
+        return start == end ? start : "\(start) - \(end)"
     }
 
     private func friendCard(_ friend: UserProfile) -> some View {

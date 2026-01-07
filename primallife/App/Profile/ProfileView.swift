@@ -150,6 +150,7 @@ struct ProfileView: View {
     @State private var pastTrips: [ProfileTrip] = []
     @State private var isLoadingPastTrips = false
     @State private var hasLoadedPastTrips = false
+    @State private var userTripsCount: Int?
     
     private let avatarSize: CGFloat = 140
     
@@ -175,6 +176,10 @@ struct ProfileView: View {
 
     private var currentTrips: [ProfileTrip] {
         hasLoadedPastTrips ? pastTrips : trips
+    }
+
+    private var currentTripsCount: Int {
+        userTripsCount ?? tripsCount
     }
 
     private var worldPercent: Int {
@@ -264,7 +269,7 @@ struct ProfileView: View {
                     }
                     
                     HStack(spacing: 12) {
-                        counterCard(title: "Trips", value: "\(tripsCount)")
+                        counterCard(title: "Trips", value: "\(currentTripsCount)")
                         counterCard(title: "Countries", value: "\(currentCountriesCount)")
                         counterCard(title: "World", value: "\(worldPercent)%")
                     }
@@ -599,6 +604,7 @@ struct ProfileView: View {
                 .execute()
                 .value
 
+            userTripsCount = fetchedTrips.count
             let startOfToday = Calendar.current.startOfDay(for: Date())
             pastTrips = fetchedTrips
                 .filter { $0.returnDate < startOfToday }

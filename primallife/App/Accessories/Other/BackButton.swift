@@ -25,6 +25,7 @@ struct BackButton: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
         }
+        .zIndex(1)
         .sensoryFeedback(.impact(weight: .medium), trigger: feedbackToggle)
     }
 }

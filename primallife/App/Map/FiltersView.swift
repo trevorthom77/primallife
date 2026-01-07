@@ -110,29 +110,6 @@ struct FiltersView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Adventure Style")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
-                    
-                    Button(action: { }) {
-                        Text("Add Style")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Colors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                
                 Spacer()
             }
         }

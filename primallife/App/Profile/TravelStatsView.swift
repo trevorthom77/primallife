@@ -75,7 +75,7 @@ struct TravelStatsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 HStack {
-                                    Text("\(visitedCount) Countries")
+                                    Text("\(visitedCount) \(visitedCount == 1 ? "Country" : "Countries")")
                                     Spacer()
                                     Text("\(percent)%")
                                 }

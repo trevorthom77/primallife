@@ -477,6 +477,7 @@ struct MyTripsView: View {
                                                     dates: tripDateRange(for: trip),
                                                     imageQuery: tripImageQuery(for: trip),
                                                     showsAttribution: true,
+                                                    allowsHitTesting: true,
                                                     prefetchedDetails: tripImageDetails[trip.id]
                                                 )
                                             }

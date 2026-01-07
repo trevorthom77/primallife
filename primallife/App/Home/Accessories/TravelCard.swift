@@ -17,6 +17,7 @@ struct TravelCard: View {
     var imageQuery: String = "Costa Rica"
     var showsParticipants: Bool = true
     var showsAttribution: Bool = false
+    var allowsHitTesting: Bool = false
     var prefetchedDetails: UnsplashImageDetails? = nil
     var width: CGFloat? = 344
     var height: CGFloat = 180
@@ -162,6 +163,7 @@ struct TravelCard: View {
                     .padding(12)
             }
         }
+        .allowsHitTesting(allowsHitTesting)
         .onAppear {
             guard customImageName == nil else { return }
             guard !didApplyPrefetch, let prefetchedDetails else { return }

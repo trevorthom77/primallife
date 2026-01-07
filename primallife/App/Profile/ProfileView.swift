@@ -432,7 +432,7 @@ struct ProfileView: View {
         .sheet(isPresented: $isCountrySheetPresented) {
             CountryPickerSheet(initialSelectedIDs: userCountryIDs) { selectedIDs in
                 Task {
-                    await addCountries(selectedIDs)
+                    await saveCountries(selectedIDs)
                 }
             }
         }
@@ -582,20 +582,31 @@ struct ProfileView: View {
     }
 
     @MainActor
-    private func addCountries(_ selectedIDs: Set<String>) async {
+    private func saveCountries(_ selectedIDs: Set<String>) async {
         guard let supabase,
               let userID = supabase.auth.currentUser?.id
         else { return }
 
         let newCountryIDs = selectedIDs.subtracting(userCountryIDs)
-        guard !newCountryIDs.isEmpty else { return }
+        let removedCountryIDs = userCountryIDs.subtracting(selectedIDs)
+        guard !newCountryIDs.isEmpty || !removedCountryIDs.isEmpty else { return }
 
         do {
-            let payload = newCountryIDs.map { UserCountryInsert(id: userID, countryISO: $0) }
-            try await supabase
-                .from("user_countries")
-                .insert(payload)
-                .execute()
+            if !newCountryIDs.isEmpty {
+                let payload = newCountryIDs.map { UserCountryInsert(id: userID, countryISO: $0) }
+                try await supabase
+                    .from("user_countries")
+                    .insert(payload)
+                    .execute()
+            }
+            if !removedCountryIDs.isEmpty {
+                try await supabase
+                    .from("user_countries")
+                    .delete()
+                    .eq("id", value: userID.uuidString)
+                    .in("country_iso", values: Array(removedCountryIDs))
+                    .execute()
+            }
             await loadUserCountries()
         } catch {
             return

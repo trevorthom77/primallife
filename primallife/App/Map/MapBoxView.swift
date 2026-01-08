@@ -952,25 +952,36 @@ private struct MapCommunityPanel: View {
                 Spacer()
             }
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    if tab == .tribes {
+            if tab == .tribes {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
                         ForEach(tribes) { tribe in
                             tribeCard(tribe)
                         }
-                    } else if travelers.isEmpty {
-                        Text("No travelers nearby yet.")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.secondaryText)
-                    } else {
+                    }
+                    .padding(.vertical, 4)
+                }
+                .frame(height: 92)
+            } else if travelers.isEmpty {
+                HStack {
+                    Spacer()
+                    Text("No travelers nearby yet.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                    Spacer()
+                }
+                .frame(height: 92)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
                         ForEach(travelers) { traveler in
                             travelerCard(traveler)
                         }
                     }
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
+                .frame(height: 92)
             }
-            .frame(height: 92)
         }
         .padding(16)
         .background(Colors.background)

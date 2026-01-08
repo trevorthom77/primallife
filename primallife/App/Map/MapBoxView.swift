@@ -38,17 +38,6 @@ struct MapBoxView: View {
     @State private var communityTab: CommunityTab = .tribes
     private let locationQueryRadius: CLLocationDistance = 50_000
     
-    private let profileTribes = [
-        ProfileTribe(imageName: "profile4", name: "Pacific Travelers", status: "Active"),
-        ProfileTribe(imageName: "profile5", name: "Mountain Crew", status: "Planning")
-    ]
-    
-    private let profileFriends = [
-        ProfileFriend(imageName: "profile1", name: "Ava", status: "Online"),
-        ProfileFriend(imageName: "profile2", name: "Maya", status: "Planning"),
-        ProfileFriend(imageName: "profile3", name: "Liam", status: "Offline")
-    ]
-    
     private let customPlaceImageNames = [
         "italy",
         "greece",
@@ -350,8 +339,8 @@ struct MapBoxView: View {
                         if selectedPlace == nil {
                             MapCommunityPanel(
                                 tab: $communityTab,
-                                tribes: profileTribes,
-                                friends: profileFriends
+                                tribes: [],
+                                friends: []
                             )
                             .padding(.horizontal)
                             .padding(.bottom, 120)

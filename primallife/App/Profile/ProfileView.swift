@@ -52,6 +52,7 @@ struct UserProfile: Decodable, Identifiable {
     let fullName: String
     let origin: String?
     let gender: String?
+    let birthday: String?
     let bio: String
     let avatarPath: String?
     let meetingPreference: String?
@@ -69,6 +70,7 @@ struct UserProfile: Decodable, Identifiable {
         case fullName = "full_name"
         case origin
         case gender
+        case birthday
         case bio
         case avatarPath = "avatar_url"
         case meetingPreference = "meeting_preference"
@@ -88,6 +90,7 @@ struct UserProfile: Decodable, Identifiable {
         fullName = try container.decode(String.self, forKey: .fullName)
         origin = try container.decodeIfPresent(String.self, forKey: .origin)
         gender = try container.decodeIfPresent(String.self, forKey: .gender)
+        birthday = try container.decodeIfPresent(String.self, forKey: .birthday)
         bio = try container.decode(String.self, forKey: .bio)
         avatarPath = try container.decodeIfPresent(String.self, forKey: .avatarPath)
         meetingPreference = try container.decodeIfPresent(String.self, forKey: .meetingPreference)

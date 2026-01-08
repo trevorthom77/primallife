@@ -16,6 +16,9 @@ struct EditProfileView: View {
     @State private var showBirthdayPicker = false
     @State private var showBirthdayWarning = false
     @State private var originalBirthday: Date?
+    @State private var showOriginPicker = false
+    @State private var selectedOriginID: String?
+    @State private var originalOriginID: String?
     @State private var isSaving = false
     @FocusState private var isNameFocused: Bool
 
@@ -29,6 +32,17 @@ struct EditProfileView: View {
 
     private var birthdayText: String {
         birthday.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var originDisplay: String? {
+        guard
+            let selectedOriginID,
+            let country = CountryDatabase.all.first(where: { $0.id == selectedOriginID })
+        else {
+            return nil
+        }
+
+        return "\(country.flag) \(country.name)"
     }
 
     private var maximumBirthday: Date {
@@ -58,8 +72,12 @@ struct EditProfileView: View {
         return !Calendar.current.isDate(originalBirthday, inSameDayAs: birthday)
     }
 
+    private var hasOriginChange: Bool {
+        selectedOriginID != originalOriginID
+    }
+
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBirthdayChange
+        hasNameChange || hasBirthdayChange || hasOriginChange
     }
 
     var body: some View {
@@ -137,6 +155,30 @@ struct EditProfileView: View {
                 }
 
                 Button {
+                    showOriginPicker = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Origin")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        HStack {
+                            Text(originDisplay ?? "Select your origin")
+                                .font(.travelBody)
+                                .foregroundColor(originDisplay == nil ? Colors.secondaryText : Colors.primaryText)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+
+                Button {
                     showBirthdayPicker = true
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
@@ -179,6 +221,15 @@ struct EditProfileView: View {
                     hasSelectedBirthday = true
                 }
             }
+
+            if originalOriginID == nil {
+                let origin = profileStore.profile?.origin?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let normalizedOrigin = (origin?.isEmpty == false) ? origin : nil
+                originalOriginID = normalizedOrigin
+                if selectedOriginID == nil {
+                    selectedOriginID = normalizedOrigin
+                }
+            }
         }
         .onTapGesture {
             isNameFocused = false
@@ -213,26 +264,31 @@ struct EditProfileView: View {
                     }
                 }
                 .padding(20)
-            }
-            .presentationDetents([.height(320)])
-            .presentationDragIndicator(.hidden)
-            .preferredColorScheme(.light)
+        }
+        .presentationDetents([.height(320)])
+        .presentationDragIndicator(.hidden)
+        .preferredColorScheme(.light)
+        }
+        .sheet(isPresented: $showOriginPicker) {
+            OriginPickerSheet(selectedOriginID: $selectedOriginID)
         }
     }
 
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBirthdayChange else { return }
+        guard hasNameChange || hasBirthdayChange || hasOriginChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
             let fullName: String?
             let birthday: String?
+            let origin: String?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
                 case birthday
+                case origin
             }
 
             func encode(to encoder: Encoder) throws {
@@ -242,6 +298,9 @@ struct EditProfileView: View {
                 }
                 if let birthday {
                     try container.encode(birthday, forKey: .birthday)
+                }
+                if let origin {
+                    try container.encode(origin, forKey: .origin)
                 }
             }
         }
@@ -255,7 +314,8 @@ struct EditProfileView: View {
                 .update(
                     ProfileUpdate(
                         fullName: hasNameChange ? trimmedName : nil,
-                        birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil
+                        birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil,
+                        origin: hasOriginChange ? selectedOriginID : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)
@@ -297,5 +357,88 @@ struct EditProfileView: View {
             return date
         }
         return birthdayDateFormatter.date(from: value)
+    }
+}
+
+private struct OriginPickerSheet: View {
+    @Binding var selectedOriginID: String?
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredCountries: [Country] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
+            return CountryDatabase.all
+        }
+        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField(
+                        "",
+                        text: $searchText,
+                        prompt: Text("Search country")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                    )
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredCountries) { country in
+                            let isSelected = selectedOriginID == country.id
+
+                            Button {
+                                selectedOriginID = country.id
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(country.flag)
+                                        .font(.travelTitle)
+                                    Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
     }
 }

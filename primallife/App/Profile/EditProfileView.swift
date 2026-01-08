@@ -11,6 +11,7 @@ struct EditProfileView: View {
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @State private var fullName = ""
+    @State private var bio = ""
     @State private var birthday = Date()
     @State private var hasSelectedBirthday = false
     @State private var showBirthdayPicker = false
@@ -19,15 +20,25 @@ struct EditProfileView: View {
     @State private var showOriginPicker = false
     @State private var selectedOriginID: String?
     @State private var originalOriginID: String?
+    @State private var originalBio: String?
     @State private var isSaving = false
     @FocusState private var isNameFocused: Bool
+    @FocusState private var isBioFocused: Bool
 
     private var trimmedName: String {
         fullName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var trimmedBio: String {
+        bio.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var currentName: String {
         profileStore.profile?.fullName ?? ""
+    }
+
+    private var currentBio: String {
+        profileStore.profile?.bio ?? ""
     }
 
     private var birthdayText: String {
@@ -66,6 +77,11 @@ struct EditProfileView: View {
         return !updatedName.isEmpty && updatedName != currentName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var hasBioChange: Bool {
+        let original = (originalBio ?? currentBio).trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedBio != original
+    }
+
     private var hasBirthdayChange: Bool {
         guard hasSelectedBirthday else { return false }
         guard let originalBirthday else { return true }
@@ -77,7 +93,7 @@ struct EditProfileView: View {
     }
 
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBirthdayChange || hasOriginChange
+        hasNameChange || hasBioChange || hasBirthdayChange || hasOriginChange
     }
 
     var body: some View {
@@ -178,6 +194,33 @@ struct EditProfileView: View {
                 }
                 .buttonStyle(.plain)
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Bio")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+
+                    ZStack(alignment: .topLeading) {
+                        if trimmedBio.isEmpty {
+                            Text("Share what other travelers should know about you")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 18)
+                                .allowsHitTesting(false)
+                        }
+
+                        TextEditor(text: $bio)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(12)
+                            .frame(height: 140)
+                            .scrollContentBackground(.hidden)
+                            .focused($isBioFocused)
+                    }
+                    .background(Colors.card)
+                    .cornerRadius(12)
+                }
+
                 Button {
                     showBirthdayPicker = true
                 } label: {
@@ -213,6 +256,14 @@ struct EditProfileView: View {
                 fullName = currentName
             }
 
+            if originalBio == nil {
+                let current = currentBio
+                originalBio = current
+                if bio.isEmpty {
+                    bio = current
+                }
+            }
+
             if originalBirthday == nil {
                 let parsed = Self.parseBirthday(profileStore.profile?.birthday)
                 originalBirthday = parsed
@@ -233,6 +284,7 @@ struct EditProfileView: View {
         }
         .onTapGesture {
             isNameFocused = false
+            isBioFocused = false
         }
         .ignoresSafeArea(.keyboard)
         .navigationBarBackButtonHidden(true)
@@ -277,18 +329,20 @@ struct EditProfileView: View {
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBirthdayChange || hasOriginChange else { return }
+        guard hasNameChange || hasBioChange || hasBirthdayChange || hasOriginChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
             let fullName: String?
             let birthday: String?
             let origin: String?
+            let bio: String?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
                 case birthday
                 case origin
+                case bio
             }
 
             func encode(to encoder: Encoder) throws {
@@ -301,6 +355,9 @@ struct EditProfileView: View {
                 }
                 if let origin {
                     try container.encode(origin, forKey: .origin)
+                }
+                if let bio {
+                    try container.encode(bio, forKey: .bio)
                 }
             }
         }
@@ -315,7 +372,8 @@ struct EditProfileView: View {
                     ProfileUpdate(
                         fullName: hasNameChange ? trimmedName : nil,
                         birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil,
-                        origin: hasOriginChange ? selectedOriginID : nil
+                        origin: hasOriginChange ? selectedOriginID : nil,
+                        bio: hasBioChange ? trimmedBio : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)

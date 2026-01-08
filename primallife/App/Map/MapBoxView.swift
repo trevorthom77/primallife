@@ -64,7 +64,16 @@ struct MapBoxView: View {
                     
                     ForEvery(otherUserLocations) { location in
                         MapViewAnnotation(coordinate: location.coordinate) {
-                            otherUserAnnotation(for: location)
+                            if let userID = UUID(uuidString: location.id) {
+                                NavigationLink {
+                                    OthersProfileView(userID: userID)
+                                } label: {
+                                    otherUserAnnotation(for: location)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                otherUserAnnotation(for: location)
+                            }
                         }
                         .allowOverlap(true)
                     }
@@ -707,6 +716,11 @@ struct MapBoxView: View {
                 .value
             
             let travelerLookup = Dictionary(uniqueKeysWithValues: travelers.map { ($0.id, $0) })
+            let distanceByID = Dictionary(uniqueKeysWithValues: visibleRows.map { row in
+                let location = CLLocation(latitude: row.latitude, longitude: row.longitude)
+                let distanceMiles = location.distance(from: originLocation) / 1609.344
+                return (row.id, distanceMiles)
+            })
             
             await MainActor.run {
                 otherUserLocations = visibleRows.map { row in
@@ -729,7 +743,8 @@ struct MapBoxView: View {
                         id: row.id,
                         name: traveler.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
                         origin: traveler.origin?.trimmingCharacters(in: .whitespacesAndNewlines),
-                        avatarPath: traveler.avatarPath
+                        avatarPath: traveler.avatarPath,
+                        distanceMiles: distanceByID[row.id]
                     )
                 }
             }
@@ -907,6 +922,7 @@ private struct MapTraveler: Identifiable {
     let name: String
     let origin: String?
     let avatarPath: String?
+    let distanceMiles: Double?
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,
@@ -1068,23 +1084,33 @@ private struct MapCommunityPanel: View {
             .frame(width: 52, height: 52)
             .clipShape(Circle())
             
-            VStack(alignment: .leading, spacing: 8) {
-                if !traveler.name.isEmpty {
-                    Text(traveler.name)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-                }
-                
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !traveler.name.isEmpty {
+                        Text(traveler.name)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+                    
                 if let originDisplay = traveler.originDisplay {
                     Text(originDisplay)
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.accent)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+                }
+                
+                Spacer(minLength: 8)
+                
+                if let distanceMiles = traveler.distanceMiles {
+                    Text(String(format: "%.1f mi", distanceMiles))
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
                 }
             }
         }
         .frame(width: 220, alignment: .leading)
         .padding(16)
-        .background(Colors.background)
+        .background(Colors.secondaryText.opacity(0.18))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

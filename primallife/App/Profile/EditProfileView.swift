@@ -120,183 +120,189 @@ struct EditProfileView: View {
             Colors.background
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 24) {
-                HStack {
-                    BackButton {
-                        dismiss()
-                    }
-                    .disabled(isSaving)
-                    .opacity(isSaving ? 0.6 : 1)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack {
+                        BackButton {
+                            dismiss()
+                        }
+                        .disabled(isSaving)
+                        .opacity(isSaving ? 0.6 : 1)
 
-                    Spacer()
+                        Spacer()
+
+                        Button {
+                            guard isSaveEnabled else { return }
+                            Task {
+                                await saveProfileUpdates()
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Save")
+
+                                if isSaving {
+                                    ProgressView()
+                                        .tint(Colors.accent)
+                                }
+                            }
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .buttonStyle(.plain)
+                        .disabled(!isSaveEnabled || isSaving)
+                        .opacity(isSaveEnabled && !isSaving ? 1 : 0.6)
+                    }
+
+                    Text("Edit Profile")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Full name")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        TextField(
+                            "",
+                            text: $fullName,
+                            prompt: Text("Enter your name")
+                                .foregroundColor(Colors.secondaryText)
+                        )
+                        .font(.travelBody)
+                        .foregroundColor(Colors.primaryText)
+                        .focused($isNameFocused)
+                        .textInputAutocapitalization(.words)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isNameFocused = false
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .cornerRadius(12)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isNameFocused = true
+                    }
 
                     Button {
-                        guard isSaveEnabled else { return }
-                        Task {
-                            await saveProfileUpdates()
-                        }
+                        showOriginPicker = true
                     } label: {
-                        HStack(spacing: 8) {
-                            Text("Save")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Origin")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
 
-                            if isSaving {
-                                ProgressView()
-                                    .tint(Colors.accent)
+                            HStack {
+                                Text(originDisplay ?? "Select your origin")
+                                    .font(.travelBody)
+                                    .foregroundColor(originDisplay == nil ? Colors.secondaryText : Colors.primaryText)
+
+                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.accent)
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 16)
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .buttonStyle(.plain)
-                    .disabled(!isSaveEnabled || isSaving)
-                    .opacity(isSaveEnabled && !isSaving ? 1 : 0.6)
-                }
 
-                Text("Edit Profile")
-                    .font(.customTitle)
-                    .foregroundStyle(Colors.primaryText)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Full name")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-
-                    TextField(
-                        "",
-                        text: $fullName,
-                        prompt: Text("Enter your name")
-                            .foregroundColor(Colors.secondaryText)
-                    )
-                    .font(.travelBody)
-                    .foregroundColor(Colors.primaryText)
-                    .focused($isNameFocused)
-                    .textInputAutocapitalization(.words)
-                    .submitLabel(.done)
-                    .onSubmit {
-                        isNameFocused = false
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Colors.card)
-                .cornerRadius(12)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isNameFocused = true
-                }
-
-                Button {
-                    showOriginPicker = true
-                } label: {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Origin")
+                        Text("Bio")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
 
-                        HStack {
-                            Text(originDisplay ?? "Select your origin")
-                                .font(.travelBody)
-                                .foregroundColor(originDisplay == nil ? Colors.secondaryText : Colors.primaryText)
-
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .cornerRadius(12)
-                }
-                .buttonStyle(.plain)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Bio")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-
-                    ZStack(alignment: .topLeading) {
-                        if trimmedBio.isEmpty {
-                            Text("Share what other travelers should know about you")
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.secondaryText)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 18)
-                                .allowsHitTesting(false)
-                        }
-
-                        TextEditor(text: $bio)
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
-                            .padding(12)
-                            .frame(height: 140)
-                            .scrollContentBackground(.hidden)
-                            .focused($isBioFocused)
-                    }
-                    .background(Colors.card)
-                    .cornerRadius(12)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Who do you want to travel with?")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
-
-                    VStack(spacing: 12) {
-                        ForEach(meetingPreferenceOptions, id: \.self) { option in
-                            let isSelected = normalizedMeetingPreference == option
-
-                            Button {
-                                meetingPreference = option
-                            } label: {
-                                HStack {
-                                    Text(option)
-                                        .font(.travelBody)
-                                    Spacer()
-                                }
-                                .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(isSelected ? Colors.accent : Colors.card)
-                                .cornerRadius(12)
+                        ZStack(alignment: .topLeading) {
+                            if trimmedBio.isEmpty {
+                                Text("Share what other travelers should know about you")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 18)
+                                    .allowsHitTesting(false)
                             }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
 
-                Button {
-                    showBirthdayPicker = true
-                } label: {
+                            TextEditor(text: $bio)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .padding(12)
+                                .frame(height: 140)
+                                .scrollContentBackground(.hidden)
+                                .focused($isBioFocused)
+                        }
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Birthday")
+                        Text("Who do you want to travel with?")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
 
-                        HStack {
-                            Text(hasSelectedBirthday ? birthdayText : "Select your birthday")
-                                .font(.travelBody)
-                                .foregroundColor(hasSelectedBirthday ? Colors.primaryText : Colors.secondaryText)
+                        VStack(spacing: 12) {
+                            ForEach(meetingPreferenceOptions, id: \.self) { option in
+                                let isSelected = normalizedMeetingPreference == option
+                                let selectedColor = option == "Only Girls" ? Colors.girlsPink : Colors.accent
 
-                            Spacer()
+                                Button {
+                                    meetingPreference = option
+                                } label: {
+                                    HStack {
+                                        Text(option)
+                                            .font(.travelBody)
+                                        Spacer()
+                                    }
+                                    .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(isSelected ? selectedColor : Colors.card)
+                                    .cornerRadius(12)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .cornerRadius(12)
-                }
-                .buttonStyle(.plain)
 
-                Spacer()
+                    Button {
+                        showBirthdayPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Birthday")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(hasSelectedBirthday ? birthdayText : "Select your birthday")
+                                    .font(.travelBody)
+                                    .foregroundColor(hasSelectedBirthday ? Colors.primaryText : Colors.secondaryText)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .scrollIndicators(.hidden)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: 96)
+            }
         }
         .onAppear {
             if fullName.isEmpty {

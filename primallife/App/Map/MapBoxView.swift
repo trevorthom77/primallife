@@ -937,11 +937,11 @@ private struct MapCommunityPanel: View {
                         } label: {
                             Text(item.rawValue)
                                 .font(.travelDetail)
-                                .foregroundStyle(tab == item ? Colors.accent : Colors.primaryText)
+                                .foregroundStyle(tab == item ? Colors.tertiaryText : Colors.primaryText)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 14)
                                 .frame(maxWidth: .infinity)
-                                .background(Colors.card)
+                                .background(tab == item ? Colors.accent : Colors.secondaryText.opacity(0.18))
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -984,7 +984,7 @@ private struct MapCommunityPanel: View {
             }
         }
         .padding(16)
-        .background(Colors.background)
+        .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .animation(.none, value: tab)
     }
@@ -1037,13 +1037,13 @@ private struct MapCommunityPanel: View {
                 if let originDisplay = traveler.originDisplay {
                     Text(originDisplay)
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
+                        .foregroundStyle(Colors.accent)
                 }
             }
         }
         .frame(width: 220, alignment: .leading)
         .padding(16)
-        .background(Colors.card)
+        .background(Colors.background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

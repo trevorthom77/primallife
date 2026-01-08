@@ -34,6 +34,7 @@ struct MapBoxView: View {
     @State private var airplaneFeedbackToggle = false
     @State private var flyFeedbackToggle = false
     @State private var otherUserLocations: [OtherUserLocation] = []
+    @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     private let locationQueryRadius: CLLocationDistance = 50_000
@@ -340,7 +341,7 @@ struct MapBoxView: View {
                             MapCommunityPanel(
                                 tab: $communityTab,
                                 tribes: [],
-                                friends: []
+                                travelers: nearbyTravelers
                             )
                             .padding(.horizontal)
                             .padding(.bottom, 120)
@@ -683,6 +684,7 @@ struct MapBoxView: View {
             guard !nearbyRows.isEmpty else {
                 await MainActor.run {
                     otherUserLocations = []
+                    nearbyTravelers = []
                 }
                 return
             }
@@ -693,28 +695,40 @@ struct MapBoxView: View {
             guard !visibleRows.isEmpty else {
                 await MainActor.run {
                     otherUserLocations = []
+                    nearbyTravelers = []
                 }
                 return
             }
             
             let ids = visibleRows.map { $0.id }
             
-            let avatars: [UserAvatar] = try await supabase
+            let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url")
+                .select("id, avatar_url, full_name, upcoming_destination")
                 .in("id", values: ids)
                 .execute()
                 .value
             
-            let avatarLookup = Dictionary(uniqueKeysWithValues: avatars.map { ($0.id, $0.avatarPath) })
+            let travelerLookup = Dictionary(uniqueKeysWithValues: travelers.map { ($0.id, $0) })
             
             await MainActor.run {
                 otherUserLocations = visibleRows.map { row in
-                    OtherUserLocation(
+                    let traveler = travelerLookup[row.id]
+                    return OtherUserLocation(
                         id: row.id,
                         latitude: row.latitude,
                         longitude: row.longitude,
-                        avatarPath: avatarLookup[row.id] ?? nil
+                        avatarPath: traveler?.avatarPath
+                    )
+                }
+
+                nearbyTravelers = visibleRows.compactMap { row in
+                    guard let traveler = travelerLookup[row.id] else { return nil }
+                    return MapTraveler(
+                        id: row.id,
+                        name: traveler.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                        status: traveler.upcomingDestination?.trimmingCharacters(in: .whitespacesAndNewlines),
+                        avatarPath: traveler.avatarPath
                     )
                 }
             }
@@ -846,13 +860,36 @@ private struct BlockingUserRow: Decodable {
     }
 }
 
-private struct UserAvatar: Decodable {
+private struct TravelerRow: Decodable {
     let id: String
     let avatarPath: String?
+    let fullName: String?
+    let upcomingDestination: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case avatarPath = "avatar_url"
+        case fullName = "full_name"
+        case upcomingDestination = "upcoming_destination"
+    }
+}
+
+private struct MapTraveler: Identifiable {
+    let id: String
+    let name: String
+    let status: String?
+    let avatarPath: String?
+
+    func avatarURL(using supabase: SupabaseClient?) -> URL? {
+        guard let supabase, let avatarPath else { return nil }
+
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: avatarPath)
+        } catch {
+            return nil
+        }
     }
 }
 
@@ -880,9 +917,10 @@ private struct OtherUserLocation: Identifiable {
 }
 
 private struct MapCommunityPanel: View {
+    @Environment(\.supabaseClient) private var supabase
     @Binding var tab: CommunityTab
     let tribes: [ProfileTribe]
-    let friends: [ProfileFriend]
+    let travelers: [MapTraveler]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -915,9 +953,13 @@ private struct MapCommunityPanel: View {
                         ForEach(tribes) { tribe in
                             tribeCard(tribe)
                         }
+                    } else if travelers.isEmpty {
+                        Text("No travelers nearby yet.")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
                     } else {
-                        ForEach(friends) { friend in
-                            explorerCard(friend)
+                        ForEach(travelers) { traveler in
+                            travelerCard(traveler)
                         }
                     }
                 }
@@ -955,22 +997,32 @@ private struct MapCommunityPanel: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
-    private func explorerCard(_ friend: ProfileFriend) -> some View {
+    private func travelerCard(_ traveler: MapTraveler) -> some View {
         HStack(spacing: 12) {
-            Image(friend.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 52, height: 52)
-                .clipShape(Circle())
+            AsyncImage(url: traveler.avatarURL(using: supabase)) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(friend.name)
-                    .font(.travelBody)
-                    .foregroundStyle(Colors.primaryText)
+                if !traveler.name.isEmpty {
+                    Text(traveler.name)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+                }
                 
-                Text(friend.status)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.accent)
+                if let status = traveler.status, !status.isEmpty {
+                    Text(status)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                }
             }
         }
         .frame(width: 220, alignment: .leading)

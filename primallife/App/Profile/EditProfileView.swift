@@ -416,7 +416,6 @@ private struct OriginPickerSheet: View {
 
                             Button {
                                 selectedOriginID = country.id
-                                dismiss()
                             } label: {
                                 HStack(spacing: 12) {
                                     Text(country.flag)

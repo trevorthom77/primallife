@@ -84,17 +84,18 @@ struct TravelStatsView: View {
                             let visitedCount = visitedByContinent[continent, default: 0]
                             let percent = total == 0 ? 0 : Double(visitedCount) / Double(total)
 
-                            HStack(spacing: 16) {
+                            HStack(spacing: 12) {
                                 TravelCard(
                                     flag: "",
                                     location: "",
                                     dates: "",
                                     imageQuery: continent,
                                     showsParticipants: false,
-                                    height: 60
+                                    width: 110,
+                                    height: 80,
+                                    cornerRadius: 8
                                 )
-                                .frame(width: 60, height: 60)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(continent)
@@ -105,8 +106,7 @@ struct TravelStatsView: View {
                                         .font(.badgeDetail)
                                         .foregroundStyle(Colors.secondaryText)
                                 }
-
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                                 ZStack {
                                     Circle()
@@ -124,12 +124,11 @@ struct TravelStatsView: View {
                                         .font(.badgeDetail)
                                         .foregroundStyle(Colors.primaryText)
                                 }
-                                .frame(width: 45, height: 45)
+                                .frame(width: 48, height: 48)
                             }
                             .padding()
                             .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: Colors.primaryText.opacity(0.05), radius: 5, x: 0, y: 2)
                         }
                     }
                 }

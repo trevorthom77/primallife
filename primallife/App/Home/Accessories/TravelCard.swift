@@ -21,13 +21,21 @@ struct TravelCard: View {
     var prefetchedDetails: UnsplashImageDetails? = nil
     var width: CGFloat? = 344
     var height: CGFloat = 180
+    var cornerRadius: CGFloat = 16
     @State private var didApplyPrefetch = false
     
     private let customImageNames = [
         "italy",
         "greece",
         "puerto rico",
-        "costa rica"
+        "costa rica",
+        "africa",
+        "antarctica",
+        "asia",
+        "europe",
+        "north america",
+        "oceania",
+        "south america"
     ]
     
     private var customImageName: String? {
@@ -65,7 +73,7 @@ struct TravelCard: View {
         }
         .frame(width: width, height: height)
         .frame(maxWidth: width == nil ? .infinity : nil)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(alignment: .topLeading) {
             HStack(spacing: 12) {
                 HStack(spacing: 8) {

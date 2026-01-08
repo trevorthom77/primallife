@@ -151,6 +151,9 @@ struct ProfileView: View {
     @State private var isLoadingPastTrips = false
     @State private var hasLoadedPastTrips = false
     @State private var userTripsCount: Int?
+    @State private var isPastTripsSheetPresented = false
+    @State private var isTribesSheetPresented = false
+    @State private var isFriendsSheetPresented = false
     
     private let avatarSize: CGFloat = 140
     
@@ -282,7 +285,7 @@ struct ProfileView: View {
 
                             Spacer()
 
-                            Button { } label: {
+                            Button { isPastTripsSheetPresented = true } label: {
                                 SeeAllButton()
                             }
                         }
@@ -381,7 +384,7 @@ struct ProfileView: View {
                             
                             Spacer()
                             
-                            Button { } label: {
+                            Button { isTribesSheetPresented = true } label: {
                                 SeeAllButton()
                             }
                         }
@@ -432,7 +435,7 @@ struct ProfileView: View {
                             
                             Spacer()
                             
-                            Button { } label: {
+                            Button { isFriendsSheetPresented = true } label: {
                                 SeeAllButton()
                             }
                         }
@@ -470,6 +473,115 @@ struct ProfileView: View {
             CountryPickerSheet(initialSelectedIDs: userCountryIDs) { selectedIDs in
                 Task {
                     await saveCountries(selectedIDs)
+                }
+            }
+        }
+        .sheet(isPresented: $isPastTripsSheetPresented) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if currentTrips.isEmpty {
+                            Text("No past trips yet.")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                        } else {
+                            ForEach(currentTrips) { trip in
+                                TravelCard(
+                                    flag: trip.flag,
+                                    location: trip.location,
+                                    dates: trip.dates,
+                                    imageQuery: trip.imageQuery,
+                                    showsParticipants: false,
+                                    height: 150
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 32)
+                }
+            }
+        }
+        .sheet(isPresented: $isTribesSheetPresented) {
+            NavigationStack {
+                ZStack {
+                    Colors.background
+                        .ignoresSafeArea()
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            if displayedTribes.isEmpty {
+                                Text("No tribes yet.")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                ForEach(displayedTribes) { tribe in
+                                    NavigationLink {
+                                        TribesSocialView(
+                                            imageURL: tribe.photoURL,
+                                            title: tribe.name,
+                                            location: tribe.status,
+                                            flag: "",
+                                            endDate: tribe.endDate,
+                                            createdAt: tribe.createdAt,
+                                            gender: tribe.gender,
+                                            aboutText: tribe.aboutText,
+                                            interests: tribe.interests,
+                                            placeName: tribe.status,
+                                            tribeID: tribe.id,
+                                            createdBy: nil,
+                                            createdByAvatarPath: nil,
+                                            isCreator: supabase?.auth.currentUser?.id == tribe.ownerID,
+                                            onDelete: nil,
+                                            onBack: nil,
+                                            initialHeaderImage: tribe.photoURL.flatMap { cachedTribeImage(for: $0) }
+                                        )
+                                    } label: {
+                                        tribeRow(tribe)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 32)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isFriendsSheetPresented) {
+            NavigationStack {
+                ZStack {
+                    Colors.background
+                        .ignoresSafeArea()
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            if friends.isEmpty {
+                                Text("No friends yet")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                ForEach(friends) { friend in
+                                    NavigationLink {
+                                        OthersProfileView(userID: friend.id)
+                                    } label: {
+                                        friendCard(friend)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 32)
+                    }
                 }
             }
         }

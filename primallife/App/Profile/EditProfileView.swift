@@ -20,6 +20,9 @@ struct EditProfileView: View {
     @State private var showOriginPicker = false
     @State private var selectedOriginID: String?
     @State private var originalOriginID: String?
+    @State private var showLanguagesPicker = false
+    @State private var selectedLanguageIDs: Set<String> = []
+    @State private var originalLanguageIDs: Set<String>?
     @State private var originalBio: String?
     @State private var meetingPreference: String?
     @State private var originalMeetingPreference: String?
@@ -73,6 +76,10 @@ struct EditProfileView: View {
 
     private var currentTravelDescription: String? {
         profileStore.profile?.travelDescription
+    }
+
+    private var currentLanguageIDs: Set<String> {
+        Set(profileStore.profile?.languages ?? [])
     }
 
     private var birthdayText: String {
@@ -138,8 +145,30 @@ struct EditProfileView: View {
         selectedOriginID != originalOriginID
     }
 
+    private var hasLanguageChange: Bool {
+        guard let originalLanguageIDs else { return false }
+        return selectedLanguageIDs != originalLanguageIDs
+    }
+
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange
+        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange
+    }
+
+    private var selectedLanguages: [Language] {
+        LanguageDatabase.all.filter { selectedLanguageIDs.contains($0.id) }
+    }
+
+    private var languagesDisplayText: String {
+        guard !selectedLanguageIDs.isEmpty else { return "Select languages" }
+        let labels = selectedLanguages.map { "\($0.flag) \($0.name)" }
+        if !labels.isEmpty {
+            return labels.joined(separator: ", ")
+        }
+        return selectedLanguageIDs.sorted().joined(separator: ", ")
+    }
+
+    private var languagesDisplayColor: Color {
+        selectedLanguageIDs.isEmpty ? Colors.secondaryText : Colors.primaryText
     }
 
     var body: some View {
@@ -229,6 +258,30 @@ struct EditProfileView: View {
                                 Text(originDisplay ?? "Select your origin")
                                     .font(.travelBody)
                                     .foregroundColor(originDisplay == nil ? Colors.secondaryText : Colors.primaryText)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        showLanguagesPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Languages")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(languagesDisplayText)
+                                    .font(.travelBody)
+                                    .foregroundColor(languagesDisplayColor)
 
                                 Spacer()
                             }
@@ -396,6 +449,12 @@ struct EditProfileView: View {
                     selectedOriginID = normalizedOrigin
                 }
             }
+
+            if originalLanguageIDs == nil {
+                let current = currentLanguageIDs
+                originalLanguageIDs = current
+                selectedLanguageIDs = current
+            }
         }
         .onTapGesture {
             isNameFocused = false
@@ -441,6 +500,10 @@ struct EditProfileView: View {
             OriginPickerSheet(selectedOriginID: $selectedOriginID)
                 .presentationBackground(Colors.background)
         }
+        .sheet(isPresented: $showLanguagesPicker) {
+            LanguagesPickerSheet(selectedLanguageIDs: $selectedLanguageIDs)
+                .presentationBackground(Colors.background)
+        }
         .sheet(isPresented: $showMeetingPreferencePicker) {
             MeetingPreferenceSheet(meetingPreference: $meetingPreference, options: meetingPreferenceOptions)
                 .presentationDetents([.height(280)])
@@ -463,7 +526,7 @@ struct EditProfileView: View {
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange else { return }
+        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
@@ -473,6 +536,7 @@ struct EditProfileView: View {
             let bio: String?
             let meetingPreference: String?
             let travelDescription: String?
+            let languages: [String]?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
@@ -481,6 +545,7 @@ struct EditProfileView: View {
                 case bio
                 case meetingPreference = "meeting_preference"
                 case travelDescription = "travel_description"
+                case languages
             }
 
             func encode(to encoder: Encoder) throws {
@@ -503,6 +568,9 @@ struct EditProfileView: View {
                 if let travelDescription {
                     try container.encode(travelDescription, forKey: .travelDescription)
                 }
+                if let languages {
+                    try container.encode(languages, forKey: .languages)
+                }
             }
         }
 
@@ -519,7 +587,8 @@ struct EditProfileView: View {
                         origin: hasOriginChange ? selectedOriginID : nil,
                         bio: hasBioChange ? trimmedBio : nil,
                         meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil,
-                        travelDescription: hasTravelDescriptionChange ? normalizedTravelDescription : nil
+                        travelDescription: hasTravelDescriptionChange ? normalizedTravelDescription : nil,
+                        languages: hasLanguageChange ? selectedLanguageIDs.sorted() : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)
@@ -625,6 +694,92 @@ private struct OriginPickerSheet: View {
                                     Text(country.flag)
                                         .font(.travelTitle)
                                     Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+private struct LanguagesPickerSheet: View {
+    @Binding var selectedLanguageIDs: Set<String>
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredLanguages: [Language] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
+            return LanguageDatabase.all
+        }
+        return LanguageDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField(
+                        "",
+                        text: $searchText,
+                        prompt: Text("Search languages")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                    )
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.primaryText)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredLanguages) { language in
+                            let isSelected = selectedLanguageIDs.contains(language.id)
+
+                            Button {
+                                if isSelected {
+                                    selectedLanguageIDs.remove(language.id)
+                                } else {
+                                    selectedLanguageIDs.insert(language.id)
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(language.flag)
+                                        .font(.travelTitle)
+                                    Text(language.name)
                                         .font(.travelBody)
                                         .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
                                 }

@@ -975,7 +975,16 @@ private struct MapCommunityPanel: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(travelers) { traveler in
-                            travelerCard(traveler)
+                            if let userID = UUID(uuidString: traveler.id) {
+                                NavigationLink {
+                                    OthersProfileView(userID: userID)
+                                } label: {
+                                    travelerCard(traveler)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                travelerCard(traveler)
+                            }
                         }
                     }
                     .padding(.vertical, 4)

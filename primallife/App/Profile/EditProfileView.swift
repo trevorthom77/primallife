@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Supabase
+import UIKit
 
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
@@ -34,6 +35,9 @@ struct EditProfileView: View {
     @State private var originalTravelDescription: String?
     @State private var showTravelDescriptionPicker = false
     @State private var isSaving = false
+    @State private var avatarImage: UIImage?
+    @State private var avatarImageData: Data?
+    @State private var isShowingPhotoPicker = false
     @FocusState private var isNameFocused: Bool
     @FocusState private var isBioFocused: Bool
 
@@ -162,8 +166,12 @@ struct EditProfileView: View {
         return selectedInterests != originalInterests
     }
 
+    private var hasAvatarChange: Bool {
+        avatarImageData != nil
+    }
+
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange
+        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange || hasAvatarChange
     }
 
     private var selectedLanguages: [Language] {
@@ -241,6 +249,41 @@ struct EditProfileView: View {
                     Text("Edit Profile")
                         .font(.customTitle)
                         .foregroundStyle(Colors.primaryText)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Profile photo")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Button {
+                            isShowingPhotoPicker = true
+                        } label: {
+                            HStack(spacing: 16) {
+                                avatarPreview
+                                    .frame(width: 104, height: 104)
+                                    .background(Colors.background)
+                                    .clipShape(Circle())
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Change photo")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                    Text("Tap to select a new photo")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isSaving)
+                        .opacity(isSaving ? 0.6 : 1)
+                    }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Full name")
@@ -575,6 +618,13 @@ struct EditProfileView: View {
                 .presentationBackground(Colors.background)
                 .presentationDragIndicator(.hidden)
         }
+        .sheet(isPresented: $isShowingPhotoPicker) {
+            CroppingImagePicker { image, data in
+                avatarImage = image
+                avatarImageData = data
+            }
+            .ignoresSafeArea()
+        }
     }
 
     private var meetingPreferenceDisplayColor: Color {
@@ -585,7 +635,7 @@ struct EditProfileView: View {
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange else { return }
+        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange || hasAvatarChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
@@ -593,6 +643,7 @@ struct EditProfileView: View {
             let birthday: String?
             let origin: String?
             let bio: String?
+            let avatarPath: String?
             let meetingPreference: String?
             let travelDescription: String?
             let languages: [String]?
@@ -603,6 +654,7 @@ struct EditProfileView: View {
                 case birthday
                 case origin
                 case bio
+                case avatarPath = "avatar_url"
                 case meetingPreference = "meeting_preference"
                 case travelDescription = "travel_description"
                 case languages
@@ -623,6 +675,9 @@ struct EditProfileView: View {
                 if let bio {
                     try container.encode(bio, forKey: .bio)
                 }
+                if let avatarPath {
+                    try container.encode(avatarPath, forKey: .avatarPath)
+                }
                 if let meetingPreference {
                     try container.encode(meetingPreference, forKey: .meetingPreference)
                 }
@@ -641,6 +696,27 @@ struct EditProfileView: View {
         isSaving = true
         defer { isSaving = false }
 
+        var updatedAvatarPath: String?
+
+        if let avatarImageData {
+            let path = "\(userID)/avatar.jpg"
+
+            do {
+                try await supabase.storage
+                    .from("profile-photos")
+                    .upload(path, data: avatarImageData, options: FileOptions(contentType: "image/jpeg", upsert: true))
+
+                updatedAvatarPath = path
+
+                if let avatarImage,
+                   let publicURL = makePublicAvatarURL(for: path) {
+                    profileStore.cacheAvatar(Image(uiImage: avatarImage), url: publicURL)
+                }
+            } catch {
+                return
+            }
+        }
+
         do {
             try await supabase
                 .from("onboarding")
@@ -650,6 +726,7 @@ struct EditProfileView: View {
                         birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil,
                         origin: hasOriginChange ? selectedOriginID : nil,
                         bio: hasBioChange ? trimmedBio : nil,
+                        avatarPath: hasAvatarChange ? updatedAvatarPath : nil,
                         meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil,
                         travelDescription: hasTravelDescriptionChange ? normalizedTravelDescription : nil,
                         languages: hasLanguageChange ? selectedLanguageIDs.sorted() : nil,
@@ -660,9 +737,44 @@ struct EditProfileView: View {
                 .execute()
 
             await profileStore.loadProfile(for: userID, supabase: supabase)
+            avatarImageData = nil
             dismiss()
         } catch {
             return
+        }
+    }
+
+    private func makePublicAvatarURL(for path: String) -> URL? {
+        guard let supabase else { return nil }
+
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: path)
+        } catch {
+            return nil
+        }
+    }
+
+    @ViewBuilder
+    private var avatarPreview: some View {
+        if let avatarImage {
+            Image(uiImage: avatarImage)
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL = profileStore.profile?.avatarURL(using: supabase) {
+            AsyncImage(url: avatarURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    Color.clear
+                }
+            }
+        } else {
+            Color.clear
         }
     }
 
@@ -1041,6 +1153,52 @@ private struct TravelDescriptionSheet: View {
             .padding(.horizontal, 20)
             .padding(.top, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+private struct CroppingImagePicker: UIViewControllerRepresentable {
+    let onImagePicked: (UIImage, Data) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: CroppingImagePicker
+
+        init(parent: CroppingImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            guard let selectedImage,
+                  let data = selectedImage.jpegData(compressionQuality: 0.9) else {
+                parent.dismiss()
+                return
+            }
+
+            parent.onImagePicked(selectedImage, data)
+            parent.dismiss()
         }
     }
 }

@@ -889,26 +889,42 @@ private extension ProfileView {
     private func friendCard(_ friend: UserProfile) -> some View {
         HStack(spacing: 12) {
             friendAvatar(for: friend)
-                .frame(width: 52, height: 52)
+                .frame(width: 48, height: 48)
                 .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Colors.card, lineWidth: 3)
+                }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(friend.fullName)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.primaryText)
-
-                if let origin = friendOriginDisplay(for: friend) {
-                    Text(origin)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text(friend.fullName)
                         .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
+                        .foregroundStyle(Colors.primaryText)
+                }
+
+                if friend.originFlag != nil || friend.originName != nil {
+                    HStack(spacing: 8) {
+                        if let flag = friend.originFlag {
+                            Text(flag)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+                        }
+
+                        if let name = friend.originName {
+                            Text(name)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                        }
+                    }
                 }
             }
 
+            Spacer()
         }
-        .frame(width: 220, alignment: .leading)
-        .padding(16)
+        .padding()
         .background(Colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     @ViewBuilder

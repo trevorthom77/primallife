@@ -250,14 +250,14 @@ struct EditProfileView: View {
                         .font(.customTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Profile photo")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
+                    Button {
+                        isShowingPhotoPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Profile photo")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
 
-                        Button {
-                            isShowingPhotoPicker = true
-                        } label: {
                             HStack(spacing: 16) {
                                 avatarPreview
                                     .frame(width: 104, height: 104)
@@ -275,15 +275,15 @@ struct EditProfileView: View {
 
                                 Spacer()
                             }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Colors.card)
-                            .cornerRadius(12)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(isSaving)
-                        .opacity(isSaving ? 0.6 : 1)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
+                    .buttonStyle(.plain)
+                    .disabled(isSaving)
+                    .opacity(isSaving ? 0.6 : 1)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Full name")

@@ -889,26 +889,26 @@ private extension ProfileView {
     private func friendCard(_ friend: UserProfile) -> some View {
         HStack(spacing: 12) {
             friendAvatar(for: friend)
-                .frame(width: 44, height: 44)
+                .frame(width: 52, height: 52)
                 .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(friend.fullName)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
 
                 if let origin = friendOriginDisplay(for: friend) {
                     Text(origin)
-                        .font(.custom(Fonts.regular, size: 14))
+                        .font(.travelDetail)
                         .foregroundStyle(Colors.secondaryText)
                 }
             }
 
-            Spacer()
         }
-        .padding()
+        .frame(width: 220, alignment: .leading)
+        .padding(16)
         .background(Colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     @ViewBuilder

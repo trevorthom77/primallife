@@ -585,10 +585,6 @@ struct MapBoxView: View {
             ),
             duration: 2
         )
-        
-        Task {
-            await updateDestination(to: place.title)
-        }
     }
     
     private func updateDestination(to destination: String) async {
@@ -704,7 +700,7 @@ struct MapBoxView: View {
             
             let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url, full_name, upcoming_destination")
+                .select("id, avatar_url, full_name, origin")
                 .in("id", values: ids)
                 .execute()
                 .value
@@ -727,7 +723,7 @@ struct MapBoxView: View {
                     return MapTraveler(
                         id: row.id,
                         name: traveler.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                        status: traveler.upcomingDestination?.trimmingCharacters(in: .whitespacesAndNewlines),
+                        origin: traveler.origin?.trimmingCharacters(in: .whitespacesAndNewlines),
                         avatarPath: traveler.avatarPath
                     )
                 }
@@ -864,21 +860,30 @@ private struct TravelerRow: Decodable {
     let id: String
     let avatarPath: String?
     let fullName: String?
-    let upcomingDestination: String?
+    let origin: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case avatarPath = "avatar_url"
         case fullName = "full_name"
-        case upcomingDestination = "upcoming_destination"
+        case origin
     }
 }
 
 private struct MapTraveler: Identifiable {
     let id: String
     let name: String
-    let status: String?
+    let origin: String?
     let avatarPath: String?
+    
+    var originDisplay: String? {
+        guard let origin, !origin.isEmpty,
+              let country = CountryDatabase.all.first(where: { $0.id == origin })
+        else {
+            return nil
+        }
+        return "\(country.flag) \(country.name)"
+    }
 
     func avatarURL(using supabase: SupabaseClient?) -> URL? {
         guard let supabase, let avatarPath else { return nil }
@@ -932,11 +937,11 @@ private struct MapCommunityPanel: View {
                         } label: {
                             Text(item.rawValue)
                                 .font(.travelDetail)
-                                .foregroundStyle(tab == item ? Colors.tertiaryText : Colors.primaryText)
+                                .foregroundStyle(tab == item ? Colors.accent : Colors.primaryText)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 14)
                                 .frame(maxWidth: .infinity)
-                                .background(tab == item ? Colors.accent : Colors.secondaryText.opacity(0.18))
+                                .background(Colors.card)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -968,7 +973,7 @@ private struct MapCommunityPanel: View {
             .frame(height: 92)
         }
         .padding(16)
-        .background(Colors.card)
+        .background(Colors.background)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .animation(.none, value: tab)
     }
@@ -1018,8 +1023,8 @@ private struct MapCommunityPanel: View {
                         .foregroundStyle(Colors.primaryText)
                 }
                 
-                if let status = traveler.status, !status.isEmpty {
-                    Text(status)
+                if let originDisplay = traveler.originDisplay {
+                    Text(originDisplay)
                         .font(.travelDetail)
                         .foregroundStyle(Colors.secondaryText)
                 }
@@ -1027,7 +1032,7 @@ private struct MapCommunityPanel: View {
         }
         .frame(width: 220, alignment: .leading)
         .padding(16)
-        .background(Colors.background)
+        .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

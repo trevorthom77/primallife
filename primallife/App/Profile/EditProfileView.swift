@@ -24,11 +24,22 @@ struct EditProfileView: View {
     @State private var meetingPreference: String?
     @State private var originalMeetingPreference: String?
     @State private var showMeetingPreferencePicker = false
+    @State private var travelDescription: String?
+    @State private var originalTravelDescription: String?
+    @State private var showTravelDescriptionPicker = false
     @State private var isSaving = false
     @FocusState private var isNameFocused: Bool
     @FocusState private var isBioFocused: Bool
 
     private let meetingPreferenceOptions = ["Only Girls", "Only Boys", "Everyone"]
+    private let travelDescriptionOptions = [
+        "Backpacking",
+        "Gap year",
+        "Studying abroad",
+        "Living abroad",
+        "Just love to travel",
+        "Digital nomad"
+    ]
 
     private var trimmedName: String {
         fullName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -43,6 +54,11 @@ struct EditProfileView: View {
         return trimmed?.isEmpty == true ? nil : trimmed
     }
 
+    private var normalizedTravelDescription: String? {
+        let trimmed = travelDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
     private var currentName: String {
         profileStore.profile?.fullName ?? ""
     }
@@ -53,6 +69,10 @@ struct EditProfileView: View {
 
     private var currentMeetingPreference: String? {
         profileStore.profile?.meetingPreference
+    }
+
+    private var currentTravelDescription: String? {
+        profileStore.profile?.travelDescription
     }
 
     private var birthdayText: String {
@@ -102,6 +122,12 @@ struct EditProfileView: View {
         return normalizedMeetingPreference != normalizedOriginal
     }
 
+    private var hasTravelDescriptionChange: Bool {
+        let original = (originalTravelDescription ?? currentTravelDescription)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedOriginal = (original?.isEmpty == true) ? nil : original
+        return normalizedTravelDescription != normalizedOriginal
+    }
+
     private var hasBirthdayChange: Bool {
         guard hasSelectedBirthday else { return false }
         guard let originalBirthday else { return true }
@@ -113,7 +139,7 @@ struct EditProfileView: View {
     }
 
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasBirthdayChange || hasOriginChange
+        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange
     }
 
     var body: some View {
@@ -267,6 +293,30 @@ struct EditProfileView: View {
                     .buttonStyle(.plain)
 
                     Button {
+                        showTravelDescriptionPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("What describes you best?")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(normalizedTravelDescription ?? "Select what describes you best")
+                                    .font(.travelBody)
+                                    .foregroundColor(normalizedTravelDescription == nil ? Colors.secondaryText : Colors.primaryText)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
                         showBirthdayPicker = true
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
@@ -318,6 +368,14 @@ struct EditProfileView: View {
                 originalMeetingPreference = current
                 if meetingPreference == nil {
                     meetingPreference = current
+                }
+            }
+
+            if originalTravelDescription == nil {
+                let current = currentTravelDescription
+                originalTravelDescription = current
+                if travelDescription == nil {
+                    travelDescription = current
                 }
             }
 
@@ -389,17 +447,23 @@ struct EditProfileView: View {
                 .presentationBackground(Colors.background)
                 .presentationDragIndicator(.hidden)
         }
+        .sheet(isPresented: $showTravelDescriptionPicker) {
+            TravelDescriptionSheet(travelDescription: $travelDescription, options: travelDescriptionOptions)
+                .presentationDetents([.height(360)])
+                .presentationBackground(Colors.background)
+                .presentationDragIndicator(.hidden)
+        }
     }
 
     private var meetingPreferenceDisplayColor: Color {
-        guard let normalizedMeetingPreference else { return Colors.secondaryText }
-        return normalizedMeetingPreference == "Only Girls" ? Colors.girlsPink : Colors.accent
+        guard normalizedMeetingPreference != nil else { return Colors.secondaryText }
+        return Colors.primaryText
     }
 
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasBirthdayChange || hasOriginChange else { return }
+        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
@@ -408,6 +472,7 @@ struct EditProfileView: View {
             let origin: String?
             let bio: String?
             let meetingPreference: String?
+            let travelDescription: String?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
@@ -415,6 +480,7 @@ struct EditProfileView: View {
                 case origin
                 case bio
                 case meetingPreference = "meeting_preference"
+                case travelDescription = "travel_description"
             }
 
             func encode(to encoder: Encoder) throws {
@@ -434,6 +500,9 @@ struct EditProfileView: View {
                 if let meetingPreference {
                     try container.encode(meetingPreference, forKey: .meetingPreference)
                 }
+                if let travelDescription {
+                    try container.encode(travelDescription, forKey: .travelDescription)
+                }
             }
         }
 
@@ -449,7 +518,8 @@ struct EditProfileView: View {
                         birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil,
                         origin: hasOriginChange ? selectedOriginID : nil,
                         bio: hasBioChange ? trimmedBio : nil,
-                        meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil
+                        meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil,
+                        travelDescription: hasTravelDescriptionChange ? normalizedTravelDescription : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)
@@ -626,6 +696,66 @@ private struct MeetingPreferenceSheet: View {
                         .buttonStyle(.plain)
                     }
                 }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+private struct TravelDescriptionSheet: View {
+    @Binding var travelDescription: String?
+    let options: [String]
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var normalizedSelection: String? {
+        let trimmed = travelDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(options, id: \.self) { option in
+                            let isSelected = normalizedSelection == option
+
+                            Button {
+                                travelDescription = option
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(.travelBody)
+                                    Spacer()
+                                }
+                                .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)

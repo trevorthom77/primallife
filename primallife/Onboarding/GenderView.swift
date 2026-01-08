@@ -51,7 +51,11 @@ struct GenderView: View {
                     VStack(spacing: 12) {
                         ForEach(options, id: \.self) { option in
                             Button {
-                                onboardingViewModel.selectedGender = option
+                                if onboardingViewModel.selectedGender == option {
+                                    onboardingViewModel.selectedGender = nil
+                                } else {
+                                    onboardingViewModel.selectedGender = option
+                                }
                             } label: {
                                 HStack {
                                     Text(option)

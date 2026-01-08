@@ -11,7 +11,7 @@ struct MeetingView: View {
     }
     
     private var accentColor: Color {
-        onboardingViewModel.selectedGender == "Female" ? Colors.girlsPink : Colors.accent
+        onboardingViewModel.travelCompanionPreference == "Only Girls" ? Colors.girlsPink : Colors.accent
     }
     
     var body: some View {
@@ -47,7 +47,11 @@ struct MeetingView: View {
                     VStack(spacing: 12) {
                         ForEach(options, id: \.self) { option in
                             Button {
-                                onboardingViewModel.travelCompanionPreference = option
+                                if onboardingViewModel.travelCompanionPreference == option {
+                                    onboardingViewModel.travelCompanionPreference = nil
+                                } else {
+                                    onboardingViewModel.travelCompanionPreference = option
+                                }
                             } label: {
                                 HStack {
                                     Text(option)

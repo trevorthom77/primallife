@@ -23,6 +23,7 @@ struct EditProfileView: View {
     @State private var originalBio: String?
     @State private var meetingPreference: String?
     @State private var originalMeetingPreference: String?
+    @State private var showMeetingPreferencePicker = false
     @State private var isSaving = false
     @FocusState private var isNameFocused: Bool
     @FocusState private var isBioFocused: Bool
@@ -241,34 +242,29 @@ struct EditProfileView: View {
                         .cornerRadius(12)
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Who do you want to travel with?")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
+                    Button {
+                        showMeetingPreferencePicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Who do you want to travel with?")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
 
-                        VStack(spacing: 12) {
-                            ForEach(meetingPreferenceOptions, id: \.self) { option in
-                                let isSelected = normalizedMeetingPreference == option
-                                let selectedColor = option == "Only Girls" ? Colors.girlsPink : Colors.accent
+                            HStack {
+                                Text(normalizedMeetingPreference ?? "Select who you want to travel with")
+                                    .font(.travelBody)
+                                    .foregroundColor(meetingPreferenceDisplayColor)
 
-                                Button {
-                                    meetingPreference = option
-                                } label: {
-                                    HStack {
-                                        Text(option)
-                                            .font(.travelBody)
-                                        Spacer()
-                                    }
-                                    .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(isSelected ? selectedColor : Colors.card)
-                                    .cornerRadius(12)
-                                }
-                                .buttonStyle(.plain)
+                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
+                    .buttonStyle(.plain)
 
                     Button {
                         showBirthdayPicker = true
@@ -379,12 +375,25 @@ struct EditProfileView: View {
                 .padding(20)
         }
         .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
         .presentationDragIndicator(.hidden)
         .preferredColorScheme(.light)
         }
         .sheet(isPresented: $showOriginPicker) {
             OriginPickerSheet(selectedOriginID: $selectedOriginID)
+                .presentationBackground(Colors.background)
         }
+        .sheet(isPresented: $showMeetingPreferencePicker) {
+            MeetingPreferenceSheet(meetingPreference: $meetingPreference, options: meetingPreferenceOptions)
+                .presentationDetents([.height(280)])
+                .presentationBackground(Colors.background)
+                .presentationDragIndicator(.hidden)
+        }
+    }
+
+    private var meetingPreferenceDisplayColor: Color {
+        guard let normalizedMeetingPreference else { return Colors.secondaryText }
+        return normalizedMeetingPreference == "Only Girls" ? Colors.girlsPink : Colors.accent
     }
 
     @MainActor
@@ -559,6 +568,64 @@ private struct OriginPickerSheet: View {
                     }
                 }
                 .scrollIndicators(.hidden)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+private struct MeetingPreferenceSheet: View {
+    @Binding var meetingPreference: String?
+    let options: [String]
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var normalizedSelection: String? {
+        let trimmed = meetingPreference?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(options, id: \.self) { option in
+                        let isSelected = normalizedSelection == option
+                        let selectedColor = option == "Only Girls" ? Colors.girlsPink : Colors.accent
+
+                        Button {
+                            meetingPreference = option
+                        } label: {
+                            HStack {
+                                Text(option)
+                                    .font(.travelBody)
+                                Spacer()
+                            }
+                            .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(isSelected ? selectedColor : Colors.card)
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)

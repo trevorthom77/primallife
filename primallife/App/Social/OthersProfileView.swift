@@ -157,6 +157,10 @@ struct OthersProfileView: View {
                                 Text(aboutText)
                                     .font(.custom(Fonts.regular, size: 16))
                                     .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                Text("No about me yet.")
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
                             }
                         }
                         .padding(16)
@@ -216,6 +220,10 @@ struct OthersProfileView: View {
                                 .allowsHitTesting(false)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .frame(height: 140)
+                            } else {
+                                Text("No trips yet.")
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
                             }
                         }
                         .padding(.top, 8)

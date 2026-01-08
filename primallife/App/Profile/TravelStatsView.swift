@@ -115,7 +115,7 @@ struct TravelStatsView: View {
                                     Circle()
                                         .trim(from: 0, to: percent)
                                         .stroke(
-                                            percent >= 1 ? Colors.girlsPink : Colors.accent,
+                                            Colors.accent,
                                             style: StrokeStyle(lineWidth: 5, lineCap: .round)
                                         )
                                         .rotationEffect(.degrees(-90))

@@ -21,9 +21,13 @@ struct EditProfileView: View {
     @State private var selectedOriginID: String?
     @State private var originalOriginID: String?
     @State private var originalBio: String?
+    @State private var meetingPreference: String?
+    @State private var originalMeetingPreference: String?
     @State private var isSaving = false
     @FocusState private var isNameFocused: Bool
     @FocusState private var isBioFocused: Bool
+
+    private let meetingPreferenceOptions = ["Only Girls", "Only Boys", "Everyone"]
 
     private var trimmedName: String {
         fullName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,12 +37,21 @@ struct EditProfileView: View {
         bio.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var normalizedMeetingPreference: String? {
+        let trimmed = meetingPreference?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
     private var currentName: String {
         profileStore.profile?.fullName ?? ""
     }
 
     private var currentBio: String {
         profileStore.profile?.bio ?? ""
+    }
+
+    private var currentMeetingPreference: String? {
+        profileStore.profile?.meetingPreference
     }
 
     private var birthdayText: String {
@@ -82,6 +95,12 @@ struct EditProfileView: View {
         return trimmedBio != original
     }
 
+    private var hasMeetingPreferenceChange: Bool {
+        let original = (originalMeetingPreference ?? currentMeetingPreference)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedOriginal = (original?.isEmpty == true) ? nil : original
+        return normalizedMeetingPreference != normalizedOriginal
+    }
+
     private var hasBirthdayChange: Bool {
         guard hasSelectedBirthday else { return false }
         guard let originalBirthday else { return true }
@@ -93,7 +112,7 @@ struct EditProfileView: View {
     }
 
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBioChange || hasBirthdayChange || hasOriginChange
+        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasBirthdayChange || hasOriginChange
     }
 
     var body: some View {
@@ -221,6 +240,34 @@ struct EditProfileView: View {
                     .cornerRadius(12)
                 }
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Who do you want to travel with?")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+
+                    VStack(spacing: 12) {
+                        ForEach(meetingPreferenceOptions, id: \.self) { option in
+                            let isSelected = normalizedMeetingPreference == option
+
+                            Button {
+                                meetingPreference = option
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(.travelBody)
+                                    Spacer()
+                                }
+                                .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
                 Button {
                     showBirthdayPicker = true
                 } label: {
@@ -261,6 +308,14 @@ struct EditProfileView: View {
                 originalBio = current
                 if bio.isEmpty {
                     bio = current
+                }
+            }
+
+            if originalMeetingPreference == nil {
+                let current = currentMeetingPreference
+                originalMeetingPreference = current
+                if meetingPreference == nil {
+                    meetingPreference = current
                 }
             }
 
@@ -329,7 +384,7 @@ struct EditProfileView: View {
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBioChange || hasBirthdayChange || hasOriginChange else { return }
+        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasBirthdayChange || hasOriginChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
@@ -337,12 +392,14 @@ struct EditProfileView: View {
             let birthday: String?
             let origin: String?
             let bio: String?
+            let meetingPreference: String?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
                 case birthday
                 case origin
                 case bio
+                case meetingPreference = "meeting_preference"
             }
 
             func encode(to encoder: Encoder) throws {
@@ -359,6 +416,9 @@ struct EditProfileView: View {
                 if let bio {
                     try container.encode(bio, forKey: .bio)
                 }
+                if let meetingPreference {
+                    try container.encode(meetingPreference, forKey: .meetingPreference)
+                }
             }
         }
 
@@ -373,7 +433,8 @@ struct EditProfileView: View {
                         fullName: hasNameChange ? trimmedName : nil,
                         birthday: hasBirthdayChange ? birthday.ISO8601Format() : nil,
                         origin: hasOriginChange ? selectedOriginID : nil,
-                        bio: hasBioChange ? trimmedBio : nil
+                        bio: hasBioChange ? trimmedBio : nil,
+                        meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)

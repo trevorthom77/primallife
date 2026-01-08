@@ -26,6 +26,9 @@ struct OthersProfileView: View {
     @State private var isShowingUnblockConfirm = false
     @State private var hasBlockedUser = false
     @State private var isBlockedByUser = false
+    @State private var isShowingAvatarPreview = false
+    @State private var cachedAvatarImage: Image?
+    @State private var cachedAvatarURL: URL?
 
     private struct FriendRequestStatusRow: Decodable {
         let requesterID: UUID
@@ -73,6 +76,13 @@ struct OthersProfileView: View {
                             .overlay {
                                 Circle()
                                     .stroke(Colors.card, lineWidth: 4)
+                            }
+                            .contentShape(Circle())
+                            .onTapGesture {
+                                guard avatarURL != nil else { return }
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                    isShowingAvatarPreview = true
+                                }
                             }
 
                         HStack(spacing: 8) {
@@ -390,6 +400,53 @@ struct OthersProfileView: View {
                 }
             )
         }
+        .overlay {
+            if isShowingAvatarPreview {
+                ZStack {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+
+                    if let avatarURL {
+                        Group {
+                            if let cachedAvatarImage,
+                               cachedAvatarURL == avatarURL {
+                                cachedAvatarImage
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                AsyncImage(url: avatarURL) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .onAppear {
+                                                if cachedAvatarURL != avatarURL {
+                                                    cachedAvatarURL = avatarURL
+                                                    cachedAvatarImage = image
+                                                }
+                                            }
+                                    } else {
+                                        Colors.secondaryText.opacity(0.3)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(width: 280, height: 280)
+                        .clipShape(Circle())
+                        .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        isShowingAvatarPreview = false
+                    }
+                }
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isShowingAvatarPreview)
         .task(id: userID) {
             guard let userID else { return }
             await MainActor.run {
@@ -507,12 +564,24 @@ struct OthersProfileView: View {
 
     @ViewBuilder
     private var avatarView: some View {
-        if let avatarURL {
+        if let avatarURL,
+           let cachedAvatarImage,
+           cachedAvatarURL == avatarURL {
+            cachedAvatarImage
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL {
             AsyncImage(url: avatarURL) { phase in
                 if let image = phase.image {
                     image
                         .resizable()
                         .scaledToFill()
+                        .onAppear {
+                            if cachedAvatarURL != avatarURL {
+                                cachedAvatarURL = avatarURL
+                                cachedAvatarImage = image
+                            }
+                        }
                 } else {
                     Colors.secondaryText.opacity(0.3)
                 }

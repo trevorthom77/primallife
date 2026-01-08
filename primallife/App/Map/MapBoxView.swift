@@ -38,6 +38,7 @@ struct MapBoxView: View {
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     private let locationQueryRadius: CLLocationDistance = 50_000
+    private let otherUserJitterRadius: CLLocationDistance = 500
     
     private let customPlaceImageNames = [
         "italy",
@@ -710,10 +711,14 @@ struct MapBoxView: View {
             await MainActor.run {
                 otherUserLocations = visibleRows.map { row in
                     let traveler = travelerLookup[row.id]
+                    let jittered = jitteredCoordinate(
+                        for: CLLocationCoordinate2D(latitude: row.latitude, longitude: row.longitude),
+                        userID: row.id
+                    )
                     return OtherUserLocation(
                         id: row.id,
-                        latitude: row.latitude,
-                        longitude: row.longitude,
+                        latitude: jittered.latitude,
+                        longitude: jittered.longitude,
                         avatarPath: traveler?.avatarPath
                     )
                 }
@@ -745,6 +750,33 @@ struct MapBoxView: View {
         let maxLongitude = min(180, coordinate.longitude + lonDelta)
         
         return (minLatitude, maxLatitude, minLongitude, maxLongitude)
+    }
+
+    private func jitteredCoordinate(for coordinate: CLLocationCoordinate2D, userID: String) -> CLLocationCoordinate2D {
+        let seed = stableHash64(userID)
+        let angleSeed = Double(UInt32(truncatingIfNeeded: seed)) / Double(UInt32.max)
+        let distanceSeed = Double(UInt32(truncatingIfNeeded: seed >> 32)) / Double(UInt32.max)
+        let angle = angleSeed * 2 * .pi
+        let distance = sqrt(distanceSeed) * otherUserJitterRadius
+        let metersPerDegreeLatitude: Double = 111_000
+        let longitudeScale = max(0.0001, abs(cos(coordinate.latitude * .pi / 180)))
+        let x = distance * cos(angle)
+        let y = distance * sin(angle)
+        let latDelta = y / metersPerDegreeLatitude
+        let lonDelta = x / (metersPerDegreeLatitude * longitudeScale)
+        let latitude = min(90, max(-90, coordinate.latitude + latDelta))
+        let longitude = min(180, max(-180, coordinate.longitude + lonDelta))
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    private func stableHash64(_ string: String) -> UInt64 {
+        let prime: UInt64 = 1099511628211
+        var hash: UInt64 = 14695981039346656037
+        for byte in string.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= prime
+        }
+        return hash
     }
     
     private func startLocationsRefresh() {

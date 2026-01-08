@@ -23,6 +23,9 @@ struct EditProfileView: View {
     @State private var showLanguagesPicker = false
     @State private var selectedLanguageIDs: Set<String> = []
     @State private var originalLanguageIDs: Set<String>?
+    @State private var showInterestsPicker = false
+    @State private var selectedInterests: Set<String> = []
+    @State private var originalInterests: Set<String>?
     @State private var originalBio: String?
     @State private var meetingPreference: String?
     @State private var originalMeetingPreference: String?
@@ -80,6 +83,10 @@ struct EditProfileView: View {
 
     private var currentLanguageIDs: Set<String> {
         Set(profileStore.profile?.languages ?? [])
+    }
+
+    private var currentInterests: Set<String> {
+        Set(profileStore.profile?.interests ?? [])
     }
 
     private var birthdayText: String {
@@ -150,8 +157,13 @@ struct EditProfileView: View {
         return selectedLanguageIDs != originalLanguageIDs
     }
 
+    private var hasInterestsChange: Bool {
+        guard let originalInterests else { return false }
+        return selectedInterests != originalInterests
+    }
+
     private var isSaveEnabled: Bool {
-        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange
+        hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange
     }
 
     private var selectedLanguages: [Language] {
@@ -169,6 +181,19 @@ struct EditProfileView: View {
 
     private var languagesDisplayColor: Color {
         selectedLanguageIDs.isEmpty ? Colors.secondaryText : Colors.primaryText
+    }
+
+    private var interestsDisplayText: String {
+        guard !selectedInterests.isEmpty else { return "Select interests" }
+        let labels = InterestOptions.all.filter { selectedInterests.contains($0) }
+        if !labels.isEmpty {
+            return labels.joined(separator: ", ")
+        }
+        return selectedInterests.sorted().joined(separator: ", ")
+    }
+
+    private var interestsDisplayColor: Color {
+        selectedInterests.isEmpty ? Colors.secondaryText : Colors.primaryText
     }
 
     var body: some View {
@@ -282,6 +307,30 @@ struct EditProfileView: View {
                                 Text(languagesDisplayText)
                                     .font(.travelBody)
                                     .foregroundColor(languagesDisplayColor)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        showInterestsPicker = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Interests")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text(interestsDisplayText)
+                                    .font(.travelBody)
+                                    .foregroundColor(interestsDisplayColor)
 
                                 Spacer()
                             }
@@ -455,6 +504,12 @@ struct EditProfileView: View {
                 originalLanguageIDs = current
                 selectedLanguageIDs = current
             }
+
+            if originalInterests == nil {
+                let current = currentInterests
+                originalInterests = current
+                selectedInterests = current
+            }
         }
         .onTapGesture {
             isNameFocused = false
@@ -504,6 +559,10 @@ struct EditProfileView: View {
             LanguagesPickerSheet(selectedLanguageIDs: $selectedLanguageIDs)
                 .presentationBackground(Colors.background)
         }
+        .sheet(isPresented: $showInterestsPicker) {
+            InterestsPickerSheet(selectedInterests: $selectedInterests)
+                .presentationBackground(Colors.background)
+        }
         .sheet(isPresented: $showMeetingPreferencePicker) {
             MeetingPreferenceSheet(meetingPreference: $meetingPreference, options: meetingPreferenceOptions)
                 .presentationDetents([.height(280)])
@@ -526,7 +585,7 @@ struct EditProfileView: View {
     @MainActor
     private func saveProfileUpdates() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange else { return }
+        guard hasNameChange || hasBioChange || hasMeetingPreferenceChange || hasTravelDescriptionChange || hasBirthdayChange || hasOriginChange || hasLanguageChange || hasInterestsChange else { return }
         guard !isSaving else { return }
 
         struct ProfileUpdate: Encodable {
@@ -537,6 +596,7 @@ struct EditProfileView: View {
             let meetingPreference: String?
             let travelDescription: String?
             let languages: [String]?
+            let interests: [String]?
 
             enum CodingKeys: String, CodingKey {
                 case fullName = "full_name"
@@ -546,6 +606,7 @@ struct EditProfileView: View {
                 case meetingPreference = "meeting_preference"
                 case travelDescription = "travel_description"
                 case languages
+                case interests
             }
 
             func encode(to encoder: Encoder) throws {
@@ -571,6 +632,9 @@ struct EditProfileView: View {
                 if let languages {
                     try container.encode(languages, forKey: .languages)
                 }
+                if let interests {
+                    try container.encode(interests, forKey: .interests)
+                }
             }
         }
 
@@ -588,7 +652,8 @@ struct EditProfileView: View {
                         bio: hasBioChange ? trimmedBio : nil,
                         meetingPreference: hasMeetingPreferenceChange ? normalizedMeetingPreference : nil,
                         travelDescription: hasTravelDescriptionChange ? normalizedTravelDescription : nil,
-                        languages: hasLanguageChange ? selectedLanguageIDs.sorted() : nil
+                        languages: hasLanguageChange ? selectedLanguageIDs.sorted() : nil,
+                        interests: hasInterestsChange ? selectedInterests.sorted() : nil
                     )
                 )
                 .eq("id", value: userID.uuidString)
@@ -797,6 +862,67 @@ private struct LanguagesPickerSheet: View {
             .padding(.horizontal, 20)
             .padding(.top, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+private struct InterestsPickerSheet: View {
+    @Binding var selectedInterests: Set<String>
+
+    @Environment(\.dismiss) private var dismiss
+    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(InterestOptions.all, id: \.self) { interest in
+                            let isSelected = selectedInterests.contains(interest)
+
+                            Button {
+                                toggleInterest(interest)
+                            } label: {
+                                Text(interest)
+                                    .font(.travelBody)
+                                    .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(isSelected ? Colors.accent : Colors.card)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else {
+            selectedInterests.insert(interest)
         }
     }
 }

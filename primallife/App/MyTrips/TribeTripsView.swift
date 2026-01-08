@@ -2,6 +2,52 @@ import SwiftUI
 import Supabase
 import UIKit
 
+enum InterestOptions {
+    static let all: [String] = [
+        "🧭 Adventure",
+        "✝️ God",
+        "🧳 Solo Traveling",
+        "🚗 Road Trips",
+        "🚐 Van Travel",
+        "🛳️ Cruises",
+        "🛥️ Boats",
+        "⛵️ Sailing",
+        "🚤 Jet Skis",
+        "🏝️ Island Hopping",
+        "🐳 Scuba Diving",
+        "🤿 Snorkeling",
+        "🏄 Surfing",
+        "🛶 Kayaking",
+        "🎣 Fishing",
+        "🔱 Spearfishing",
+        "🦈 Sharks",
+        "🌊 Ocean",
+        "🏖️ Beaches",
+        "🌴 Tropical",
+        "🌧️ Rainforests",
+        "🍃 Nature",
+        "🏞️ National Parks",
+        "🧗 Rock Climbing",
+        "🥾 Hiking",
+        "🚲 Biking",
+        "⛺️ Camping",
+        "🌲 Off Grid",
+        "🎿 Snow and Ski",
+        "🏅 Sports",
+        "🐘 Animal Lover",
+        "🍽️ Food",
+        "🛍️ Shopping",
+        "🍻 Bar Hopping",
+        "🌃 Nightlife",
+        "🎨 Art",
+        "📸 Photography",
+        "🖼️ Museums",
+        "🛏️ Hostels",
+        "💸 Budget Travel",
+        "🛎️ Luxury Travel"
+    ]
+}
+
 struct TribeTripsView: View {
     let trip: Trip
     let imageDetails: UnsplashImageDetails?
@@ -419,49 +465,7 @@ private struct TribeDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isAboutFocused: Bool
     private let interestsLimit = 6
-    private let interests = [
-        "🧭 Adventure",
-        "✝️ God",
-        "🧳 Solo Traveling",
-        "🚗 Road Trips",
-        "🚐 Van Travel",
-        "🛳️ Cruises",
-        "🛥️ Boats",
-        "⛵️ Sailing",
-        "🚤 Jet Skis",
-        "🏝️ Island Hopping",
-        "🐳 Scuba Diving",
-        "🤿 Snorkeling",
-        "🏄 Surfing",
-        "🛶 Kayaking",
-        "🎣 Fishing",
-        "🔱 Spearfishing",
-        "🦈 Sharks",
-        "🌊 Ocean",
-        "🏖️ Beaches",
-        "🌴 Tropical",
-        "🌧️ Rainforests",
-        "🍃 Nature",
-        "🏞️ National Parks",
-        "🧗 Rock Climbing",
-        "🥾 Hiking",
-        "🚲 Biking",
-        "⛺️ Camping",
-        "🌲 Off Grid",
-        "🎿 Snow and Ski",
-        "🏅 Sports",
-        "🐘 Animal Lover",
-        "🍽️ Food",
-        "🛍️ Shopping",
-        "🍻 Bar Hopping",
-        "🌃 Nightlife",
-        "🎨 Art",
-        "📸 Photography",
-        "🖼️ Museums",
-        "🛏️ Hostels",
-        "💸 Budget Travel",
-        "🛎️ Luxury Travel"
-    ]
+    private let interests = InterestOptions.all
 
     var body: some View {
         ScrollView {

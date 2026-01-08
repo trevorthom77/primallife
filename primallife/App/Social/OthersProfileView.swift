@@ -184,7 +184,7 @@ struct OthersProfileView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
-                                Text("Upcoming Trips")
+                                Text("Trips")
                                     .font(.travelTitle)
                                     .foregroundStyle(Colors.primaryText)
 

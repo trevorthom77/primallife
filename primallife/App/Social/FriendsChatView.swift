@@ -98,6 +98,8 @@ struct FriendsChatView: View {
     @State private var currentUserName: String?
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
+    @State private var sendFeedbackToggle = false
+    @FocusState private var isInputFocused: Bool
 
     var body: some View {
         ZStack {
@@ -179,6 +181,9 @@ struct FriendsChatView: View {
                     .background(Colors.background)
             }
         }
+        .onTapGesture {
+            isInputFocused = false
+        }
         .navigationBarBackButtonHidden(true)
         .task(id: friendID) {
             await loadFriendProfile()
@@ -200,12 +205,14 @@ struct FriendsChatView: View {
                     .font(.custom(Fonts.regular, size: 16))
                     .foregroundStyle(Colors.primaryText)
                     .tint(Colors.primaryText)
+                    .focused($isInputFocused)
             }
             .padding(16)
             .background(Colors.contentview)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button(action: {
+                sendFeedbackToggle.toggle()
                 Task {
                     await sendMessage()
                 }
@@ -219,6 +226,7 @@ struct FriendsChatView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.impact(weight: .medium), trigger: sendFeedbackToggle)
         }
     }
 

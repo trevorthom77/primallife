@@ -134,7 +134,9 @@ struct OthersProfileView: View {
                             .allowsHitTesting(!isFriend && !isBlocked)
 
                         NavigationLink {
-                            FriendsChatView()
+                            if let userID {
+                                FriendsChatView(friendID: userID)
+                            }
                         } label: {
                             Text("Message")
                                 .font(.custom(Fonts.semibold, size: 16))

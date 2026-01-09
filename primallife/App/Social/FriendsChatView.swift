@@ -86,6 +86,20 @@ private struct FriendChatMessage: Identifiable {
     let isUser: Bool
 }
 
+private struct FriendsChatCacheEntry {
+    var messages: [FriendChatMessage]
+    var friendAvatarURL: URL?
+    var friendAvatarImage: Image?
+    var friendName: String?
+    var currentUserAvatarURL: URL?
+    var currentUserAvatarImage: Image?
+    var currentUserName: String?
+}
+
+private enum FriendsChatCache {
+    static var entries: [UUID: FriendsChatCacheEntry] = [:]
+}
+
 struct FriendsChatView: View {
     let friendID: UUID
     @Environment(\.dismiss) private var dismiss
@@ -95,11 +109,24 @@ struct FriendsChatView: View {
     @State private var friendAvatarImage: Image?
     @State private var friendName: String?
     @State private var currentUserAvatarURL: URL?
+    @State private var currentUserAvatarImage: Image?
     @State private var currentUserName: String?
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
     @State private var sendFeedbackToggle = false
     @FocusState private var isInputFocused: Bool
+
+    init(friendID: UUID) {
+        self.friendID = friendID
+        let cachedEntry = FriendsChatCache.entries[friendID]
+        _messages = State(initialValue: cachedEntry?.messages ?? [])
+        _friendAvatarURL = State(initialValue: cachedEntry?.friendAvatarURL)
+        _friendAvatarImage = State(initialValue: cachedEntry?.friendAvatarImage)
+        _friendName = State(initialValue: cachedEntry?.friendName)
+        _currentUserAvatarURL = State(initialValue: cachedEntry?.currentUserAvatarURL)
+        _currentUserAvatarImage = State(initialValue: cachedEntry?.currentUserAvatarImage)
+        _currentUserName = State(initialValue: cachedEntry?.currentUserName)
+    }
 
     var body: some View {
         ZStack {
@@ -298,6 +325,7 @@ struct FriendsChatView: View {
                     .onAppear {
                         if friendAvatarImage == nil {
                             friendAvatarImage = image
+                            cacheFriendAvatarImage(image)
                         }
                     }
             } placeholder: {
@@ -328,6 +356,7 @@ struct FriendsChatView: View {
                     .onAppear {
                         if friendAvatarImage == nil {
                             friendAvatarImage = image
+                            cacheFriendAvatarImage(image)
                         }
                     }
             } placeholder: {
@@ -340,11 +369,23 @@ struct FriendsChatView: View {
 
     @ViewBuilder
     private var currentUserMessageAvatar: some View {
-        if let currentUserAvatarURL {
+        if let currentUserAvatarImage {
+            currentUserAvatarImage
+                .resizable()
+                .scaledToFill()
+                .frame(width: 28, height: 28)
+                .clipShape(Circle())
+        } else if let currentUserAvatarURL {
             AsyncImage(url: currentUserAvatarURL) { image in
                 image
                     .resizable()
                     .scaledToFill()
+                    .onAppear {
+                        if currentUserAvatarImage == nil {
+                            currentUserAvatarImage = image
+                            cacheCurrentUserAvatarImage(image)
+                        }
+                    }
             } placeholder: {
                 Colors.card
             }
@@ -355,10 +396,6 @@ struct FriendsChatView: View {
 
     @MainActor
     private func loadFriendProfile() async {
-        friendAvatarURL = nil
-        friendAvatarImage = nil
-        friendName = nil
-
         guard let supabase else { return }
 
         do {
@@ -372,6 +409,7 @@ struct FriendsChatView: View {
 
             friendAvatarURL = profiles.first?.avatarURL(using: supabase)
             friendName = profiles.first?.fullName
+            cacheFriendProfile(avatarURL: friendAvatarURL, name: friendName)
         } catch {
             return
         }
@@ -379,9 +417,6 @@ struct FriendsChatView: View {
 
     @MainActor
     private func loadCurrentUserProfile() async {
-        currentUserAvatarURL = nil
-        currentUserName = nil
-
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id else { return }
 
@@ -396,6 +431,7 @@ struct FriendsChatView: View {
 
             currentUserAvatarURL = profiles.first?.avatarURL(using: supabase)
             currentUserName = profiles.first?.fullName
+            cacheCurrentUserProfile(avatarURL: currentUserAvatarURL, name: currentUserName)
         } catch {
             return
         }
@@ -434,6 +470,7 @@ struct FriendsChatView: View {
                 )
             }
             messages = newMessages
+            cacheMessages(newMessages)
         } catch {
             return
         }
@@ -465,5 +502,49 @@ struct FriendsChatView: View {
             shouldAnimateScroll = false
             return
         }
+    }
+
+    private func cacheEntry() -> FriendsChatCacheEntry {
+        FriendsChatCache.entries[friendID] ?? FriendsChatCacheEntry(
+            messages: messages,
+            friendAvatarURL: friendAvatarURL,
+            friendAvatarImage: friendAvatarImage,
+            friendName: friendName,
+            currentUserAvatarURL: currentUserAvatarURL,
+            currentUserAvatarImage: currentUserAvatarImage,
+            currentUserName: currentUserName
+        )
+    }
+
+    private func cacheMessages(_ newMessages: [FriendChatMessage]) {
+        var entry = cacheEntry()
+        entry.messages = newMessages
+        FriendsChatCache.entries[friendID] = entry
+    }
+
+    private func cacheFriendProfile(avatarURL: URL?, name: String?) {
+        var entry = cacheEntry()
+        entry.friendAvatarURL = avatarURL
+        entry.friendName = name
+        FriendsChatCache.entries[friendID] = entry
+    }
+
+    private func cacheFriendAvatarImage(_ image: Image) {
+        var entry = cacheEntry()
+        entry.friendAvatarImage = image
+        FriendsChatCache.entries[friendID] = entry
+    }
+
+    private func cacheCurrentUserProfile(avatarURL: URL?, name: String?) {
+        var entry = cacheEntry()
+        entry.currentUserAvatarURL = avatarURL
+        entry.currentUserName = name
+        FriendsChatCache.entries[friendID] = entry
+    }
+
+    private func cacheCurrentUserAvatarImage(_ image: Image) {
+        var entry = cacheEntry()
+        entry.currentUserAvatarImage = image
+        FriendsChatCache.entries[friendID] = entry
     }
 }

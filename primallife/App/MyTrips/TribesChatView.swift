@@ -223,31 +223,47 @@ struct TribesChatView: View {
                 }
 
                 GeometryReader { proxy in
-                    ScrollViewReader { scrollProxy in
-                        ScrollView {
-                            VStack(spacing: 14) {
-                                ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
-                                    messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                    if messages.isEmpty {
+                        VStack(spacing: 0) {
+                            Spacer()
+
+                            Text("No messages yet.")
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .center)
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollViewReader { scrollProxy in
+                            ScrollView {
+                                VStack(spacing: 14) {
+                                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                                        messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: proxy.size.height, alignment: .bottom)
+                            }
+                            .scrollIndicators(.hidden)
+                            .onAppear {
+                                Task { @MainActor in
+                                    await Task.yield()
+                                    scrollToBottom(proxy: scrollProxy, animated: false)
                                 }
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: proxy.size.height, alignment: .bottom)
-                        }
-                        .scrollIndicators(.hidden)
-                        .onAppear {
-                            Task { @MainActor in
-                                await Task.yield()
-                                scrollToBottom(proxy: scrollProxy, animated: false)
-                            }
-                        }
-                        .onChange(of: messages.count) { _, _ in
-                            if shouldAnimateScroll {
-                                scrollToBottom(proxy: scrollProxy, animated: true)
-                                shouldAnimateScroll = false
-                            } else {
-                                scrollToBottom(proxy: scrollProxy, animated: false)
+                            .onChange(of: messages.count) { _, _ in
+                                if shouldAnimateScroll {
+                                    scrollToBottom(proxy: scrollProxy, animated: true)
+                                    shouldAnimateScroll = false
+                                } else {
+                                    scrollToBottom(proxy: scrollProxy, animated: false)
+                                }
                             }
                         }
                     }

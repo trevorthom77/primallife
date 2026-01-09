@@ -120,12 +120,17 @@ struct FriendsChatView: View {
                 }
 
                 if messages.isEmpty {
-                    Text("No messages yet.")
-                        .font(.custom(Fonts.regular, size: 16))
-                        .foregroundStyle(Colors.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(spacing: 0) {
+                        Spacer()
 
-                    Spacer()
+                        Text("No messages yet.")
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .center)
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         VStack(spacing: 14) {

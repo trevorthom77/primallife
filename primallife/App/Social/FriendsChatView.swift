@@ -94,6 +94,8 @@ struct FriendsChatView: View {
     @State private var friendAvatarURL: URL?
     @State private var friendAvatarImage: Image?
     @State private var friendName: String?
+    @State private var currentUserAvatarURL: URL?
+    @State private var currentUserName: String?
     @State private var draft = ""
 
     var body: some View {
@@ -134,8 +136,8 @@ struct FriendsChatView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 14) {
-                            ForEach(messages) { message in
-                                messageBubble(message)
+                            ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                                messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -151,6 +153,7 @@ struct FriendsChatView: View {
         .navigationBarBackButtonHidden(true)
         .task(id: friendID) {
             await loadFriendProfile()
+            await loadCurrentUserProfile()
             await loadMessages()
         }
     }
@@ -190,8 +193,27 @@ struct FriendsChatView: View {
         }
     }
 
-    private func messageBubble(_ message: FriendChatMessage) -> some View {
+    private func messageBubble(_ message: FriendChatMessage, showsHeader: Bool) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+            if showsHeader,
+               let headerName = message.isUser ? currentUserName : friendName,
+               !headerName.isEmpty {
+                HStack(spacing: 6) {
+                    if !message.isUser {
+                        friendMessageAvatar
+                    }
+
+                    Text(headerName)
+                        .font(.custom(Fonts.regular, size: 16))
+                        .foregroundStyle(Colors.secondaryText)
+
+                    if message.isUser {
+                        currentUserMessageAvatar
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+            }
+
             Text(message.text)
                 .font(.custom(Fonts.regular, size: 16))
                 .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
@@ -204,6 +226,12 @@ struct FriendsChatView: View {
                 .foregroundStyle(Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+    }
+
+    private func shouldShowSenderHeader(at index: Int) -> Bool {
+        guard messages.indices.contains(index) else { return false }
+        guard index > 0 else { return true }
+        return messages[index].senderID != messages[index - 1].senderID
     }
 
     @ViewBuilder
@@ -236,6 +264,47 @@ struct FriendsChatView: View {
         }
     }
 
+    @ViewBuilder
+    private var friendMessageAvatar: some View {
+        if let friendAvatarImage {
+            friendAvatarImage
+                .resizable()
+                .scaledToFill()
+                .frame(width: 28, height: 28)
+                .clipShape(Circle())
+        } else if let friendAvatarURL {
+            AsyncImage(url: friendAvatarURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .onAppear {
+                        if friendAvatarImage == nil {
+                            friendAvatarImage = image
+                        }
+                    }
+            } placeholder: {
+                Colors.card
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(Circle())
+        }
+    }
+
+    @ViewBuilder
+    private var currentUserMessageAvatar: some View {
+        if let currentUserAvatarURL {
+            AsyncImage(url: currentUserAvatarURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                Colors.card
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(Circle())
+        }
+    }
+
     @MainActor
     private func loadFriendProfile() async {
         friendAvatarURL = nil
@@ -255,6 +324,30 @@ struct FriendsChatView: View {
 
             friendAvatarURL = profiles.first?.avatarURL(using: supabase)
             friendName = profiles.first?.fullName
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadCurrentUserProfile() async {
+        currentUserAvatarURL = nil
+        currentUserName = nil
+
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .eq("id", value: currentUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            currentUserAvatarURL = profiles.first?.avatarURL(using: supabase)
+            currentUserName = profiles.first?.fullName
         } catch {
             return
         }

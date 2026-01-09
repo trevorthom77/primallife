@@ -143,10 +143,18 @@ struct OthersProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
-                        .opacity(isBlocked ? 0.6 : 1)
-                        .allowsHitTesting(!isBlocked)
+                        .opacity(isFriend && !isBlocked ? 1 : 0.6)
+                        .allowsHitTesting(isFriend && !isBlocked)
                     }
                         .padding(.top, 8)
+
+                    if !isFriend {
+                        Text("Messaging is available for friends only.")
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
 
                     if hasBlockedUser {
                         Text("You blocked this user.")

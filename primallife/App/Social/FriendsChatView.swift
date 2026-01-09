@@ -97,13 +97,14 @@ struct FriendsChatView: View {
     @State private var currentUserAvatarURL: URL?
     @State private var currentUserName: String?
     @State private var draft = ""
+    @State private var shouldAnimateScroll = false
 
     var body: some View {
         ZStack {
             Colors.background
                 .ignoresSafeArea()
 
-            VStack(spacing: 16) {
+            VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     BackButton {
                         dismiss()
@@ -120,35 +121,63 @@ struct FriendsChatView: View {
 
                     Spacer()
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Colors.background)
 
-                if messages.isEmpty {
-                    VStack(spacing: 0) {
-                        Spacer()
+                GeometryReader { proxy in
+                    if messages.isEmpty {
+                        VStack(spacing: 0) {
+                            Spacer()
 
-                        Text("No messages yet.")
-                            .font(.custom(Fonts.regular, size: 16))
-                            .foregroundStyle(Colors.secondaryText)
-                            .frame(maxWidth: .infinity, alignment: .center)
+                            Text("No messages yet.")
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .center)
 
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 14) {
-                            ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
-                                messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollViewReader { scrollProxy in
+                            ScrollView {
+                                VStack(spacing: 14) {
+                                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                                        messageBubble(message, showsHeader: shouldShowSenderHeader(at: index))
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: proxy.size.height, alignment: .bottom)
+                            }
+                            .scrollIndicators(.hidden)
+                            .onAppear {
+                                Task { @MainActor in
+                                    await Task.yield()
+                                    scrollToBottom(proxy: scrollProxy, animated: false)
+                                }
+                            }
+                            .onChange(of: messages.count) { _, _ in
+                                if shouldAnimateScroll {
+                                    scrollToBottom(proxy: scrollProxy, animated: true)
+                                    shouldAnimateScroll = false
+                                } else {
+                                    scrollToBottom(proxy: scrollProxy, animated: false)
+                                }
                             }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
                     }
-                    .scrollIndicators(.hidden)
                 }
-
-                typeBar
             }
-            .padding(24)
+            .safeAreaInset(edge: .bottom) {
+                typeBar
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Colors.background)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .task(id: friendID) {
@@ -232,6 +261,17 @@ struct FriendsChatView: View {
         guard messages.indices.contains(index) else { return false }
         guard index > 0 else { return true }
         return messages[index].senderID != messages[index - 1].senderID
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
+        guard let lastID = messages.last?.id else { return }
+        if animated {
+            withAnimation {
+                proxy.scrollTo(lastID, anchor: .bottom)
+            }
+        } else {
+            proxy.scrollTo(lastID, anchor: .bottom)
+        }
     }
 
     @ViewBuilder
@@ -398,6 +438,7 @@ struct FriendsChatView: View {
               let supabase,
               let currentUserID = supabase.auth.currentUser?.id else { return }
 
+        shouldAnimateScroll = true
         let payload = FriendMessagePayload(
             userID: currentUserID,
             friendID: friendID,
@@ -413,6 +454,7 @@ struct FriendsChatView: View {
             draft = ""
             await loadMessages()
         } catch {
+            shouldAnimateScroll = false
             return
         }
     }

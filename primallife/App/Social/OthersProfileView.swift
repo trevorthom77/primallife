@@ -133,7 +133,9 @@ struct OthersProfileView: View {
                             .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
                             .allowsHitTesting(!isFriend && !isBlocked)
 
-                        Button(action: {}) {
+                        NavigationLink {
+                            FriendsChatView()
+                        } label: {
                             Text("Message")
                                 .font(.custom(Fonts.semibold, size: 16))
                                 .foregroundStyle(Colors.primaryText)

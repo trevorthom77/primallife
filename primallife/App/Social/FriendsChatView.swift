@@ -91,6 +91,8 @@ struct FriendsChatView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
     @State private var messages: [FriendChatMessage] = []
+    @State private var friendAvatarURL: URL?
+    @State private var friendAvatarImage: Image?
     @State private var draft = ""
 
     var body: some View {
@@ -103,6 +105,8 @@ struct FriendsChatView: View {
                     BackButton {
                         dismiss()
                     }
+
+                    friendAvatar
 
                     Text("Friend Chat")
                         .font(.travelTitle)
@@ -137,6 +141,7 @@ struct FriendsChatView: View {
         }
         .navigationBarBackButtonHidden(true)
         .task(id: friendID) {
+            await loadFriendProfile()
             await loadMessages()
         }
     }
@@ -190,6 +195,58 @@ struct FriendsChatView: View {
                 .foregroundStyle(Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+    }
+
+    @ViewBuilder
+    private var friendAvatar: some View {
+        if let friendAvatarImage {
+            friendAvatarImage
+                .resizable()
+                .scaledToFill()
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else if let friendAvatarURL {
+            AsyncImage(url: friendAvatarURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .onAppear {
+                        if friendAvatarImage == nil {
+                            friendAvatarImage = image
+                        }
+                    }
+            } placeholder: {
+                Colors.card
+            }
+            .frame(width: 48, height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            Colors.card
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    @MainActor
+    private func loadFriendProfile() async {
+        friendAvatarURL = nil
+        friendAvatarImage = nil
+
+        guard let supabase else { return }
+
+        do {
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .eq("id", value: friendID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            friendAvatarURL = profiles.first?.avatarURL(using: supabase)
+        } catch {
+            return
+        }
     }
 
     @MainActor

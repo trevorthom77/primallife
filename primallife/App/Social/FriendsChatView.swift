@@ -282,7 +282,7 @@ struct FriendsChatView: View {
                 .font(.custom(Fonts.regular, size: 16))
                 .foregroundStyle(message.isUser ? Colors.tertiaryText : Colors.primaryText)
                 .padding(12)
-                .background(message.isUser ? Colors.accent : Colors.card)
+                .background(message.isUser ? Colors.accent : Colors.contentview)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
             Text(message.time)

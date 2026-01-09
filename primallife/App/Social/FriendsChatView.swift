@@ -114,6 +114,10 @@ struct FriendsChatView: View {
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
     @State private var sendFeedbackToggle = false
+    @State private var outgoingRealtimeChannel: RealtimeChannelV2?
+    @State private var incomingRealtimeChannel: RealtimeChannelV2?
+    @State private var outgoingRealtimeTask: Task<Void, Never>?
+    @State private var incomingRealtimeTask: Task<Void, Never>?
     @FocusState private var isInputFocused: Bool
 
     init(friendID: UUID) {
@@ -216,6 +220,12 @@ struct FriendsChatView: View {
             await loadFriendProfile()
             await loadCurrentUserProfile()
             await loadMessages()
+            await startRealtime()
+        }
+        .onDisappear {
+            Task {
+                await stopRealtime()
+            }
         }
     }
 
@@ -474,6 +484,69 @@ struct FriendsChatView: View {
         } catch {
             return
         }
+    }
+
+    @MainActor
+    private func startRealtime() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id else { return }
+
+        await stopRealtime()
+
+        let outgoingChannel = supabase.channel("friend-messages-\(currentUserID.uuidString)-\(friendID.uuidString)-out")
+        let outgoingInsertions = outgoingChannel.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "friend_messages",
+            filter: .eq("user_id", value: currentUserID)
+        )
+
+        let incomingChannel = supabase.channel("friend-messages-\(currentUserID.uuidString)-\(friendID.uuidString)-in")
+        let incomingInsertions = incomingChannel.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "friend_messages",
+            filter: .eq("user_id", value: friendID)
+        )
+
+        do {
+            try await outgoingChannel.subscribeWithError()
+            try await incomingChannel.subscribeWithError()
+        } catch {
+            return
+        }
+
+        outgoingRealtimeChannel = outgoingChannel
+        incomingRealtimeChannel = incomingChannel
+        outgoingRealtimeTask = Task { @MainActor in
+            for await _ in outgoingInsertions {
+                await loadMessages()
+            }
+        }
+        incomingRealtimeTask = Task { @MainActor in
+            for await _ in incomingInsertions {
+                await loadMessages()
+            }
+        }
+    }
+
+    @MainActor
+    private func stopRealtime() async {
+        outgoingRealtimeTask?.cancel()
+        outgoingRealtimeTask = nil
+        incomingRealtimeTask?.cancel()
+        incomingRealtimeTask = nil
+
+        if let supabase, let outgoingRealtimeChannel {
+            await supabase.removeChannel(outgoingRealtimeChannel)
+        }
+
+        if let supabase, let incomingRealtimeChannel {
+            await supabase.removeChannel(incomingRealtimeChannel)
+        }
+
+        outgoingRealtimeChannel = nil
+        incomingRealtimeChannel = nil
     }
 
     @MainActor

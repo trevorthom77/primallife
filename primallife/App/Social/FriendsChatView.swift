@@ -93,6 +93,7 @@ struct FriendsChatView: View {
     @State private var messages: [FriendChatMessage] = []
     @State private var friendAvatarURL: URL?
     @State private var friendAvatarImage: Image?
+    @State private var friendName: String?
     @State private var draft = ""
 
     var body: some View {
@@ -108,9 +109,12 @@ struct FriendsChatView: View {
 
                     friendAvatar
 
-                    Text("Friend Chat")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
+                    if let friendName {
+                        Text(friendName)
+                            .font(.custom(Fonts.semibold, size: 18))
+                            .foregroundStyle(Colors.primaryText)
+                            .lineLimit(1)
+                    }
 
                     Spacer()
                 }
@@ -231,6 +235,7 @@ struct FriendsChatView: View {
     private func loadFriendProfile() async {
         friendAvatarURL = nil
         friendAvatarImage = nil
+        friendName = nil
 
         guard let supabase else { return }
 
@@ -244,6 +249,7 @@ struct FriendsChatView: View {
                 .value
 
             friendAvatarURL = profiles.first?.avatarURL(using: supabase)
+            friendName = profiles.first?.fullName
         } catch {
             return
         }

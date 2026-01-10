@@ -287,10 +287,13 @@ final class MyTripsViewModel: ObservableObject {
         }
 
         do {
+            let startOfToday = Calendar.current.startOfDay(for: Date())
+            let startOfTodayString = myTripsDateFormatter.string(from: startOfToday)
             let fetchedTravelers: [TripTraveler] = try await supabase
                 .from("mytrips")
                 .select("user_id")
                 .eq("destination", value: trip.destination)
+                .gte("return_date", value: startOfTodayString)
                 .execute()
                 .value
 

@@ -143,14 +143,21 @@ struct FriendsChatView: View {
                         dismiss()
                     }
 
-                    friendAvatar
+                    NavigationLink {
+                        OthersProfileView(userID: friendID)
+                    } label: {
+                        HStack(spacing: 12) {
+                            friendAvatar
 
-                    if let friendName {
-                        Text(friendName)
-                            .font(.custom(Fonts.semibold, size: 18))
-                            .foregroundStyle(Colors.primaryText)
-                            .lineLimit(1)
+                            if let friendName {
+                                Text(friendName)
+                                    .font(.custom(Fonts.semibold, size: 18))
+                                    .foregroundStyle(Colors.primaryText)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
+                    .buttonStyle(.plain)
 
                     Spacer()
                 }

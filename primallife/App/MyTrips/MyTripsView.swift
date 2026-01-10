@@ -777,7 +777,7 @@ struct MyTripsView: View {
                                                 .foregroundStyle(Colors.tertiaryText)
                                                 .padding(.vertical, 4)
                                                 .padding(.horizontal, 8)
-                                                .background(Colors.accent)
+                                                .background(recommendationRatingColor("9.5"))
                                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                         }
                                     }
@@ -1114,6 +1114,15 @@ struct MyTripsView: View {
         let cleaned = String(String.UnicodeScalarView(filteredScalars))
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return cleaned.isEmpty ? trip.destination : cleaned
+    }
+
+    private func recommendationRatingColor(_ ratingText: String) -> Color {
+        let trimmed = ratingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed) else { return Colors.accent }
+        if value >= 10 { return Colors.accent }
+        if value >= 7 { return Colors.ratingGreen }
+        if value >= 5 { return Colors.ratingYellow }
+        return Color.red
     }
 
     private var selectedTripDestination: String {

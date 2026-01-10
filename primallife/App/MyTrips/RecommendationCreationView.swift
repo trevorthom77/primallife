@@ -77,6 +77,8 @@ private struct RecommendationDetailsView: View {
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
     @State private var recommendationRating = ""
+    @State private var recommendationPhoto: UIImage?
+    @State private var recommendationPhotoData: Data?
     @FocusState private var isNameFocused: Bool
     @FocusState private var isNoteFocused: Bool
     @FocusState private var isRatingFocused: Bool
@@ -208,7 +210,13 @@ private struct RecommendationDetailsView: View {
         )
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingPhotoPrompt) {
-            RecommendationPhotoPromptView()
+            RecommendationPhotoPromptView(
+                recommendationName: recommendationName,
+                recommendationSubtext: recommendationSubtext,
+                recommendationRating: recommendationRating,
+                recommendationPhoto: $recommendationPhoto,
+                recommendationPhotoData: $recommendationPhotoData
+            )
         }
     }
 
@@ -239,10 +247,14 @@ private struct RecommendationDetailsView: View {
 }
 
 private struct RecommendationPhotoPromptView: View {
+    let recommendationName: String
+    let recommendationSubtext: String
+    let recommendationRating: String
+    @Binding var recommendationPhoto: UIImage?
+    @Binding var recommendationPhotoData: Data?
     @Environment(\.dismiss) private var dismiss
-    @State private var recommendationPhoto: UIImage?
-    @State private var recommendationPhotoData: Data?
     @State private var isShowingPhotoPicker = false
+    @State private var isShowingReview = false
     private let unsplashURL = URL(string: "https://unsplash.com")!
 
     var body: some View {
@@ -332,7 +344,9 @@ private struct RecommendationPhotoPromptView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
-                Button(action: {}) {
+                Button(action: {
+                    isShowingReview = true
+                }) {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -352,6 +366,123 @@ private struct RecommendationPhotoPromptView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $isShowingReview) {
+            RecommendationReviewView(
+                recommendationName: recommendationName,
+                recommendationSubtext: recommendationSubtext,
+                recommendationRating: recommendationRating,
+                recommendationPhoto: recommendationPhoto
+            )
+        }
+    }
+}
+
+private struct RecommendationReviewView: View {
+    let recommendationName: String
+    let recommendationSubtext: String
+    let recommendationRating: String
+    let recommendationPhoto: UIImage?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Review your recommendation")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("This is what travelers will see.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(alignment: .leading, spacing: 16) {
+                    if let image = recommendationPhoto {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Colors.card)
+                            .frame(height: 200)
+                            .frame(maxWidth: .infinity)
+                            .overlay {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+
+                    if !trimmedName.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Recommendation name")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Text(trimmedName)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    if !trimmedNote.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Note")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Text(trimmedNote)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    if !trimmedRating.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Rating")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Text(trimmedRating)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                        }
+                    }
+                }
+                .padding(16)
+                .background(Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+    }
+
+    private var trimmedName: String {
+        recommendationName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedNote: String {
+        recommendationSubtext.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedRating: String {
+        recommendationRating.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

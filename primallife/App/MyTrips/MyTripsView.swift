@@ -368,6 +368,10 @@ final class MyTripsViewModel: ObservableObject {
                 .value
 
             recommendationsByDestination[trimmedDestination] = fetchedRecommendations
+            let creatorIDs = Array(Set(fetchedRecommendations.map(\.creatorID)))
+            if !creatorIDs.isEmpty {
+                await loadCreators(for: creatorIDs, supabase: supabase)
+            }
         } catch {
             recommendationsByDestination[trimmedDestination] = []
         }
@@ -1184,11 +1188,11 @@ struct MyTripsView: View {
                             .resizable()
                             .scaledToFill()
                     } else {
-                        Colors.secondaryText.opacity(0.3)
+                        Color.clear
                     }
                 }
             } else {
-                Colors.secondaryText.opacity(0.3)
+                Color.clear
             }
         }
         .frame(width: 48, height: 48)
@@ -1201,11 +1205,11 @@ struct MyTripsView: View {
 
     @ViewBuilder
     private func recommendationAvatar(for recommendation: Recommendation) -> some View {
-        let photoURL = recommendationPhotoURL(for: recommendation)
+        let avatarURL = viewModel.creatorAvatarURL(for: recommendation.creatorID, supabase: supabase)
 
         Group {
-            if let photoURL {
-                AsyncImage(url: photoURL) { phase in
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
                     if let image = phase.image {
                         image
                             .resizable()

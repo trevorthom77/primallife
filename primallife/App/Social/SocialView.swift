@@ -89,6 +89,21 @@ private enum FriendListCache {
     }
 }
 
+private enum FriendChatListCache {
+    static var latestChats: [FriendChatPreview] = []
+    static var chatsByUser: [UUID: [FriendChatPreview]] = [:]
+
+    static func cachedChats(for userID: UUID?) -> [FriendChatPreview] {
+        guard let userID else { return latestChats }
+        return chatsByUser[userID] ?? latestChats
+    }
+
+    static func update(_ chats: [FriendChatPreview], for userID: UUID) {
+        chatsByUser[userID] = chats
+        latestChats = chats
+    }
+}
+
 private enum SocialPlanImageCache {
     static var images: [URL: Image] = [:]
 }
@@ -104,6 +119,7 @@ private enum FriendAvatarImageCache {
 struct MessagesView: View {
     @State private var isShowingBell = false
     @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
+    @State private var friendChats: [FriendChatPreview] = FriendChatListCache.cachedChats(for: nil)
     @State private var activePlans: [SocialPlan] = SocialPlanListCache.cachedPlans(for: nil)
     @State private var planImageCache: [URL: Image] = SocialPlanImageCache.images
     @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
@@ -142,7 +158,7 @@ struct MessagesView: View {
                                     }
                                 }
 
-                                if !joinedTribeChats.isEmpty {
+                                if !joinedTribeChats.isEmpty || !friendChats.isEmpty {
                                     VStack(spacing: 12) {
                                         ForEach(Array(joinedTribeChats.prefix(3))) { chat in
                                             NavigationLink {
@@ -156,6 +172,15 @@ struct MessagesView: View {
                                                 )
                                             } label: {
                                                 tribeChatRow(chat)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+
+                                        ForEach(Array(friendChats.prefix(3))) { chat in
+                                            NavigationLink {
+                                                FriendsChatView(friendID: chat.id)
+                                            } label: {
+                                                friendChatRow(chat)
                                             }
                                             .buttonStyle(.plain)
                                         }
@@ -221,6 +246,7 @@ struct MessagesView: View {
             .task {
                 await loadJoinedTribeChats()
                 await loadFriends()
+                await loadFriendChats()
                 await loadNotificationCount()
             }
         }
@@ -276,6 +302,38 @@ struct MessagesView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(chat.name)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                if !chat.lastMessage.isEmpty {
+                    Text(chat.lastMessage)
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            if !chat.lastMessageTime.isEmpty {
+                Text(chat.lastMessageTime)
+                    .font(.custom(Fonts.regular, size: 14))
+                    .foregroundStyle(Colors.secondaryText)
+            }
+        }
+        .padding()
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func friendChatRow(_ chat: FriendChatPreview) -> some View {
+        HStack(spacing: 12) {
+            friendAvatar(for: chat.friend)
+                .frame(width: 48, height: 48)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(chat.friend.fullName)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
 
@@ -635,6 +693,74 @@ struct MessagesView: View {
             }
         }
     }
+
+    @MainActor
+    private func loadFriendChats() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        let cachedChats = FriendChatListCache.cachedChats(for: currentUserID)
+        if friendChats.isEmpty, !cachedChats.isEmpty {
+            friendChats = cachedChats
+        }
+
+        let friendIDs = friends.map { $0.id }
+        if friendIDs.isEmpty {
+            friendChats = []
+            FriendChatListCache.update([], for: currentUserID)
+            return
+        }
+
+        let friendIDStrings = friendIDs.map { $0.uuidString }
+
+        do {
+            let sentRows: [FriendChatMessageRow] = try await supabase
+                .from("friend_messages")
+                .select("user_id, friend_id, text, created_at")
+                .eq("user_id", value: currentUserID.uuidString)
+                .in("friend_id", values: friendIDStrings)
+                .execute()
+                .value
+
+            let receivedRows: [FriendChatMessageRow] = try await supabase
+                .from("friend_messages")
+                .select("user_id, friend_id, text, created_at")
+                .in("user_id", values: friendIDStrings)
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            var latestMessageByFriend: [UUID: FriendChatMessageRow] = [:]
+            for row in sentRows + receivedRows {
+                let friendID = row.userID == currentUserID ? row.friendID : row.userID
+                if let existing = latestMessageByFriend[friendID] {
+                    if row.createdAt > existing.createdAt {
+                        latestMessageByFriend[friendID] = row
+                    }
+                } else {
+                    latestMessageByFriend[friendID] = row
+                }
+            }
+
+            let chats = friends.map { friend in
+                let message = latestMessageByFriend[friend.id]
+                return FriendChatPreview(
+                    id: friend.id,
+                    friend: friend,
+                    lastMessage: message?.text ?? "",
+                    lastMessageTime: message.map { socialChatTimeFormatter.string(from: $0.createdAt) } ?? ""
+                )
+            }
+
+            friendChats = chats
+            FriendChatListCache.update(chats, for: currentUserID)
+        } catch {
+            if friendChats.isEmpty {
+                friendChats = FriendChatListCache.cachedChats(for: currentUserID)
+            }
+        }
+    }
     
     @MainActor
     private func loadNotificationCount() async {
@@ -835,6 +961,36 @@ private struct FriendRequestCountRow: Decodable {
     }
 }
 
+private struct FriendChatMessageRow: Decodable {
+    let userID: UUID
+    let friendID: UUID
+    let text: String
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case friendID = "friend_id"
+        case text
+        case createdAt = "created_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userID = try container.decode(UUID.self, forKey: .userID)
+        friendID = try container.decode(UUID.self, forKey: .friendID)
+        text = try container.decode(String.self, forKey: .text)
+
+        let createdAtString = try container.decode(String.self, forKey: .createdAt)
+        guard let createdAtDate = socialChatTimestampFormatterWithFractional.date(from: createdAtString)
+            ?? socialChatTimestampFormatter.date(from: createdAtString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
+            )
+        }
+        createdAt = createdAtDate
+    }
+}
+
 private struct SocialPlanRow: Decodable {
     let id: UUID
     let tribeID: UUID
@@ -889,6 +1045,13 @@ private struct TribeChatPreview: Identifiable {
     let lastMessage: String
     let lastMessageTime: String
     let memberCount: Int
+}
+
+private struct FriendChatPreview: Identifiable {
+    let id: UUID
+    let friend: UserProfile
+    let lastMessage: String
+    let lastMessageTime: String
 }
 
 #Preview {

@@ -1121,7 +1121,7 @@ struct MyTripsView: View {
         guard let value = Double(trimmed) else { return Colors.accent }
         if value >= 10 { return Colors.accent }
         if value >= 7 { return Colors.ratingGreen }
-        if value >= 5 { return Colors.ratingYellow }
+        if value >= 5 { return Colors.ratingyellow }
         return Color.red
     }
 

@@ -10,7 +10,7 @@ import Foundation
 
 enum Colors {
     static let accent = Color(hex: "#47c9db")
-    static let ratingYellow = Color(hex: "#dbc247")
+    static let ratingyellow = Color(hex: "#B7C7D1")
     static let ratingGreen = Color(hex: "#47db78")
     static let contentview = Color(hex: "#EFF2F7")
     static let background = Color(hex: "#F7FAFF")

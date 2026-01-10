@@ -454,8 +454,12 @@ private struct RecommendationReviewView: View {
                                 .foregroundStyle(Colors.primaryText)
 
                             Text(trimmedRating)
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(ratingColor(for: trimmedRating))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
                 }
@@ -488,6 +492,15 @@ private struct RecommendationReviewView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
+    }
+
+    private func ratingColor(for ratingText: String) -> Color {
+        let trimmed = ratingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed) else { return Colors.accent }
+        if value >= 10 { return Colors.accent }
+        if value >= 7 { return Colors.ratingGreen }
+        if value >= 5 { return Colors.ratingyellow }
+        return Color.red
     }
 
     private var trimmedName: String {

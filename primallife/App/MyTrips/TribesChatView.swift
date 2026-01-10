@@ -122,6 +122,24 @@ private struct TribeMemberRow: Decodable {
     let id: UUID
 }
 
+private struct TribeMemberProfileRow: Decodable {
+    let id: UUID
+    let fullName: String
+    let avatarPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullName = "full_name"
+        case avatarPath = "avatar_url"
+    }
+}
+
+private struct TribeMember: Identifiable {
+    let id: UUID
+    let fullName: String
+    let avatarURL: URL?
+}
+
 private struct TribeMessagePayload: Encodable {
     let tribeID: UUID
     let senderID: UUID
@@ -186,6 +204,7 @@ struct TribesChatView: View {
     @State private var plans: [TribePlan] = []
     @State private var selectedPlan: TribePlan?
     @State private var isShowingMembersSheet = false
+    @State private var members: [TribeMember] = []
     @State private var messages: [TribeChatMessage] = []
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
@@ -308,9 +327,46 @@ struct TribesChatView: View {
             )
         }
         .sheet(isPresented: $isShowingMembersSheet) {
+            membersSheet
+        }
+    }
+
+    private var membersSheet: some View {
+        ZStack {
             Colors.background
                 .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 14) {
+                    ForEach(members) { member in
+                        memberRow(member)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+            }
         }
+        .task {
+            await loadMembers()
+        }
+    }
+
+    private func memberRow(_ member: TribeMember) -> some View {
+        HStack(spacing: 12) {
+            if let avatarURL = member.avatarURL {
+                messageAvatar(avatarURL)
+            } else {
+                Color.clear
+                    .frame(width: 28, height: 28)
+            }
+
+            Text(member.fullName)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var plansRow: some View {
@@ -769,6 +825,54 @@ struct TribesChatView: View {
                 .value
             totalTravelers = rows.count
             cacheMemberCount(rows.count)
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadMembers() async {
+        guard let supabase else { return }
+
+        do {
+            let joinRows: [TribeMemberRow] = try await supabase
+                .from("tribes_join")
+                .select("id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+                .value
+
+            let memberIDs = Array(Set(joinRows.map { $0.id }))
+            guard !memberIDs.isEmpty else {
+                members = []
+                return
+            }
+
+            let rows: [TribeMemberProfileRow] = try await supabase
+                .from("onboarding")
+                .select("id, full_name, avatar_url")
+                .in("id", values: memberIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            let newMembers = rows.map { row -> TribeMember in
+                let avatarURL: URL?
+                if let avatarPath = row.avatarPath, !avatarPath.isEmpty {
+                    avatarURL = try? supabase.storage
+                        .from("profile-photos")
+                        .getPublicURL(path: avatarPath)
+                } else {
+                    avatarURL = nil
+                }
+
+                return TribeMember(
+                    id: row.id,
+                    fullName: row.fullName,
+                    avatarURL: avatarURL
+                )
+            }
+
+            members = newMembers
         } catch {
             return
         }

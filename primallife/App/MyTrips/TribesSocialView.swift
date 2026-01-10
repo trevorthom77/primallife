@@ -25,6 +25,7 @@ struct TribesSocialView: View {
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
     @State private var isJoiningTribe = false
+    @State private var currentUserGender: String?
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -206,38 +207,48 @@ struct TribesSocialView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Button {
-                        if hasJoinedTribe {
-                            shouldNavigateToChat = true
-                            return
-                        }
-                        guard !isJoiningTribe else { return }
-                        isJoiningTribe = true
-                        Task {
-                            let didJoin = await joinTribe()
-                            if didJoin {
-                                hasJoinedTribe = true
+                    if let joinRestrictionText {
+                        Text(joinRestrictionText)
+                            .font(.travelDetail)
+                            .foregroundStyle(joinRestrictionColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    } else {
+                        Button {
+                            if hasJoinedTribe {
                                 shouldNavigateToChat = true
+                                return
                             }
-                            isJoiningTribe = false
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text(hasJoinedTribe ? "View Chat" : "Join")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.tertiaryText)
+                            guard !isJoiningTribe else { return }
+                            isJoiningTribe = true
+                            Task {
+                                let didJoin = await joinTribe()
+                                if didJoin {
+                                    hasJoinedTribe = true
+                                    shouldNavigateToChat = true
+                                }
+                                isJoiningTribe = false
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text(hasJoinedTribe ? "View Chat" : "Join")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
 
-                            if isJoiningTribe {
-                                ProgressView()
-                                    .tint(Colors.tertiaryText)
+                                if isJoiningTribe {
+                                    ProgressView()
+                                        .tint(Colors.tertiaryText)
+                                }
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Colors.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What?")
@@ -415,6 +426,7 @@ struct TribesSocialView: View {
         }
         .task {
             await loadJoinStatus()
+            await loadCurrentUserGender()
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $shouldNavigateToChat) {
@@ -557,6 +569,13 @@ private extension TribesSocialView {
             hasJoinedTribe = false
             cacheJoinStatus(false)
         }
+    }
+
+    @MainActor
+    func loadCurrentUserGender() async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id else { return }
+        currentUserGender = await userGender(for: userID, supabase: supabase)
     }
 
     @MainActor
@@ -719,6 +738,45 @@ private extension TribesSocialView {
         }
 
         return nil
+    }
+
+    var joinRestrictionText: String? {
+        guard !hasJoinedTribe else { return nil }
+        let normalizedTribeGender = resolvedGender
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard let normalizedUserGender = currentUserGender?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased(),
+              !normalizedUserGender.isEmpty else {
+            return nil
+        }
+
+        if normalizedTribeGender.contains("girl"), normalizedUserGender != "female" {
+            return "Girls Only"
+        }
+
+        if normalizedTribeGender.contains("boy"), normalizedUserGender != "male" {
+            return "Boys Only"
+        }
+
+        return nil
+    }
+
+    var joinRestrictionColor: Color {
+        let normalizedTribeGender = resolvedGender
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        if normalizedTribeGender.contains("girl") {
+            return Colors.girlsPink
+        }
+
+        if normalizedTribeGender.contains("boy") {
+            return Colors.accent
+        }
+
+        return Colors.secondaryText
     }
 
     @ViewBuilder

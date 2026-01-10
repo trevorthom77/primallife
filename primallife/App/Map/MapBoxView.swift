@@ -12,6 +12,14 @@ import CoreLocation
 import MapboxMaps
 import Supabase
 
+private let mapTripsDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @EnvironmentObject private var profileStore: ProfileStore
@@ -27,6 +35,7 @@ struct MapBoxView: View {
     @State private var selectedPlace: MapboxPlace?
     @State private var placeImageURL: URL?
     @State private var photoTask: Task<Void, Never>?
+    @State private var selectedPlaceTravelerCount = 0
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var isUsingSelectedDestination = false
@@ -289,7 +298,7 @@ struct MapBoxView: View {
                                                             .stroke(Colors.card, lineWidth: 3)
                                                     }
                                                 
-                                                Text("67+")
+                                                Text("\(selectedPlaceTravelerCount)+")
                                                     .font(.custom(Fonts.semibold, size: 12))
                                                     .foregroundStyle(Colors.primaryText)
                                             }
@@ -387,6 +396,11 @@ struct MapBoxView: View {
                             pitch: 0
                         )
                         hasCenteredOnUser = true
+                    }
+                    .task(id: selectedPlace?.id) {
+                        selectedPlaceTravelerCount = 0
+                        guard let place = selectedPlace else { return }
+                        selectedPlaceTravelerCount = await fetchSelectedPlaceTravelerCount(for: place)
                     }
                     .sheet(isPresented: $isShowingSearch) {
                         MapSearchSheet { place in
@@ -640,6 +654,42 @@ struct MapBoxView: View {
                 .execute()
         } catch {
             print("Failed to upsert location: \(error.localizedDescription)")
+        }
+    }
+
+    private func fetchSelectedPlaceTravelerCount(for place: MapboxPlace) async -> Int {
+        guard let supabase else { return 0 }
+
+        let destination = place.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !destination.isEmpty else { return 0 }
+
+        struct TripTraveler: Decodable {
+            let userID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case userID = "user_id"
+            }
+        }
+
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        let startOfTodayString = mapTripsDateFormatter.string(from: startOfToday)
+
+        do {
+            let travelers: [TripTraveler] = try await supabase
+                .from("mytrips")
+                .select("user_id")
+                .eq("destination", value: destination)
+                .gte("return_date", value: startOfTodayString)
+                .execute()
+                .value
+
+            var uniqueUserIDs = Set(travelers.map { $0.userID })
+            if let currentUserID = supabase.auth.currentUser?.id {
+                uniqueUserIDs.remove(currentUserID)
+            }
+            return uniqueUserIDs.count
+        } catch {
+            return 0
         }
     }
 

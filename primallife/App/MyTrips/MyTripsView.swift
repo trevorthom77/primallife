@@ -86,6 +86,44 @@ struct NewTrip: Encodable {
     }
 }
 
+struct Recommendation: Decodable, Identifiable {
+    let id: UUID
+    let creatorID: UUID
+    let destination: String
+    let name: String
+    let note: String
+    let rating: Double
+    let photoURL: String?
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case creatorID = "creator_id"
+        case destination
+        case name
+        case note
+        case rating
+        case photoURL = "photo_url"
+        case createdAt = "created_at"
+    }
+}
+
+struct NewRecommendation: Encodable {
+    let creatorID: UUID
+    let destination: String
+    let name: String
+    let note: String
+    let rating: Double
+
+    enum CodingKeys: String, CodingKey {
+        case creatorID = "creator_id"
+        case destination
+        case name
+        case note
+        case rating
+    }
+}
+
 struct Tribe: Decodable, Identifiable {
     let id: UUID
     let ownerID: UUID
@@ -177,8 +215,10 @@ final class MyTripsViewModel: ObservableObject {
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published var travelersByTrip: [UUID: [UUID]] = [:]
+    @Published var recommendationsByDestination: [String: [Recommendation]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
+    @Published private(set) var loadingRecommendationDestinations: Set<String> = []
     @Published private(set) var tribeMemberCounts: [UUID: Int] = [:]
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
     private var pendingTripKeys: Set<String> = []
@@ -305,6 +345,64 @@ final class MyTripsViewModel: ObservableObject {
         }
 
         loadingTravelerTripIDs.remove(trip.id)
+    }
+
+    func loadRecommendations(for destination: String, supabase: SupabaseClient?) async {
+        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let supabase,
+              !trimmedDestination.isEmpty,
+              !loadingRecommendationDestinations.contains(trimmedDestination) else { return }
+
+        loadingRecommendationDestinations.insert(trimmedDestination)
+        defer { loadingRecommendationDestinations.remove(trimmedDestination) }
+
+        do {
+            let fetchedRecommendations: [Recommendation] = try await supabase
+                .from("recommendations")
+                .select()
+                .eq("destination", value: trimmedDestination)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+
+            recommendationsByDestination[trimmedDestination] = fetchedRecommendations
+        } catch {
+            recommendationsByDestination[trimmedDestination] = []
+        }
+    }
+
+    func addRecommendation(
+        destination: String,
+        name: String,
+        note: String,
+        rating: Double,
+        supabase: SupabaseClient?
+    ) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedDestination.isEmpty, !trimmedName.isEmpty, !trimmedNote.isEmpty else { return }
+        guard (1...10).contains(rating) else { return }
+
+        let payload = NewRecommendation(
+            creatorID: userID,
+            destination: trimmedDestination,
+            name: trimmedName,
+            note: trimmedNote,
+            rating: rating
+        )
+
+        do {
+            try await supabase
+                .from("recommendations")
+                .insert(payload)
+                .execute()
+
+            await loadRecommendations(for: trimmedDestination, supabase: supabase)
+        } catch {
+            self.error = "Unable to create recommendation."
+        }
     }
 
     func creatorName(for ownerID: UUID) -> String? {

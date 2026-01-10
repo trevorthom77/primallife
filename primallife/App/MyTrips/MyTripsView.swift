@@ -859,47 +859,43 @@ struct MyTripsView: View {
                                         }
                                     }
 
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        HStack(spacing: 12) {
-                                            Image("profile9")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 48, height: 48)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
-                                                }
+                                    if let recommendations = recommendationsForSelectedTrip {
+                                        ForEach(recommendations) { recommendation in
+                                            let ratingText = String(format: "%.1f", recommendation.rating)
 
-                                            VStack(alignment: .leading, spacing: 6) {
-                                                Text("Snorkeling in Montego Bay")
-                                                    .font(.travelDetail)
-                                                    .foregroundStyle(Colors.primaryText)
+                                            HStack(spacing: 12) {
+                                                recommendationAvatar(for: recommendation)
 
-                                                HStack(spacing: 8) {
-                                                    Text(selectedTripDestination)
+                                                VStack(alignment: .leading, spacing: 6) {
+                                                    Text(recommendation.name)
                                                         .font(.travelDetail)
-                                                        .foregroundStyle(Colors.secondaryText)
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
+                                                        .foregroundStyle(Colors.primaryText)
+
+                                                    HStack(spacing: 8) {
+                                                        Text(recommendation.destination)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
+                                                    }
                                                 }
+
+                                                Spacer()
+
+                                                Text(ratingText)
+                                                    .font(.travelDetail)
+                                                    .foregroundStyle(Colors.tertiaryText)
+                                                    .padding(.vertical, 4)
+                                                    .padding(.horizontal, 8)
+                                                    .background(recommendationRatingColor(ratingText))
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
                                             }
-
-                                            Spacer()
-
-                                            Text("9.5")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.tertiaryText)
-                                                .padding(.vertical, 4)
-                                                .padding(.horizontal, 8)
-                                                .background(recommendationRatingColor("9.5"))
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .padding(12)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .background(Colors.card)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }
                                     }
-                                    .padding(12)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Colors.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
 
                                 NavigationLink {
@@ -1049,16 +1045,19 @@ struct MyTripsView: View {
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
+            await loadRecommendationsForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             clampSelectedTripIndex()
             await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
+            await loadRecommendationsForSelectedTrip(force: true)
         }
         .task(id: selectedTripIndex) {
             await loadTribesForSelectedTrip()
             await loadTravelersForSelectedTrip()
+            await loadRecommendationsForSelectedTrip()
         }
         .onChange(of: isShowingTribeTrips) { _, newValue in
             if !newValue {
@@ -1113,6 +1112,15 @@ struct MyTripsView: View {
         await viewModel.loadTravelers(for: trip, supabase: supabase)
     }
 
+    @MainActor
+    private func loadRecommendationsForSelectedTrip(force: Bool = false) async {
+        guard let trip = selectedTrip else { return }
+        let trimmedDestination = trip.destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedDestination.isEmpty else { return }
+        if !force, viewModel.recommendationsByDestination[trimmedDestination] != nil { return }
+        await viewModel.loadRecommendations(for: trimmedDestination, supabase: supabase)
+    }
+
     private func clampSelectedTripIndex() {
         let maxIndex = max(0, min(viewModel.trips.count, 3) - 1)
         if selectedTripIndex > maxIndex {
@@ -1137,6 +1145,13 @@ struct MyTripsView: View {
     private var travelersForSelectedTrip: [UUID]? {
         guard let trip = selectedTrip else { return nil }
         return viewModel.travelersByTrip[trip.id]
+    }
+
+    private var recommendationsForSelectedTrip: [Recommendation]? {
+        guard let trip = selectedTrip else { return nil }
+        let trimmedDestination = trip.destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedDestination.isEmpty else { return nil }
+        return viewModel.recommendationsByDestination[trimmedDestination]
     }
 
     private func travelerCount(for trip: Trip) -> Int {
@@ -1181,6 +1196,48 @@ struct MyTripsView: View {
         .overlay {
             Circle()
                 .stroke(Colors.card, lineWidth: 3)
+        }
+    }
+
+    @ViewBuilder
+    private func recommendationAvatar(for recommendation: Recommendation) -> some View {
+        let photoURL = recommendationPhotoURL(for: recommendation)
+
+        Group {
+            if let photoURL {
+                AsyncImage(url: photoURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.3)
+                    }
+                }
+            } else {
+                Colors.secondaryText.opacity(0.3)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: 3)
+        }
+    }
+
+    private func recommendationPhotoURL(for recommendation: Recommendation) -> URL? {
+        guard let photoPath = recommendation.photoURL else { return nil }
+        if let url = URL(string: photoPath), url.scheme != nil {
+            return url
+        }
+        guard let supabase else { return nil }
+        do {
+            return try supabase.storage
+                .from("recommendation-photos")
+                .getPublicURL(path: photoPath)
+        } catch {
+            return nil
         }
     }
 

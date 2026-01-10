@@ -416,6 +416,7 @@ private struct RecommendationReviewView: View {
     @ObservedObject var viewModel: MyTripsViewModel
     let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var isCreating = false
 
     var body: some View {
         ScrollView {
@@ -506,6 +507,8 @@ private struct RecommendationReviewView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
+                    guard !isCreating else { return }
+                    isCreating = true
                     Task {
                         let ratingValue = Double(trimmedRating) ?? 0
                         await viewModel.addRecommendation(
@@ -517,17 +520,25 @@ private struct RecommendationReviewView: View {
                             supabase: supabase
                         )
                         await MainActor.run {
+                            isCreating = false
                             onFinish()
                         }
                     }
                 }) {
-                    Text("Create Recommendation")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+                    HStack(spacing: 8) {
+                        Text("Create Recommendation")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+
+                        if isCreating {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
                 .disabled(!isCreateEnabled)
                 .opacity(isCreateEnabled ? 1 : 0.6)

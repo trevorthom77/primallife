@@ -27,7 +27,7 @@ struct RecommendationCreationView: View {
                         .font(.customTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    Text("Share a place you love for this trip. Recommendations help others plan their trip so travelers can discover new places.")
+                    Text("Share a place you love for this trip. Add secret spots too, like shops, nature hideaways, and local gems. Recommendations help others plan their trip so travelers can discover new places.")
                         .font(.travelBody)
                         .foregroundStyle(Colors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -118,7 +118,7 @@ private struct RecommendationDetailsView: View {
                         .foregroundStyle(Colors.primaryText)
 
                     VStack(spacing: 8) {
-                        TextField("Add a name", text: $recommendationName)
+                        TextField("Snorkeling in Mangel Halto", text: $recommendationName)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
                             .padding()
@@ -150,7 +150,7 @@ private struct RecommendationDetailsView: View {
 
                     ZStack(alignment: .topLeading) {
                         if recommendationSubtext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Text("Add Note")
+                            Text("We saw a lot of turtles, plus calm water and great visibility for snorkeling.")
                                 .font(.travelBody)
                                 .foregroundStyle(Colors.secondaryText)
                                 .padding(.horizontal, 16)

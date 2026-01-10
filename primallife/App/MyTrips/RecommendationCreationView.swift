@@ -1,9 +1,11 @@
 import SwiftUI
 import UIKit
+import Supabase
 
 struct RecommendationCreationView: View {
     let trip: Trip
     let imageDetails: UnsplashImageDetails?
+    @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingDetails = false
 
@@ -67,12 +69,17 @@ struct RecommendationCreationView: View {
         )
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingDetails) {
-            RecommendationDetailsView()
+            RecommendationDetailsView(
+                destination: trip.destination,
+                viewModel: viewModel
+            )
         }
     }
 }
 
 private struct RecommendationDetailsView: View {
+    let destination: String
+    @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
@@ -211,9 +218,11 @@ private struct RecommendationDetailsView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingPhotoPrompt) {
             RecommendationPhotoPromptView(
+                destination: destination,
                 recommendationName: recommendationName,
                 recommendationSubtext: recommendationSubtext,
                 recommendationRating: recommendationRating,
+                viewModel: viewModel,
                 recommendationPhoto: $recommendationPhoto,
                 recommendationPhotoData: $recommendationPhotoData
             )
@@ -247,9 +256,11 @@ private struct RecommendationDetailsView: View {
 }
 
 private struct RecommendationPhotoPromptView: View {
+    let destination: String
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
+    @ObservedObject var viewModel: MyTripsViewModel
     @Binding var recommendationPhoto: UIImage?
     @Binding var recommendationPhotoData: Data?
     @Environment(\.dismiss) private var dismiss
@@ -368,20 +379,27 @@ private struct RecommendationPhotoPromptView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingReview) {
             RecommendationReviewView(
+                destination: destination,
                 recommendationName: recommendationName,
                 recommendationSubtext: recommendationSubtext,
                 recommendationRating: recommendationRating,
-                recommendationPhoto: recommendationPhoto
+                recommendationPhoto: recommendationPhoto,
+                recommendationPhotoData: recommendationPhotoData,
+                viewModel: viewModel
             )
         }
     }
 }
 
 private struct RecommendationReviewView: View {
+    let destination: String
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
     let recommendationPhoto: UIImage?
+    let recommendationPhotoData: Data?
+    @ObservedObject var viewModel: MyTripsViewModel
+    @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -472,7 +490,19 @@ private struct RecommendationReviewView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
-                Button(action: { }) {
+                Button(action: {
+                    Task {
+                        let ratingValue = Double(trimmedRating) ?? 0
+                        await viewModel.addRecommendation(
+                            destination: destination,
+                            name: recommendationName,
+                            note: recommendationSubtext,
+                            rating: ratingValue,
+                            photoData: recommendationPhotoData,
+                            supabase: supabase
+                        )
+                    }
+                }) {
                     Text("Create Recommendation")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)

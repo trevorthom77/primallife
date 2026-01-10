@@ -114,6 +114,7 @@ struct NewRecommendation: Encodable {
     let name: String
     let note: String
     let rating: Double
+    let photoURL: String?
 
     enum CodingKeys: String, CodingKey {
         case creatorID = "creator_id"
@@ -121,6 +122,7 @@ struct NewRecommendation: Encodable {
         case name
         case note
         case rating
+        case photoURL = "photo_url"
     }
 }
 
@@ -376,6 +378,7 @@ final class MyTripsViewModel: ObservableObject {
         name: String,
         note: String,
         rating: Double,
+        photoData: Data?,
         supabase: SupabaseClient?
     ) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -385,15 +388,29 @@ final class MyTripsViewModel: ObservableObject {
         guard !trimmedDestination.isEmpty, !trimmedName.isEmpty, !trimmedNote.isEmpty else { return }
         guard (1...10).contains(rating) else { return }
 
-        let payload = NewRecommendation(
-            creatorID: userID,
-            destination: trimmedDestination,
-            name: trimmedName,
-            note: trimmedNote,
-            rating: rating
-        )
-
         do {
+            var photoPath: String?
+            if let photoData, !photoData.isEmpty {
+                let path = "\(userID)/recommendations/\(UUID().uuidString).jpg"
+                try await supabase.storage
+                    .from("recommendation-photos")
+                    .upload(
+                        path,
+                        data: photoData,
+                        options: FileOptions(contentType: "image/jpeg", upsert: true)
+                    )
+                photoPath = path
+            }
+
+            let payload = NewRecommendation(
+                creatorID: userID,
+                destination: trimmedDestination,
+                name: trimmedName,
+                note: trimmedNote,
+                rating: rating,
+                photoURL: photoPath
+            )
+
             try await supabase
                 .from("recommendations")
                 .insert(payload)
@@ -888,7 +905,8 @@ struct MyTripsView: View {
                                 NavigationLink {
                                     RecommendationCreationView(
                                         trip: trip,
-                                        imageDetails: tripImageDetails[trip.id]
+                                        imageDetails: tripImageDetails[trip.id],
+                                        viewModel: viewModel
                                     )
                                 } label: {
                                     Text("Add Recommendation")

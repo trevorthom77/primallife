@@ -73,7 +73,11 @@ struct RecommendationCreationView: View {
             RecommendationDetailsView(
                 destination: trip.destination,
                 supabase: supabase,
-                viewModel: viewModel
+                viewModel: viewModel,
+                onFinish: {
+                    isShowingDetails = false
+                    dismiss()
+                }
             )
         }
     }
@@ -83,6 +87,7 @@ private struct RecommendationDetailsView: View {
     let destination: String
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
@@ -227,6 +232,7 @@ private struct RecommendationDetailsView: View {
                 recommendationRating: recommendationRating,
                 supabase: supabase,
                 viewModel: viewModel,
+                onFinish: onFinish,
                 recommendationPhoto: $recommendationPhoto,
                 recommendationPhotoData: $recommendationPhotoData
             )
@@ -266,6 +272,7 @@ private struct RecommendationPhotoPromptView: View {
     let recommendationRating: String
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
+    let onFinish: () -> Void
     @Binding var recommendationPhoto: UIImage?
     @Binding var recommendationPhotoData: Data?
     @Environment(\.dismiss) private var dismiss
@@ -391,7 +398,8 @@ private struct RecommendationPhotoPromptView: View {
                 recommendationPhoto: recommendationPhoto,
                 recommendationPhotoData: recommendationPhotoData,
                 supabase: supabase,
-                viewModel: viewModel
+                viewModel: viewModel,
+                onFinish: onFinish
             )
         }
     }
@@ -406,6 +414,7 @@ private struct RecommendationReviewView: View {
     let recommendationPhotoData: Data?
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -507,6 +516,9 @@ private struct RecommendationReviewView: View {
                             photoData: recommendationPhotoData,
                             supabase: supabase
                         )
+                        await MainActor.run {
+                            onFinish()
+                        }
                     }
                 }) {
                     Text("Create Recommendation")
@@ -517,6 +529,8 @@ private struct RecommendationReviewView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isCreateEnabled)
+                .opacity(isCreateEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -549,6 +563,12 @@ private struct RecommendationReviewView: View {
 
     private var trimmedRating: String {
         recommendationRating.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isCreateEnabled: Bool {
+        guard !trimmedName.isEmpty, !trimmedNote.isEmpty else { return false }
+        guard let ratingValue = Double(trimmedRating) else { return false }
+        return (1...10).contains(ratingValue)
     }
 }
 

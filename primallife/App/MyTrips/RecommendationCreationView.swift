@@ -5,6 +5,7 @@ import Supabase
 struct RecommendationCreationView: View {
     let trip: Trip
     let imageDetails: UnsplashImageDetails?
+    let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingDetails = false
@@ -71,6 +72,7 @@ struct RecommendationCreationView: View {
         .navigationDestination(isPresented: $isShowingDetails) {
             RecommendationDetailsView(
                 destination: trip.destination,
+                supabase: supabase,
                 viewModel: viewModel
             )
         }
@@ -79,6 +81,7 @@ struct RecommendationCreationView: View {
 
 private struct RecommendationDetailsView: View {
     let destination: String
+    let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var recommendationName = ""
@@ -222,6 +225,7 @@ private struct RecommendationDetailsView: View {
                 recommendationName: recommendationName,
                 recommendationSubtext: recommendationSubtext,
                 recommendationRating: recommendationRating,
+                supabase: supabase,
                 viewModel: viewModel,
                 recommendationPhoto: $recommendationPhoto,
                 recommendationPhotoData: $recommendationPhotoData
@@ -260,6 +264,7 @@ private struct RecommendationPhotoPromptView: View {
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
+    let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
     @Binding var recommendationPhoto: UIImage?
     @Binding var recommendationPhotoData: Data?
@@ -385,6 +390,7 @@ private struct RecommendationPhotoPromptView: View {
                 recommendationRating: recommendationRating,
                 recommendationPhoto: recommendationPhoto,
                 recommendationPhotoData: recommendationPhotoData,
+                supabase: supabase,
                 viewModel: viewModel
             )
         }
@@ -398,8 +404,8 @@ private struct RecommendationReviewView: View {
     let recommendationRating: String
     let recommendationPhoto: UIImage?
     let recommendationPhotoData: Data?
+    let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
-    @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

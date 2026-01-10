@@ -906,6 +906,7 @@ struct MyTripsView: View {
                                     RecommendationCreationView(
                                         trip: trip,
                                         imageDetails: tripImageDetails[trip.id],
+                                        supabase: supabase,
                                         viewModel: viewModel
                                     )
                                 } label: {

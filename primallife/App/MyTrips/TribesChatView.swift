@@ -842,7 +842,10 @@ struct TribesChatView: View {
                 .execute()
                 .value
 
-            let memberIDs = Array(Set(joinRows.map { $0.id }))
+            var memberIDs = Array(Set(joinRows.map { $0.id }))
+            if let currentUserID = supabase.auth.currentUser?.id {
+                memberIDs.removeAll { $0 == currentUserID }
+            }
             guard !memberIDs.isEmpty else {
                 members = []
                 return

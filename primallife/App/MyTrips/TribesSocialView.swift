@@ -22,10 +22,13 @@ struct TribesSocialView: View {
     @State private var placeImageURL: URL?
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
+    @State private var isShowingMembersSheet = false
+    @State private var totalTravelers = 0
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
     @State private var isJoiningTribe = false
     @State private var currentUserGender: String?
+    @State private var members: [TribeMember] = []
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -135,51 +138,56 @@ struct TribesSocialView: View {
                                 .allowsHitTesting(false)
                         }
                         .overlay(alignment: .bottomLeading) {
-                            HStack(spacing: -8) {
-                                Image("profile1")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Image("profile2")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Image("profile3")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                ZStack {
-                                    Circle()
-                                        .fill(Colors.background)
+                            Button(action: {
+                                isShowingMembersSheet = true
+                            }) {
+                                HStack(spacing: -8) {
+                                    Image("profile1")
+                                        .resizable()
+                                        .scaledToFill()
                                         .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
                                         .overlay {
                                             Circle()
                                                 .stroke(Colors.card, lineWidth: 3)
                                         }
 
-                                    Text("67+")
-                                        .font(.custom(Fonts.semibold, size: 12))
-                                        .foregroundStyle(Colors.primaryText)
+                                    Image("profile2")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    Image("profile3")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    ZStack {
+                                        Circle()
+                                            .fill(Colors.background)
+                                            .frame(width: 36, height: 36)
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.card, lineWidth: 3)
+                                            }
+
+                                        Text("\(totalTravelers)+")
+                                            .font(.custom(Fonts.semibold, size: 12))
+                                            .foregroundStyle(Colors.primaryText)
+                                    }
                                 }
                             }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 16)
                         }
@@ -427,6 +435,7 @@ struct TribesSocialView: View {
         .task {
             await loadJoinStatus()
             await loadCurrentUserGender()
+            await loadMemberCount()
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $shouldNavigateToChat) {
@@ -443,6 +452,9 @@ struct TribesSocialView: View {
                 EmptyView()
             }
         }
+        .sheet(isPresented: $isShowingMembersSheet) {
+            membersSheet
+        }
     }
 }
 
@@ -458,6 +470,28 @@ private struct TribeJoinPayload: Encodable {
 
 private struct TribeJoinRecord: Decodable {
     let id: UUID
+}
+
+private struct TribeMemberRow: Decodable {
+    let id: UUID
+}
+
+private struct TribeMemberProfileRow: Decodable {
+    let id: UUID
+    let fullName: String
+    let avatarPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullName = "full_name"
+        case avatarPath = "avatar_url"
+    }
+}
+
+private struct TribeMember: Identifiable {
+    let id: UUID
+    let fullName: String
+    let avatarURL: URL?
 }
 
 private struct OnboardingGenderRow: Decodable {
@@ -496,6 +530,105 @@ private extension TribesSocialView {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
         let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
         return "\(start) - \(end)"
+    }
+
+    var membersSheet: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 14) {
+                    ForEach(members) { member in
+                        memberRow(member)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+            }
+        }
+        .task {
+            await loadMembers()
+        }
+    }
+
+    func memberRow(_ member: TribeMember) -> some View {
+        HStack(spacing: 12) {
+            if let avatarURL = member.avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(width: 28, height: 28)
+                .clipShape(Circle())
+            } else {
+                Color.clear
+                    .frame(width: 28, height: 28)
+            }
+
+            Text(member.fullName)
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @MainActor
+    func loadMembers() async {
+        guard let supabase, let tribeID else { return }
+
+        do {
+            let joinRows: [TribeMemberRow] = try await supabase
+                .from("tribes_join")
+                .select("id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+                .value
+
+            var memberIDs = Array(Set(joinRows.map { $0.id }))
+            if let currentUserID = supabase.auth.currentUser?.id {
+                memberIDs.removeAll { $0 == currentUserID }
+            }
+            guard !memberIDs.isEmpty else {
+                members = []
+                return
+            }
+
+            let rows: [TribeMemberProfileRow] = try await supabase
+                .from("onboarding")
+                .select("id, full_name, avatar_url")
+                .in("id", values: memberIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            let newMembers = rows.map { row -> TribeMember in
+                let avatarURL: URL?
+                if let avatarPath = row.avatarPath, !avatarPath.isEmpty {
+                    avatarURL = try? supabase.storage
+                        .from("profile-photos")
+                        .getPublicURL(path: avatarPath)
+                } else {
+                    avatarURL = nil
+                }
+
+                return TribeMember(
+                    id: row.id,
+                    fullName: row.fullName,
+                    avatarURL: avatarURL
+                )
+            }
+
+            members = newMembers
+        } catch {
+            return
+        }
     }
 
     @MainActor
@@ -594,6 +727,23 @@ private extension TribesSocialView {
         if let freshGender = await userGender(for: userID, supabase: supabase) {
             currentUserGender = freshGender
             cacheUserGender(freshGender, for: userID)
+        }
+    }
+
+    @MainActor
+    func loadMemberCount() async {
+        guard let supabase, let tribeID else { return }
+
+        do {
+            let rows: [TribeMemberRow] = try await supabase
+                .from("tribes_join")
+                .select("id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+                .value
+            totalTravelers = rows.count
+        } catch {
+            return
         }
     }
 

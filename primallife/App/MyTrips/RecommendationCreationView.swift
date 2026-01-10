@@ -76,8 +76,10 @@ private struct RecommendationDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
+    @State private var recommendationRating = ""
     @FocusState private var isNameFocused: Bool
     @FocusState private var isNoteFocused: Bool
+    @FocusState private var isRatingFocused: Bool
     @State private var isShowingPhotoPrompt = false
     private let nameLimit = 60
 
@@ -149,6 +151,27 @@ private struct RecommendationDetailsView: View {
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Rating (1-10)")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    TextField("e.g., 5.6", text: $recommendationRating)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+                        .padding()
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .keyboardType(.decimalPad)
+                        .focused($isRatingFocused)
+                        .onChange(of: recommendationRating) { _, newValue in
+                            let sanitized = sanitizeRating(newValue)
+                            if sanitized != newValue {
+                                recommendationRating = sanitized
+                            }
+                        }
+                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -157,6 +180,7 @@ private struct RecommendationDetailsView: View {
         .onTapGesture {
             isNameFocused = false
             isNoteFocused = false
+            isRatingFocused = false
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -186,6 +210,31 @@ private struct RecommendationDetailsView: View {
         .navigationDestination(isPresented: $isShowingPhotoPrompt) {
             RecommendationPhotoPromptView()
         }
+    }
+
+    private func sanitizeRating(_ value: String) -> String {
+        var result = ""
+        var hasDecimal = false
+        var decimalCount = 0
+
+        for character in value {
+            if character.isWholeNumber {
+                if hasDecimal {
+                    if decimalCount >= 1 { continue }
+                    decimalCount += 1
+                }
+                result.append(character)
+            } else if character == "." && !hasDecimal {
+                hasDecimal = true
+                result.append(character)
+            }
+        }
+
+        if let number = Double(result), number > 10 {
+            return "10"
+        }
+
+        return result
     }
 }
 

@@ -766,7 +766,7 @@ struct MyTripsView: View {
                                                         .font(.travelDetail)
                                                         .foregroundStyle(Colors.primaryText)
 
-                                                    Text("Montegey Bay, Jamaica")
+                                                    Text(selectedTripDestination)
                                                         .font(.travelDetail)
                                                         .foregroundStyle(Colors.secondaryText)
                                                         .lineLimit(1)

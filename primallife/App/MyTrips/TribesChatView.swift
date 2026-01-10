@@ -185,6 +185,7 @@ struct TribesChatView: View {
     @State private var headerImage: Image?
     @State private var plans: [TribePlan] = []
     @State private var selectedPlan: TribePlan?
+    @State private var isShowingMembersSheet = false
     @State private var messages: [TribeChatMessage] = []
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
@@ -305,6 +306,10 @@ struct TribesChatView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $isShowingMembersSheet) {
+            Colors.background
+                .ignoresSafeArea()
         }
     }
 
@@ -563,51 +568,56 @@ struct TribesChatView: View {
                     .foregroundStyle(Colors.primaryText)
                     .lineLimit(1)
 
-                HStack(spacing: -8) {
-                    Image("profile1")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 28, height: 28)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-
-                    Image("profile2")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 28, height: 28)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-
-                    Image("profile3")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 28, height: 28)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-
-                    ZStack {
-                        Circle()
-                            .fill(Colors.background)
+                Button(action: {
+                    isShowingMembersSheet = true
+                }) {
+                    HStack(spacing: -8) {
+                        Image("profile1")
+                            .resizable()
+                            .scaledToFill()
                             .frame(width: 28, height: 28)
+                            .clipShape(Circle())
                             .overlay {
                                 Circle()
                                     .stroke(Colors.card, lineWidth: 3)
                             }
 
-                        Text("\(totalTravelers)+")
-                            .font(.badgeDetail)
-                            .foregroundStyle(Colors.primaryText)
+                        Image("profile2")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+
+                        Image("profile3")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+
+                        ZStack {
+                            Circle()
+                                .fill(Colors.background)
+                                .frame(width: 28, height: 28)
+                                .overlay {
+                                    Circle()
+                                        .stroke(Colors.card, lineWidth: 3)
+                                }
+
+                            Text("\(totalTravelers)+")
+                                .font(.badgeDetail)
+                                .foregroundStyle(Colors.primaryText)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
             }
             .frame(height: 48, alignment: .leading)
 

@@ -877,7 +877,7 @@ struct MyTripsView: View {
                                                 .foregroundStyle(Colors.secondaryText)
                                                 .padding(.vertical, 4)
                                         } else {
-                                            ForEach(recommendations) { recommendation in
+                                        ForEach(recommendations.prefix(2)) { recommendation in
                                                 let ratingText = String(format: "%.1f", recommendation.rating)
 
                                                 HStack(spacing: 12) {

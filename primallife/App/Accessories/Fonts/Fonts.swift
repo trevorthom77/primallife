@@ -28,6 +28,10 @@ extension Font {
     static var travelBody: Font {
         .custom(Fonts.regular, size: 20)
     }
+
+    static var travelBodySemibold: Font {
+        .custom(Fonts.semibold, size: 20)
+    }
     
     static var travelDetail: Font {
         .custom(Fonts.semibold, size: 18)

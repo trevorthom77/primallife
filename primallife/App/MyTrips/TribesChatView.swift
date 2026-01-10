@@ -332,41 +332,48 @@ struct TribesChatView: View {
     }
 
     private var membersSheet: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 14) {
-                    ForEach(members) { member in
-                        memberRow(member)
+                ScrollView {
+                    VStack(spacing: 14) {
+                        ForEach(members) { member in
+                            memberRow(member)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
             }
-        }
-        .task {
-            await loadMembers()
+            .task {
+                await loadMembers()
+            }
         }
     }
 
     private func memberRow(_ member: TribeMember) -> some View {
-        HStack(spacing: 12) {
-            if let avatarURL = member.avatarURL {
-                messageAvatar(avatarURL)
-            } else {
-                Color.clear
-                    .frame(width: 28, height: 28)
+        NavigationLink {
+            OthersProfileView(userID: member.id)
+        } label: {
+            HStack(spacing: 12) {
+                if let avatarURL = member.avatarURL {
+                    messageAvatar(avatarURL, size: 36)
+                } else {
+                    Color.clear
+                        .frame(width: 36, height: 36)
+                }
+
+                Text(member.fullName)
+                    .font(.travelBodySemibold)
+                    .foregroundStyle(Colors.primaryText)
+
+                Spacer()
             }
-
-            Text(member.fullName)
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
     }
 
     private var plansRow: some View {
@@ -556,7 +563,7 @@ struct TribesChatView: View {
     }
 
     @ViewBuilder
-    private func messageAvatar(_ avatarURL: URL?) -> some View {
+    private func messageAvatar(_ avatarURL: URL?, size: CGFloat = 28) -> some View {
         if let avatarURL {
             Group {
                 if let cachedImage = cachedAvatarImage(for: avatarURL) {
@@ -581,7 +588,7 @@ struct TribesChatView: View {
                     }
                 }
             }
-            .frame(width: 28, height: 28)
+            .frame(width: size, height: size)
             .clipShape(Circle())
         }
     }

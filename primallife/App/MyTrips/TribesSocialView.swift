@@ -533,51 +533,58 @@ private extension TribesSocialView {
     }
 
     var membersSheet: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 14) {
-                    ForEach(members) { member in
-                        memberRow(member)
+                ScrollView {
+                    VStack(spacing: 14) {
+                        ForEach(members) { member in
+                            memberRow(member)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
             }
-        }
-        .task {
-            await loadMembers()
+            .task {
+                await loadMembers()
+            }
         }
     }
 
     func memberRow(_ member: TribeMember) -> some View {
-        HStack(spacing: 12) {
-            if let avatarURL = member.avatarURL {
-                AsyncImage(url: avatarURL) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        Color.clear
+        NavigationLink {
+            OthersProfileView(userID: member.id)
+        } label: {
+            HStack(spacing: 12) {
+                if let avatarURL = member.avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Color.clear
+                        }
                     }
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                } else {
+                    Color.clear
+                        .frame(width: 36, height: 36)
                 }
-                .frame(width: 28, height: 28)
-                .clipShape(Circle())
-            } else {
-                Color.clear
-                    .frame(width: 28, height: 28)
+
+                Text(member.fullName)
+                    .font(.travelBodySemibold)
+                    .foregroundStyle(Colors.primaryText)
+
+                Spacer()
             }
-
-            Text(member.fullName)
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
     }
 
     @MainActor

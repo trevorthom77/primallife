@@ -870,42 +870,49 @@ struct MyTripsView: View {
                                     }
 
                                     if let recommendations = recommendationsForSelectedTrip {
-                                        ForEach(recommendations) { recommendation in
-                                            let ratingText = String(format: "%.1f", recommendation.rating)
+                                        if recommendations.isEmpty {
+                                            Text("No recommendations yet")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.secondaryText)
+                                                .padding(.vertical, 4)
+                                        } else {
+                                            ForEach(recommendations) { recommendation in
+                                                let ratingText = String(format: "%.1f", recommendation.rating)
 
-                                            HStack(spacing: 12) {
-                                                recommendationAvatar(for: recommendation)
+                                                HStack(spacing: 12) {
+                                                    recommendationAvatar(for: recommendation)
 
-                                                VStack(alignment: .leading, spacing: 6) {
-                                                    Text(recommendation.name)
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.primaryText)
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
-
-                                                    HStack(spacing: 8) {
-                                                        Text(recommendation.destination)
+                                                    VStack(alignment: .leading, spacing: 6) {
+                                                        Text(recommendation.name)
                                                             .font(.travelDetail)
-                                                            .foregroundStyle(Colors.secondaryText)
+                                                            .foregroundStyle(Colors.primaryText)
                                                             .lineLimit(1)
                                                             .truncationMode(.tail)
+
+                                                        HStack(spacing: 8) {
+                                                            Text(recommendation.destination)
+                                                                .font(.travelDetail)
+                                                                .foregroundStyle(Colors.secondaryText)
+                                                                .lineLimit(1)
+                                                                .truncationMode(.tail)
+                                                        }
                                                     }
+
+                                                    Spacer()
+
+                                                    Text(ratingText)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.tertiaryText)
+                                                        .padding(.vertical, 4)
+                                                        .padding(.horizontal, 8)
+                                                        .background(recommendationRatingColor(ratingText))
+                                                        .clipShape(RoundedRectangle(cornerRadius: 8))
                                                 }
-
-                                                Spacer()
-
-                                                Text(ratingText)
-                                                    .font(.travelDetail)
-                                                    .foregroundStyle(Colors.tertiaryText)
-                                                    .padding(.vertical, 4)
-                                                    .padding(.horizontal, 8)
-                                                    .background(recommendationRatingColor(ratingText))
-                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .padding(12)
+                                                .frame(maxWidth: .infinity, minHeight: 88, maxHeight: 88, alignment: .leading)
+                                                .background(Colors.card)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
                                             }
-                                            .padding(12)
-                                            .frame(maxWidth: .infinity, minHeight: 88, maxHeight: 88, alignment: .leading)
-                                            .background(Colors.card)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }
                                     }
                                 }

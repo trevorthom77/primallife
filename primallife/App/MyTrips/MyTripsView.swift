@@ -165,12 +165,21 @@ final class MyTripsViewModel: ObservableObject {
         }
     }
 
+    private struct TribeMemberCountRow: Decodable {
+        let tribeID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case tribeID = "tribe_id"
+        }
+    }
+
     @Published var trips: [Trip] = []
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published var travelersByTrip: [UUID: [UUID]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
+    @Published private(set) var tribeMemberCounts: [UUID: Int] = [:]
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
     private var pendingTripKeys: Set<String> = []
 
@@ -256,6 +265,7 @@ final class MyTripsViewModel: ObservableObject {
 
             tribesByTrip[trip.id] = fetchedTribes
             await loadCreators(for: fetchedTribes, supabase: supabase)
+            await loadMemberCounts(for: fetchedTribes, supabase: supabase)
         } catch {
             tribesByTrip[trip.id] = []
         }
@@ -330,6 +340,10 @@ final class MyTripsViewModel: ObservableObject {
         return CountryDatabase.all.first(where: { $0.id == origin })?.name
     }
 
+    func memberCount(for tribeID: UUID) -> Int {
+        tribeMemberCounts[tribeID] ?? 0
+    }
+
     func creatorAge(for userID: UUID) -> Int? {
         guard let birthdayString = tribeCreatorsByID[userID.uuidString.lowercased()]?.birthday,
               !birthdayString.isEmpty else {
@@ -346,6 +360,33 @@ final class MyTripsViewModel: ObservableObject {
 
     private func loadCreators(for tribes: [Tribe], supabase: SupabaseClient) async {
         await loadCreators(for: tribes.map { $0.ownerID }, supabase: supabase)
+    }
+
+    private func loadMemberCounts(for tribes: [Tribe], supabase: SupabaseClient) async {
+        let tribeIDs = Array(Set(tribes.map { $0.id }))
+        guard !tribeIDs.isEmpty else { return }
+
+        do {
+            let rows: [TribeMemberCountRow] = try await supabase
+                .from("tribes_join")
+                .select("tribe_id")
+                .in("tribe_id", values: tribeIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            var counts: [UUID: Int] = [:]
+            for row in rows {
+                counts[row.tribeID, default: 0] += 1
+            }
+            for tribeID in tribeIDs where counts[tribeID] == nil {
+                counts[tribeID] = 0
+            }
+            tribeMemberCounts.merge(counts) { _, new in new }
+        } catch {
+            for tribeID in tribeIDs where tribeMemberCounts[tribeID] == nil {
+                tribeMemberCounts[tribeID] = 0
+            }
+        }
     }
 
     private func loadCreators(for userIDs: [UUID], supabase: SupabaseClient) async {
@@ -650,7 +691,7 @@ struct MyTripsView: View {
                                                                             .stroke(Colors.card, lineWidth: 3)
                                                                     }
                                                                 
-                                                                Text("67+")
+                                                                Text("\(viewModel.memberCount(for: tribe.id))+")
                                                                     .font(.custom(Fonts.semibold, size: 12))
                                                                     .foregroundStyle(Colors.primaryText)
                                                             }

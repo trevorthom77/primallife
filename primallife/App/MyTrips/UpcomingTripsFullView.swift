@@ -197,7 +197,7 @@ struct UpcomingTripsFullView: View {
                                                                         .stroke(Colors.card, lineWidth: 3)
                                                                 }
 
-                                                            Text("67+")
+                                                            Text("\(viewModel.memberCount(for: tribe.id))+")
                                                                 .font(.badgeDetail)
                                                                 .foregroundStyle(Colors.primaryText)
                                                         }

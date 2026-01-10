@@ -538,14 +538,24 @@ private extension TribesSocialView {
                 Colors.background
                     .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 14) {
-                        ForEach(members) { member in
-                            memberRow(member)
+                if members.isEmpty {
+                    Text("No travelers yet")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            ForEach(members) { member in
+                                memberRow(member)
+                            }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
                 }
             }
             .task {

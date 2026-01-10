@@ -744,21 +744,63 @@ struct MyTripsView: View {
                                         }
                                     }
 
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Snorkeling in Montego Bay")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        HStack(spacing: 12) {
+                                            Image("profile9")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 48, height: 48)
+                                                .clipShape(Circle())
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(Colors.card, lineWidth: 3)
+                                                }
 
-                                        Text("Secret turtle spot just past the reef. Go early for the clearest water.")
-                                            .font(.travelBody)
-                                            .foregroundStyle(Colors.secondaryText)
-                                            .fixedSize(horizontal: false, vertical: true)
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text("Snorkeling in Montego Bay")
+                                                    .font(.travelDetail)
+                                                    .foregroundStyle(Colors.primaryText)
+
+                                                HStack(spacing: 8) {
+                                                    Text("🇯🇲")
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.primaryText)
+
+                                                    Text("Montegey Bay, Jamaica")
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.secondaryText)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
+                                                }
+                                            }
+
+                                            Spacer()
+
+                                            Text("9.5")
+                                                .font(.travelDetail)
+                                                .foregroundStyle(Colors.tertiaryText)
+                                                .padding(.vertical, 4)
+                                                .padding(.horizontal, 8)
+                                                .background(Colors.accent)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        }
                                     }
-                                    .padding(16)
+                                    .padding(12)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(Colors.card)
-                                    .cornerRadius(12)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
+
+                                Button { } label: {
+                                    Text("Add Recommendation")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                }
+                                .buttonStyle(.plain)
 
                                 HStack {
                                     Text("Travelers going")

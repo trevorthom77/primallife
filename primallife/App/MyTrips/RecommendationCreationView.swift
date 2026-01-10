@@ -212,6 +212,8 @@ private struct RecommendationDetailsView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -262,6 +264,24 @@ private struct RecommendationDetailsView: View {
         }
 
         return result
+    }
+
+    private var trimmedName: String {
+        recommendationName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedNote: String {
+        recommendationSubtext.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedRating: String {
+        recommendationRating.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isContinueEnabled: Bool {
+        guard !trimmedName.isEmpty, !trimmedNote.isEmpty else { return false }
+        guard let ratingValue = Double(trimmedRating) else { return false }
+        return (1...10).contains(ratingValue)
     }
 }
 

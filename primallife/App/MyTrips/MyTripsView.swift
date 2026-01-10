@@ -762,10 +762,6 @@ struct MyTripsView: View {
                                                     .foregroundStyle(Colors.primaryText)
 
                                                 HStack(spacing: 8) {
-                                                    Text("🇯🇲")
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.primaryText)
-
                                                     Text(selectedTripDestination)
                                                         .font(.travelDetail)
                                                         .foregroundStyle(Colors.secondaryText)

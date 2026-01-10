@@ -96,17 +96,6 @@ struct TribeTripsView: View {
                     showsAttribution: false,
                     prefetchedDetails: imageDetails
                 )
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("What this does")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
-
-                    Text("We’ll set up a tribe tied to your trip dates so you and your crew can coordinate in one place.")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)

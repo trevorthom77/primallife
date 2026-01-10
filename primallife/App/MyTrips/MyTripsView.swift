@@ -791,7 +791,12 @@ struct MyTripsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
 
-                                Button { } label: {
+                                NavigationLink {
+                                    RecommendationCreationView(
+                                        trip: trip,
+                                        imageDetails: tripImageDetails[trip.id]
+                                    )
+                                } label: {
                                     Text("Add Recommendation")
                                         .font(.travelDetail)
                                         .foregroundStyle(Colors.tertiaryText)

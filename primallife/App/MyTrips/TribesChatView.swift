@@ -169,6 +169,7 @@ private struct TribeChatCacheEntry {
     var messages: [TribeChatMessage]
     var headerImage: Image?
     var avatarImageCache: [URL: Image]
+    var memberCount: Int
 }
 
 private enum TribeChatCache {
@@ -207,8 +208,8 @@ struct TribesChatView: View {
         self.title = title
         self.location = location
         self.imageURL = imageURL
-        _totalTravelers = State(initialValue: totalTravelers)
         let cachedEntry = TribeChatCache.entries[tribeID]
+        _totalTravelers = State(initialValue: cachedEntry?.memberCount ?? totalTravelers)
         _headerImage = State(initialValue: cachedEntry?.headerImage ?? initialHeaderImage)
         _messages = State(initialValue: cachedEntry?.messages ?? [])
         _avatarImageCache = State(initialValue: cachedEntry?.avatarImageCache ?? [:])
@@ -757,6 +758,7 @@ struct TribesChatView: View {
                 .execute()
                 .value
             totalTravelers = rows.count
+            cacheMemberCount(rows.count)
         } catch {
             return
         }
@@ -830,7 +832,12 @@ struct TribesChatView: View {
 
     private func cacheMessages(_ newMessages: [TribeChatMessage]) {
         var entry = TribeChatCache.entries[tribeID]
-            ?? TribeChatCacheEntry(messages: [], headerImage: nil, avatarImageCache: [:])
+            ?? TribeChatCacheEntry(
+                messages: [],
+                headerImage: nil,
+                avatarImageCache: [:],
+                memberCount: totalTravelers
+            )
         entry.messages = newMessages
         TribeChatCache.entries[tribeID] = entry
     }
@@ -840,9 +847,22 @@ struct TribesChatView: View {
             ?? TribeChatCacheEntry(
                 messages: messages,
                 headerImage: nil,
-                avatarImageCache: avatarImageCache
+                avatarImageCache: avatarImageCache,
+                memberCount: totalTravelers
             )
         entry.headerImage = image
+        TribeChatCache.entries[tribeID] = entry
+    }
+
+    private func cacheMemberCount(_ count: Int) {
+        var entry = TribeChatCache.entries[tribeID]
+            ?? TribeChatCacheEntry(
+                messages: messages,
+                headerImage: headerImage,
+                avatarImageCache: avatarImageCache,
+                memberCount: count
+            )
+        entry.memberCount = count
         TribeChatCache.entries[tribeID] = entry
     }
 
@@ -856,7 +876,8 @@ struct TribesChatView: View {
             ?? TribeChatCacheEntry(
                 messages: messages,
                 headerImage: headerImage,
-                avatarImageCache: [:]
+                avatarImageCache: [:],
+                memberCount: totalTravelers
             )
         entry.avatarImageCache[url] = image
         TribeChatCache.entries[tribeID] = entry

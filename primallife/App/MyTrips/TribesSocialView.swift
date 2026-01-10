@@ -436,7 +436,7 @@ struct TribesSocialView: View {
                     title: title,
                     location: location,
                     imageURL: imageURL,
-                    totalTravelers: 67,
+                    totalTravelers: 0,
                     initialHeaderImage: headerImage ?? initialHeaderImage
                 )
             } else {

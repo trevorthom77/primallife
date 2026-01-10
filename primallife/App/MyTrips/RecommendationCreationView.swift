@@ -466,6 +466,23 @@ private struct RecommendationReviewView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: { }) {
+                    Text("Create Recommendation")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
         .background(
             Colors.background
                 .ignoresSafeArea()

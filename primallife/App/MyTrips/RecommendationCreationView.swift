@@ -7,6 +7,7 @@ struct RecommendationCreationView: View {
     let imageDetails: UnsplashImageDetails?
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingDetails = false
 
@@ -76,7 +77,7 @@ struct RecommendationCreationView: View {
                 viewModel: viewModel,
                 onFinish: {
                     isShowingDetails = false
-                    dismiss()
+                    onFinish()
                 }
             )
         }

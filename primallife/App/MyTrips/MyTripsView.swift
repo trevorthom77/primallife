@@ -570,6 +570,7 @@ struct MyTripsView: View {
     @State private var isShowingTrips = false
     @State private var isShowingUpcomingTripsSheet = false
     @State private var isShowingTribeTrips = false
+    @State private var isShowingRecommendationCreation = false
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
     @State private var tribeImageURLCache: [UUID: URL] = [:]
@@ -917,14 +918,9 @@ struct MyTripsView: View {
                                     }
                                 }
 
-                                NavigationLink {
-                                    RecommendationCreationView(
-                                        trip: trip,
-                                        imageDetails: tripImageDetails[trip.id],
-                                        supabase: supabase,
-                                        viewModel: viewModel
-                                    )
-                                } label: {
+                                Button(action: {
+                                    isShowingRecommendationCreation = true
+                                }) {
                                     Text("Add Recommendation")
                                         .font(.travelDetail)
                                         .foregroundStyle(Colors.tertiaryText)
@@ -1041,6 +1037,21 @@ struct MyTripsView: View {
                         imageDetails: tripImageDetails[trip.id],
                         onFinish: {
                             isShowingTribeTrips = false
+                        }
+                    )
+                } else {
+                    EmptyView()
+                }
+            }
+            .navigationDestination(isPresented: $isShowingRecommendationCreation) {
+                if let trip = selectedTrip {
+                    RecommendationCreationView(
+                        trip: trip,
+                        imageDetails: tripImageDetails[trip.id],
+                        supabase: supabase,
+                        viewModel: viewModel,
+                        onFinish: {
+                            isShowingRecommendationCreation = false
                         }
                     )
                 } else {

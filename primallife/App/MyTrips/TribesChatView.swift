@@ -118,6 +118,10 @@ private struct TribePlanRow: Decodable {
     }
 }
 
+private struct TribeMemberRow: Decodable {
+    let id: UUID
+}
+
 private struct TribeMessagePayload: Encodable {
     let tribeID: UUID
     let senderID: UUID
@@ -176,7 +180,7 @@ struct TribesChatView: View {
     let title: String
     let location: String
     let imageURL: URL?
-    let totalTravelers: Int
+    @State private var totalTravelers: Int
     @State private var headerImage: Image?
     @State private var plans: [TribePlan] = []
     @State private var selectedPlan: TribePlan?
@@ -203,7 +207,7 @@ struct TribesChatView: View {
         self.title = title
         self.location = location
         self.imageURL = imageURL
-        self.totalTravelers = totalTravelers
+        _totalTravelers = State(initialValue: totalTravelers)
         let cachedEntry = TribeChatCache.entries[tribeID]
         _headerImage = State(initialValue: cachedEntry?.headerImage ?? initialHeaderImage)
         _messages = State(initialValue: cachedEntry?.messages ?? [])
@@ -282,6 +286,7 @@ struct TribesChatView: View {
         .task(id: tribeID) {
             await loadPlans()
             await loadMessages()
+            await loadMemberCount()
             await startRealtime()
         }
         .onDisappear {
@@ -737,6 +742,23 @@ struct TribesChatView: View {
             messages = newMessages
             cacheMessages(newMessages)
         } catch {
+        }
+    }
+
+    @MainActor
+    private func loadMemberCount() async {
+        guard let supabase else { return }
+
+        do {
+            let rows: [TribeMemberRow] = try await supabase
+                .from("tribes_join")
+                .select("id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+                .value
+            totalTravelers = rows.count
+        } catch {
+            return
         }
     }
 

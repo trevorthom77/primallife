@@ -515,20 +515,25 @@ struct TribesChatView: View {
     private func messageBubble(_ message: TribeChatMessage, showsHeader: Bool) -> some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             if showsHeader, !message.senderName.isEmpty {
-                HStack(spacing: 6) {
-                    if !message.isUser {
-                        messageAvatar(message.senderAvatarURL)
-                    }
+                NavigationLink {
+                    OthersProfileView(userID: message.senderID)
+                } label: {
+                    HStack(spacing: 6) {
+                        if !message.isUser {
+                            messageAvatar(message.senderAvatarURL)
+                        }
 
-                    Text(message.senderName)
-                        .font(.custom(Fonts.regular, size: 16))
-                        .foregroundStyle(Colors.secondaryText)
+                        Text(message.senderName)
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
 
-                    if message.isUser {
-                        messageAvatar(message.senderAvatarURL)
+                        if message.isUser {
+                            messageAvatar(message.senderAvatarURL)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+                .buttonStyle(.plain)
             }
 
             Text(message.text)

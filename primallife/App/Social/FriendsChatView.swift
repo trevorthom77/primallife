@@ -272,20 +272,25 @@ struct FriendsChatView: View {
             if showsHeader,
                let headerName = message.isUser ? currentUserName : friendName,
                !headerName.isEmpty {
-                HStack(spacing: 6) {
-                    if !message.isUser {
-                        friendMessageAvatar
-                    }
+                NavigationLink {
+                    OthersProfileView(userID: message.senderID)
+                } label: {
+                    HStack(spacing: 6) {
+                        if !message.isUser {
+                            friendMessageAvatar
+                        }
 
-                    Text(headerName)
-                        .font(.custom(Fonts.regular, size: 16))
-                        .foregroundStyle(Colors.secondaryText)
+                        Text(headerName)
+                            .font(.custom(Fonts.regular, size: 16))
+                            .foregroundStyle(Colors.secondaryText)
 
-                    if message.isUser {
-                        currentUserMessageAvatar
+                        if message.isUser {
+                            currentUserMessageAvatar
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+                .buttonStyle(.plain)
             }
 
             Text(message.text)

@@ -520,6 +520,7 @@ struct MyTripsView: View {
                                                     location: trip.destination,
                                                     dates: tripDateRange(for: trip),
                                                     imageQuery: tripImageQuery(for: trip),
+                                                    participantCount: travelerCount(for: trip),
                                                     showsAttribution: true,
                                                     allowsHitTesting: true,
                                                     prefetchedDetails: tripImageDetails[trip.id]
@@ -976,6 +977,14 @@ struct MyTripsView: View {
     private var travelersForSelectedTrip: [UUID]? {
         guard let trip = selectedTrip else { return nil }
         return viewModel.travelersByTrip[trip.id]
+    }
+
+    private func travelerCount(for trip: Trip) -> Int {
+        let travelers = viewModel.travelersByTrip[trip.id] ?? []
+        if let currentUserID = supabase?.auth.currentUser?.id {
+            return travelers.filter { $0 != currentUserID }.count
+        }
+        return travelers.count
     }
 
     private var isLoadingTribesForSelectedTrip: Bool {

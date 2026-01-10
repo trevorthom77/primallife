@@ -52,6 +52,7 @@ struct UpcomingTripsFullView: View {
                         location: trip.destination,
                         dates: tripDateRange(for: trip),
                         imageQuery: tripImageQuery(for: trip),
+                        participantCount: travelerCount,
                         prefetchedDetails: prefetchedDetails
                     )
 
@@ -363,10 +364,16 @@ struct UpcomingTripsFullView: View {
         return "\(count)+"
     }
 
+    private var travelerCount: Int {
+        let travelers = travelersForTrip ?? []
+        if let currentUserID = supabase?.auth.currentUser?.id {
+            return travelers.filter { $0 != currentUserID }.count
+        }
+        return travelers.count
+    }
+
     private var travelerCountText: String {
-        let currentUserID = supabase?.auth.currentUser?.id
-        let count = travelersForTrip?.filter { $0 != currentUserID }.count ?? 0
-        return "\(count)+"
+        "\(travelerCount)+"
     }
 
     private var isLoadingTribesForTrip: Bool {

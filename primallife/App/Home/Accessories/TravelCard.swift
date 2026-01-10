@@ -16,6 +16,7 @@ struct TravelCard: View {
     var dates: String = "Jan 12–20"
     var imageQuery: String = "Costa Rica"
     var showsParticipants: Bool = true
+    var participantCount: Int = 0
     var showsAttribution: Bool = false
     var allowsHitTesting: Bool = false
     var prefetchedDetails: UnsplashImageDetails? = nil
@@ -144,7 +145,7 @@ struct TravelCard: View {
                                     .stroke(Colors.card, lineWidth: 3)
                             }
                         
-                        Text("67+")
+                        Text("\(participantCount)+")
                             .font(.custom(Fonts.semibold, size: 12))
                             .foregroundStyle(Colors.primaryText)
                     }

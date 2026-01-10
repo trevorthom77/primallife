@@ -448,6 +448,10 @@ private struct TribeJoinRecord: Decodable {
     let id: UUID
 }
 
+private struct OnboardingGenderRow: Decodable {
+    let gender: String?
+}
+
 private extension TribesSocialView {
     static func cachedJoinStatus(for tribeID: UUID?) -> Bool {
         guard let tribeID else { return false }
@@ -475,6 +479,10 @@ private extension TribesSocialView {
               let tribeID,
               let userID = supabase.auth.currentUser?.id else { return false }
 
+        guard await isAllowedToJoin(tribeGender: resolvedGender, userID: userID, supabase: supabase) else {
+            return false
+        }
+
         let payload = TribeJoinPayload(id: userID, tribeID: tribeID)
 
         do {
@@ -486,6 +494,46 @@ private extension TribesSocialView {
             return true
         } catch {
             return false
+        }
+    }
+
+    func isAllowedToJoin(tribeGender: String, userID: UUID, supabase: SupabaseClient) async -> Bool {
+        let normalizedTribeGender = tribeGender
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        if normalizedTribeGender.contains("girl") {
+            return await userGender(for: userID, supabase: supabase) == "female"
+        }
+
+        if normalizedTribeGender.contains("boy") {
+            return await userGender(for: userID, supabase: supabase) == "male"
+        }
+
+        return true
+    }
+
+    func userGender(for userID: UUID, supabase: SupabaseClient) async -> String? {
+        if let cachedGender = profileStore.profile?.gender?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased(),
+           !cachedGender.isEmpty {
+            return cachedGender
+        }
+
+        do {
+            let rows: [OnboardingGenderRow] = try await supabase
+                .from("onboarding")
+                .select("gender")
+                .eq("id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first?.gender?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        } catch {
+            return nil
         }
     }
 

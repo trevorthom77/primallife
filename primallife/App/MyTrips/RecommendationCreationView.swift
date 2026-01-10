@@ -75,6 +75,8 @@ private struct RecommendationDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
+    @FocusState private var isNameFocused: Bool
+    @FocusState private var isNoteFocused: Bool
     private let nameLimit = 60
 
     var body: some View {
@@ -100,6 +102,7 @@ private struct RecommendationDetailsView: View {
                             .padding()
                             .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .focused($isNameFocused)
                             .onChange(of: recommendationName) { _, newValue in
                                 if newValue.count > nameLimit {
                                     recommendationName = String(newValue.prefix(nameLimit))
@@ -139,6 +142,7 @@ private struct RecommendationDetailsView: View {
                             .padding(12)
                             .frame(height: 140)
                             .scrollContentBackground(.hidden)
+                            .focused($isNoteFocused)
                     }
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -147,6 +151,29 @@ private struct RecommendationDetailsView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isNameFocused = false
+            isNoteFocused = false
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {}) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .background(
             Colors.background
                 .ignoresSafeArea()

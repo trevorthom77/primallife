@@ -93,7 +93,7 @@ struct TribeTripsView: View {
                     dates: "",
                     imageQuery: trip.destination,
                     showsParticipants: false,
-                    showsAttribution: true,
+                    showsAttribution: false,
                     prefetchedDetails: imageDetails
                 )
 

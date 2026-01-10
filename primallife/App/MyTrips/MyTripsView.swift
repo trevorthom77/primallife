@@ -766,10 +766,14 @@ struct MyTripsView: View {
                                                             Text(tribe.name)
                                                                 .font(.travelDetail)
                                                                 .foregroundStyle(Colors.primaryText)
+                                                                .lineLimit(1)
+                                                                .truncationMode(.tail)
                                                             
                                                             Text(selectedTripDestination)
                                                                 .font(.travelDetail)
                                                                 .foregroundStyle(Colors.secondaryText)
+                                                                .lineLimit(1)
+                                                                .truncationMode(.tail)
                                                         }
                                                         
                                                         Spacer()
@@ -874,6 +878,8 @@ struct MyTripsView: View {
                                                     Text(recommendation.name)
                                                         .font(.travelDetail)
                                                         .foregroundStyle(Colors.primaryText)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
 
                                                     HStack(spacing: 8) {
                                                         Text(recommendation.destination)
@@ -895,7 +901,7 @@ struct MyTripsView: View {
                                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                                             }
                                             .padding(12)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .frame(maxWidth: .infinity, minHeight: 88, maxHeight: 88, alignment: .leading)
                                             .background(Colors.card)
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
                                         }

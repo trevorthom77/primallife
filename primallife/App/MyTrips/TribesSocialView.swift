@@ -479,6 +479,19 @@ private extension TribesSocialView {
         "tribeJoinStatus.\(tribeID.uuidString)"
     }
 
+    static func genderCacheKey(for userID: UUID) -> String {
+        "userGender.\(userID.uuidString)"
+    }
+
+    func cachedUserGender(for userID: UUID?) -> String? {
+        guard let userID else { return nil }
+        return UserDefaults.standard.string(forKey: Self.genderCacheKey(for: userID))
+    }
+
+    func cacheUserGender(_ gender: String, for userID: UUID) {
+        UserDefaults.standard.set(gender, forKey: Self.genderCacheKey(for: userID))
+    }
+
     var dateRangeText: String {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
         let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
@@ -575,7 +588,13 @@ private extension TribesSocialView {
     func loadCurrentUserGender() async {
         guard let supabase,
               let userID = supabase.auth.currentUser?.id else { return }
-        currentUserGender = await userGender(for: userID, supabase: supabase)
+        if let cachedGender = cachedUserGender(for: userID) {
+            currentUserGender = cachedGender
+        }
+        if let freshGender = await userGender(for: userID, supabase: supabase) {
+            currentUserGender = freshGender
+            cacheUserGender(freshGender, for: userID)
+        }
     }
 
     @MainActor
@@ -745,7 +764,7 @@ private extension TribesSocialView {
         let normalizedTribeGender = resolvedGender
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-        guard let normalizedUserGender = currentUserGender?
+        guard let normalizedUserGender = resolvedUserGender?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased(),
               !normalizedUserGender.isEmpty else {
@@ -761,6 +780,14 @@ private extension TribesSocialView {
         }
 
         return nil
+    }
+
+    var resolvedUserGender: String? {
+        if let currentUserGender, !currentUserGender.isEmpty {
+            return currentUserGender
+        }
+
+        return cachedUserGender(for: supabase?.auth.currentUser?.id)
     }
 
     var joinRestrictionColor: Color {

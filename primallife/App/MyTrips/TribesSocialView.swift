@@ -76,6 +76,7 @@ struct TribesSocialView: View {
         self.onBack = onBack
         self.initialHeaderImage = initialHeaderImage
         _headerImage = State(initialValue: initialHeaderImage)
+        _totalTravelers = State(initialValue: Self.cachedMemberCount(for: tribeID) ?? 0)
         _hasJoinedTribe = State(initialValue: Self.cachedJoinStatus(for: tribeID))
     }
 
@@ -498,7 +499,21 @@ private struct OnboardingGenderRow: Decodable {
     let gender: String?
 }
 
+private enum TribeSocialCache {
+    static var memberCounts: [UUID: Int] = [:]
+}
+
 private extension TribesSocialView {
+    static func cachedMemberCount(for tribeID: UUID?) -> Int? {
+        guard let tribeID else { return nil }
+        return TribeSocialCache.memberCounts[tribeID]
+    }
+
+    func cacheMemberCount(_ count: Int) {
+        guard let tribeID else { return }
+        TribeSocialCache.memberCounts[tribeID] = count
+    }
+
     static func cachedJoinStatus(for tribeID: UUID?) -> Bool {
         guard let tribeID else { return false }
         return UserDefaults.standard.bool(forKey: joinCacheKey(for: tribeID))
@@ -759,6 +774,7 @@ private extension TribesSocialView {
                 .execute()
                 .value
             totalTravelers = rows.count
+            cacheMemberCount(rows.count)
         } catch {
             return
         }

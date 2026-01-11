@@ -68,9 +68,6 @@ struct RecommendationsView: View {
                                                 .font(.travelTitle)
                                                 .foregroundStyle(Colors.primaryText)
 
-                                            Text(recommendation.destination)
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
                                         }
 
                                         Spacer()

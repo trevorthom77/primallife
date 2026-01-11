@@ -319,11 +319,11 @@ private struct RecommendationPhotoPromptView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Add photos?")
+                    Text("Add a photo")
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    Text("Optional. Add photos of this recommendation if you want.")
+                    Text("Add a photo for this recommendation.")
                         .font(.travelBody)
                         .foregroundStyle(Colors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -405,6 +405,8 @@ private struct RecommendationPhotoPromptView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!hasRequiredPhoto)
+                .opacity(hasRequiredPhoto ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -429,6 +431,13 @@ private struct RecommendationPhotoPromptView: View {
                 onFinish: onFinish
             )
         }
+    }
+
+    private var hasRequiredPhoto: Bool {
+        if let recommendationPhotoData, !recommendationPhotoData.isEmpty {
+            return true
+        }
+        return recommendationPhoto != nil
     }
 }
 
@@ -606,6 +615,7 @@ private struct RecommendationReviewView: View {
     private var isCreateEnabled: Bool {
         guard !trimmedName.isEmpty, !trimmedNote.isEmpty else { return false }
         guard let ratingValue = Double(trimmedRating) else { return false }
+        guard let recommendationPhotoData, !recommendationPhotoData.isEmpty else { return false }
         return (1...10).contains(ratingValue)
     }
 }

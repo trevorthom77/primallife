@@ -865,7 +865,9 @@ struct MyTripsView: View {
 
                                         Spacer()
 
-                                        Button { } label: {
+                                        NavigationLink {
+                                            RecommendationsView()
+                                        } label: {
                                             SeeAllButton()
                                         }
                                     }

@@ -118,7 +118,13 @@ private struct RecommendationDetailsView: View {
                         .foregroundStyle(Colors.primaryText)
 
                     VStack(spacing: 8) {
-                        TextField("Snorkeling in Mangel Halto", text: $recommendationName)
+                        TextField(
+                            "Snorkeling in Mangel Halto",
+                            text: $recommendationName,
+                            prompt: Text("Snorkeling in Mangel Halto")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                        )
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
                             .padding()

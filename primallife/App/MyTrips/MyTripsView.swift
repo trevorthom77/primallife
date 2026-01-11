@@ -574,8 +574,6 @@ struct MyTripsView: View {
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
     @State private var tribeImageURLCache: [UUID: URL] = [:]
-    @State private var recommendationAvatarCache: [UUID: Image] = [:]
-    @State private var recommendationAvatarURLCache: [UUID: URL] = [:]
     
     var body: some View {
         NavigationStack {
@@ -892,7 +890,9 @@ struct MyTripsView: View {
                                                     )
                                                 } label: {
                                                     HStack(spacing: 12) {
-                                                        recommendationAvatar(for: recommendation)
+                                                        recommendationImage(for: recommendation)
+                                                            .frame(width: 64, height: 64)
+                                                            .clipShape(RoundedRectangle(cornerRadius: 12))
 
                                                         VStack(alignment: .leading, spacing: 6) {
                                                             Text(recommendation.name)
@@ -1243,46 +1243,23 @@ struct MyTripsView: View {
     }
 
     @ViewBuilder
-    private func recommendationAvatar(for recommendation: Recommendation) -> some View {
-        let avatarURL = viewModel.creatorAvatarURL(for: recommendation.creatorID, supabase: supabase)
-
-        Group {
-            if let cachedImage = cachedRecommendationAvatar(for: recommendation.creatorID, avatarURL: avatarURL) {
-                cachedImage
-                    .resizable()
-                    .scaledToFill()
-            } else if let avatarURL {
-                AsyncImage(url: avatarURL) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .onAppear {
-                                recommendationAvatarCache[recommendation.creatorID] = image
-                                recommendationAvatarURLCache[recommendation.creatorID] = avatarURL
-                            }
-                    } else {
-                        Colors.secondaryText.opacity(0.3)
-                    }
+    private func recommendationImage(for recommendation: Recommendation) -> some View {
+        if let url = recommendationPhotoURL(for: recommendation) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
                 }
-            } else {
-                Colors.secondaryText.opacity(0.3)
             }
+        } else {
+            Colors.card
         }
-        .frame(width: 48, height: 48)
-        .clipShape(Circle())
-        .overlay {
-            Circle()
-                .stroke(Colors.card, lineWidth: 3)
-        }
-    }
-
-    private func cachedRecommendationAvatar(for creatorID: UUID, avatarURL: URL?) -> Image? {
-        guard let cachedImage = recommendationAvatarCache[creatorID],
-              recommendationAvatarURLCache[creatorID] == avatarURL else {
-            return nil
-        }
-        return cachedImage
     }
 
     private func recommendationPhotoURL(for recommendation: Recommendation) -> URL? {

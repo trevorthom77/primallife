@@ -21,10 +21,6 @@ struct RecommendationsView: View {
                     Spacer()
                 }
 
-                Text("Recommendations")
-                    .font(.customTitle)
-                    .foregroundStyle(Colors.primaryText)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         if isLoading && recommendations.isEmpty {

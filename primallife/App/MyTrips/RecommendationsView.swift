@@ -39,6 +39,11 @@ struct RecommendationsView: View {
                         } else {
                             ForEach(recommendations) { recommendation in
                                 let ratingText = String(format: "%.1f", recommendation.rating)
+                                let creatorName = viewModel.creatorName(for: recommendation.creatorID)
+                                let creatorAvatarURL = viewModel.creatorAvatarURL(
+                                    for: recommendation.creatorID,
+                                    supabase: supabase
+                                )
 
                                 VStack(alignment: .leading, spacing: 12) {
                                     if let photoURL = recommendationPhotoURL(for: recommendation) {
@@ -81,8 +86,38 @@ struct RecommendationsView: View {
 
                                     Text(recommendation.note)
                                         .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
+                                        .foregroundStyle(Colors.secondaryText)
                                         .fixedSize(horizontal: false, vertical: true)
+
+                                    if creatorName != nil || creatorAvatarURL != nil {
+                                        HStack {
+                                            Spacer()
+
+                                            HStack(spacing: 8) {
+                                                if let creatorName {
+                                                    Text(creatorName)
+                                                        .font(.travelDetail)
+                                                        .foregroundStyle(Colors.secondaryText)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
+                                                }
+
+                                                if let creatorAvatarURL {
+                                                    AsyncImage(url: creatorAvatarURL) { phase in
+                                                        if let image = phase.image {
+                                                            image
+                                                                .resizable()
+                                                                .scaledToFill()
+                                                        } else {
+                                                            Colors.secondaryText.opacity(0.2)
+                                                        }
+                                                    }
+                                                    .frame(width: 28, height: 28)
+                                                    .clipShape(Circle())
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 .padding(16)
                                 .background(Colors.card)

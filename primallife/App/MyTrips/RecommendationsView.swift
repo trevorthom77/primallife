@@ -93,29 +93,34 @@ struct RecommendationsView: View {
                                         HStack {
                                             Spacer()
 
-                                            HStack(spacing: 8) {
-                                                if let creatorName {
-                                                    Text(creatorName)
-                                                        .font(.travelDetail)
-                                                        .foregroundStyle(Colors.secondaryText)
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
-                                                }
-
-                                                if let creatorAvatarURL {
-                                                    AsyncImage(url: creatorAvatarURL) { phase in
-                                                        if let image = phase.image {
-                                                            image
-                                                                .resizable()
-                                                                .scaledToFill()
-                                                        } else {
-                                                            Colors.secondaryText.opacity(0.2)
-                                                        }
+                                            NavigationLink {
+                                                OthersProfileView(userID: recommendation.creatorID)
+                                            } label: {
+                                                HStack(spacing: 8) {
+                                                    if let creatorName {
+                                                        Text(creatorName)
+                                                            .font(.travelDetail)
+                                                            .foregroundStyle(Colors.secondaryText)
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
                                                     }
-                                                    .frame(width: 28, height: 28)
-                                                    .clipShape(Circle())
+
+                                                    if let creatorAvatarURL {
+                                                        AsyncImage(url: creatorAvatarURL) { phase in
+                                                            if let image = phase.image {
+                                                                image
+                                                                    .resizable()
+                                                                    .scaledToFill()
+                                                            } else {
+                                                                Colors.secondaryText.opacity(0.2)
+                                                            }
+                                                        }
+                                                        .frame(width: 28, height: 28)
+                                                        .clipShape(Circle())
+                                                    }
                                                 }
                                             }
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                 }

@@ -40,86 +40,17 @@ struct RecommendationsView: View {
                                     for: recommendation.creatorID,
                                     supabase: supabase
                                 )
+                                let photoURL = recommendationPhotoURL(for: recommendation)
+                                let ratingColor = recommendationRatingColor(ratingText)
 
-                                VStack(alignment: .leading, spacing: 12) {
-                                    if let photoURL = recommendationPhotoURL(for: recommendation) {
-                                        AsyncImage(url: photoURL) { phase in
-                                            if let image = phase.image {
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                            } else {
-                                                Colors.secondaryText.opacity(0.2)
-                                            }
-                                        }
-                                        .frame(height: 180)
-                                        .frame(maxWidth: .infinity)
-                                        .clipped()
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    }
-
-                                    HStack(alignment: .top, spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text(recommendation.name)
-                                                .font(.travelTitle)
-                                                .foregroundStyle(Colors.primaryText)
-
-                                        }
-
-                                        Spacer()
-
-                                        Text(ratingText)
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.tertiaryText)
-                                            .padding(.vertical, 4)
-                                            .padding(.horizontal, 8)
-                                            .background(recommendationRatingColor(ratingText))
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    }
-
-                                    Text(recommendation.note)
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.secondaryText)
-                                        .fixedSize(horizontal: false, vertical: true)
-
-                                    if creatorName != nil || creatorAvatarURL != nil {
-                                        HStack {
-                                            Spacer()
-
-                                            NavigationLink {
-                                                OthersProfileView(userID: recommendation.creatorID)
-                                            } label: {
-                                                HStack(spacing: 8) {
-                                                    if let creatorName {
-                                                        Text(creatorName)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.secondaryText)
-                                                            .lineLimit(1)
-                                                            .truncationMode(.tail)
-                                                    }
-
-                                                    if let creatorAvatarURL {
-                                                        AsyncImage(url: creatorAvatarURL) { phase in
-                                                            if let image = phase.image {
-                                                                image
-                                                                    .resizable()
-                                                                    .scaledToFill()
-                                                            } else {
-                                                                Colors.secondaryText.opacity(0.2)
-                                                            }
-                                                        }
-                                                        .frame(width: 28, height: 28)
-                                                        .clipShape(Circle())
-                                                    }
-                                                }
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                }
-                                .padding(16)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                RecommendationCard(
+                                    recommendation: recommendation,
+                                    creatorName: creatorName,
+                                    creatorAvatarURL: creatorAvatarURL,
+                                    ratingText: ratingText,
+                                    ratingColor: ratingColor,
+                                    photoURL: photoURL
+                                )
                             }
                         }
                     }
@@ -172,5 +103,98 @@ struct RecommendationsView: View {
         if value >= 7 { return Colors.ratingGreen }
         if value >= 5 { return Colors.ratingyellow }
         return Color.red
+    }
+}
+
+struct RecommendationCard: View {
+    let recommendation: Recommendation
+    let creatorName: String?
+    let creatorAvatarURL: URL?
+    let ratingText: String
+    let ratingColor: Color
+    let photoURL: URL?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                if let photoURL {
+                    AsyncImage(url: photoURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Colors.secondaryText.opacity(0.1)
+                        }
+                    }
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .overlay(Colors.primaryText.opacity(0.02))
+                }
+
+                Text(ratingText)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.tertiaryText)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(ratingColor)
+                    .clipShape(Capsule())
+                    .padding(12)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(recommendation.name)
+                    .font(.travelTitle)
+                    .foregroundStyle(Colors.primaryText)
+                    .lineLimit(2)
+
+                Text(recommendation.note)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+
+                if creatorName != nil || creatorAvatarURL != nil {
+                    NavigationLink {
+                        OthersProfileView(userID: recommendation.creatorID)
+                    } label: {
+                        HStack(spacing: 10) {
+                            if let creatorAvatarURL {
+                                AsyncImage(url: creatorAvatarURL) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } else {
+                                        Colors.secondaryText.opacity(0.3)
+                                    }
+                                }
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                            }
+
+                            if let creatorName {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Recommended by")
+                                        .font(.badgeDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                    Text(creatorName)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                }
+                            }
+
+                            Spacer()
+
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+        }
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }

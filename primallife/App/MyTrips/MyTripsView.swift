@@ -866,7 +866,10 @@ struct MyTripsView: View {
                                         Spacer()
 
                                         NavigationLink {
-                                            RecommendationsView()
+                                            RecommendationsView(
+                                                destination: trip.destination,
+                                                viewModel: viewModel
+                                            )
                                         } label: {
                                             SeeAllButton()
                                         }

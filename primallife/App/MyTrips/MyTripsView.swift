@@ -574,6 +574,8 @@ struct MyTripsView: View {
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
     @State private var tribeImageURLCache: [UUID: URL] = [:]
+    @State private var recommendationImageCache: [UUID: Image] = [:]
+    @State private var recommendationImageURLCache: [UUID: URL] = [:]
     
     var body: some View {
         NavigationStack {
@@ -1244,13 +1246,23 @@ struct MyTripsView: View {
 
     @ViewBuilder
     private func recommendationImage(for recommendation: Recommendation) -> some View {
-        if let url = recommendationPhotoURL(for: recommendation) {
+        let url = recommendationPhotoURL(for: recommendation)
+
+        if let cachedImage = cachedRecommendationImage(for: recommendation, url: url) {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let url {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
+                        .onAppear {
+                            recommendationImageCache[recommendation.id] = image
+                            recommendationImageURLCache[recommendation.id] = url
+                        }
                 case .empty:
                     Colors.card
                 default:
@@ -1308,6 +1320,15 @@ struct MyTripsView: View {
     private func cachedTribeImage(for tribe: Tribe) -> Image? {
         guard let cachedImage = tribeImageCache[tribe.id],
               tribeImageURLCache[tribe.id] == tribe.photoURL else {
+            return nil
+        }
+        return cachedImage
+    }
+
+    private func cachedRecommendationImage(for recommendation: Recommendation, url: URL?) -> Image? {
+        guard let url,
+              let cachedImage = recommendationImageCache[recommendation.id],
+              recommendationImageURLCache[recommendation.id] == url else {
             return nil
         }
         return cachedImage

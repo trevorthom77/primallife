@@ -1137,6 +1137,21 @@ private struct MapTribeReviewView: View {
             .from("tribe-photos")
             .getPublicURL(path: path)
     }
+
+    private func resolveDestinationName(for coordinate: CLLocationCoordinate2D) async -> String? {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        return await withCheckedContinuation { continuation in
+            CLGeocoder().reverseGeocodeLocation(location) { placemarks, _ in
+                let placemark = placemarks?.first
+                let name = placemark?.locality
+                    ?? placemark?.subAdministrativeArea
+                    ?? placemark?.administrativeArea
+                    ?? placemark?.name
+                let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+                continuation.resume(returning: trimmed?.isEmpty == false ? trimmed : nil)
+            }
+        }
+    }
 }
 
 private enum MapTribeGenderOption: String, CaseIterable, Identifiable {
@@ -1156,4 +1171,58 @@ private enum MapTribeGenderOption: String, CaseIterable, Identifiable {
             return "Only men travelers can join."
         }
     }
+}
+
+private struct NewMapTribe: Encodable {
+    let ownerID: UUID
+    let destination: String
+    let name: String
+    let description: String?
+    let endDate: Date
+    let gender: String
+    let privacy: String
+    let interests: [String]
+    let photoURL: String?
+    let isMapTribe: Bool
+    let latitude: Double
+    let longitude: Double
+
+    enum CodingKeys: String, CodingKey {
+        case ownerID = "owner_id"
+        case destination
+        case name
+        case description
+        case endDate = "end_date"
+        case gender
+        case privacy
+        case interests
+        case photoURL = "photo_url"
+        case isMapTribe = "is_map_tribe"
+        case latitude
+        case longitude
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(ownerID, forKey: .ownerID)
+        try container.encode(destination, forKey: .destination)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)
+        try container.encode(gender, forKey: .gender)
+        try container.encode(privacy, forKey: .privacy)
+        try container.encode(interests, forKey: .interests)
+        try container.encode(photoURL, forKey: .photoURL)
+        try container.encode(isMapTribe, forKey: .isMapTribe)
+        try container.encode(latitude, forKey: .latitude)
+        try container.encode(longitude, forKey: .longitude)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }

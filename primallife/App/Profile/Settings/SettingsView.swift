@@ -46,13 +46,22 @@ struct SettingsView: View {
                     settingsSection(title: "Preferences") {
                         settingRow("Unit of Measurement") { }
                         divider
-                        settingRow("Hide Activity Status") { }
-                    }
-                    
-                    settingsSection(title: "Privacy") {
-                        settingRow("Block Contacts") { }
-                        divider
-                        settingRow("Report") { }
+                        NavigationLink {
+                            BlockedUsersView()
+                        } label: {
+                            HStack {
+                                Text("Blocked")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                     
                     settingsSection(title: "Store") {
@@ -259,6 +268,127 @@ struct SettingsView: View {
             }
         } catch {
             print("Sign out failed: \(error)")
+        }
+    }
+}
+
+struct BlockedUsersView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
+    @State private var blockedUsers: [UserProfile] = []
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    LazyVStack(spacing: 12) {
+                        ForEach(blockedUsers) { user in
+                            blockedUserCard(user)
+                        }
+                    }
+                }
+                .padding(24)
+            }
+            .scrollIndicators(.hidden)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: 96)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .task {
+            await loadBlockedUsers()
+        }
+    }
+
+    private func blockedUserCard(_ user: UserProfile) -> some View {
+        HStack(spacing: 12) {
+            blockedAvatar(for: user)
+                .frame(width: 48, height: 48)
+                .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Colors.card, lineWidth: 3)
+                }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(user.fullName)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+            }
+
+            Spacer()
+        }
+        .padding()
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func blockedAvatar(for user: UserProfile) -> some View {
+        if let avatarURL = user.avatarURL(using: supabase) {
+            AsyncImage(url: avatarURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    Colors.secondaryText.opacity(0.3)
+                default:
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
+    }
+
+    @MainActor
+    private func loadBlockedUsers() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        struct BlockedUserRow: Decodable {
+            let blockedID: String
+
+            enum CodingKeys: String, CodingKey {
+                case blockedID = "blocked_id"
+            }
+        }
+
+        do {
+            let rows: [BlockedUserRow] = try await supabase
+                .from("blocks")
+                .select("blocked_id")
+                .eq("blocker_id", value: currentUserID.uuidString)
+                .execute()
+                .value
+
+            let blockedIDs = rows.map { $0.blockedID }
+            if blockedIDs.isEmpty {
+                blockedUsers = []
+                return
+            }
+
+            let profiles: [UserProfile] = try await supabase
+                .from("onboarding")
+                .select()
+                .in("id", values: blockedIDs)
+                .execute()
+                .value
+
+            blockedUsers = profiles
+        } catch {
+            return
         }
     }
 }

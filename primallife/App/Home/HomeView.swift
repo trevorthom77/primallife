@@ -36,8 +36,6 @@ struct HomeView: View {
             switch selectedTab {
             case "map":
                 MapBoxView(hideChrome: $hideChrome)
-            case "globe":
-                AnimalSpottingView()
             case "airplane":
                 Color.clear
             case "message":

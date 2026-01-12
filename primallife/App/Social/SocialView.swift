@@ -150,17 +150,11 @@ struct MessagesView: View {
                                     Text("Chats")
                                         .font(.travelTitle)
                                         .foregroundStyle(Colors.primaryText)
-
-                                    Spacer()
-
-                                    Button { } label: {
-                                        SeeAllButton()
-                                    }
                                 }
 
                                 if !joinedTribeChats.isEmpty || !friendChats.isEmpty {
                                     VStack(spacing: 12) {
-                                        ForEach(Array(joinedTribeChats.prefix(3))) { chat in
+                                        ForEach(joinedTribeChats) { chat in
                                             NavigationLink {
                                                 TribesChatView(
                                                     tribeID: chat.id,
@@ -176,7 +170,7 @@ struct MessagesView: View {
                                             .buttonStyle(.plain)
                                         }
 
-                                        ForEach(Array(friendChats.prefix(3))) { chat in
+                                        ForEach(friendChats) { chat in
                                             NavigationLink {
                                                 FriendsChatView(friendID: chat.id)
                                             } label: {
@@ -213,7 +207,7 @@ struct MessagesView: View {
 
                                 if !friends.isEmpty {
                                     VStack(spacing: 12) {
-                                        ForEach(Array(friends.prefix(3))) { friend in
+                                        ForEach(friends) { friend in
                                             NavigationLink {
                                                 OthersProfileView(userID: friend.id)
                                             } label: {

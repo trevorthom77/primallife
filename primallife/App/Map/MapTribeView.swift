@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingCreateForm = false
 
     private let exampleTrips: [(title: String, count: Int, imageName: String)] = [
         ("Beach Hike in Maui", 92, "maui"),
@@ -106,6 +107,132 @@ struct MapTribeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {
+                    isShowingCreateForm = true
+                }) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $isShowingCreateForm) {
+            MapTribeCreateFormView()
+        }
+    }
+}
+
+private struct MapTribeCreateFormView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var groupName: String = ""
+    private let nameLimit = 60
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Name your tribe")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    VStack(spacing: 8) {
+                        TextField("Group name", text: $groupName)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding()
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                        HStack {
+                            Text("Up to \(nameLimit) characters")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                            Spacer()
+                            Text("\(groupName.count)/\(nameLimit)")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Tribe photo")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Button(action: {}) {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Colors.card)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .overlay {
+                                VStack(spacing: 8) {
+                                    Text("Add photo")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    Text("Tap to upload a cover for this tribe.")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.secondaryText)
+                                }
+                                .padding(.horizontal, 16)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .contentShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Use free, beautiful photos from Unsplash for your tribe image.")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+
+                        Button(action: {}) {
+                            HStack {
+                                Spacer()
+                                Image("unsplashblack")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 28)
+                                Spacer()
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .contentShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

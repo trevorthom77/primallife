@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct TravelCard: View {
     @State private var imageURL: URL?
@@ -57,9 +58,7 @@ struct TravelCard: View {
     var body: some View {
         ZStack {
             if let customImageName {
-                Image(customImageName)
-                    .resizable()
-                    .scaledToFill()
+                AssetAsyncImage(name: customImageName)
             } else if let imageURL {
                 AsyncImage(url: imageURL) { image in
                     image
@@ -188,6 +187,48 @@ struct TravelCard: View {
             imageURL = details?.url
             photographerName = details?.photographerName
             photographerProfileURL = details?.photographerProfileURL
+        }
+    }
+}
+
+private struct AssetAsyncImage: View {
+    let name: String
+
+    @Environment(\.displayScale) private var displayScale
+    @State private var image: UIImage?
+
+    var body: some View {
+        GeometryReader { proxy in
+            let pixelWidth = Int(proxy.size.width * displayScale)
+            let pixelHeight = Int(proxy.size.height * displayScale)
+
+            Group {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.clear
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
+            .task(id: "\(pixelWidth)x\(pixelHeight)") {
+                await loadImage(pixelWidth: pixelWidth, pixelHeight: pixelHeight)
+            }
+        }
+    }
+
+    private func loadImage(pixelWidth: Int, pixelHeight: Int) async {
+        guard pixelWidth > 0, pixelHeight > 0, image == nil else { return }
+        let name = name
+        let targetSize = CGSize(width: pixelWidth, height: pixelHeight)
+        let renderedImage = await Task.detached(priority: .userInitiated) {
+            let baseImage = UIImage(named: name)
+            return baseImage?.preparingThumbnail(of: targetSize) ?? baseImage
+        }.value
+        await MainActor.run {
+            image = renderedImage
         }
     }
 }

@@ -276,6 +276,8 @@ struct BlockedUsersView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
     @State private var blockedUsers: [UserProfile] = []
+    @State private var isShowingUnblockConfirm = false
+    @State private var selectedBlockedUser: UserProfile?
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -314,6 +316,29 @@ struct BlockedUsersView: View {
         .task {
             await loadBlockedUsers()
         }
+        .overlay {
+            if isShowingUnblockConfirm {
+                confirmationOverlay(
+                    title: "Unblock",
+                    message: "Unblock this user?",
+                    confirmTitle: "Unblock",
+                    isDestructive: false,
+                    confirmAction: {
+                        let user = selectedBlockedUser
+                        isShowingUnblockConfirm = false
+                        selectedBlockedUser = nil
+                        guard let user else { return }
+                        Task {
+                            await unblockUser(user)
+                        }
+                    },
+                    cancelAction: {
+                        isShowingUnblockConfirm = false
+                        selectedBlockedUser = nil
+                    }
+                )
+            }
+        }
     }
 
     private func blockedUserCard(_ user: UserProfile) -> some View {
@@ -334,17 +359,79 @@ struct BlockedUsersView: View {
 
             Spacer()
 
-            Text("Unblock")
-                .font(.travelDetail)
-                .foregroundStyle(Colors.primaryText)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Colors.contentview)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            Button {
+                selectedBlockedUser = user
+                isShowingUnblockConfirm = true
+            } label: {
+                Text("Unblock")
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Colors.contentview)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+            .buttonStyle(.plain)
         }
         .padding()
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Keep")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 
     @ViewBuilder
@@ -403,6 +490,27 @@ struct BlockedUsersView: View {
                 .value
 
             blockedUsers = profiles
+        } catch {
+            return
+        }
+    }
+
+    private func unblockUser(_ user: UserProfile) async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id
+        else { return }
+
+        do {
+            try await supabase
+                .from("blocks")
+                .delete()
+                .eq("blocker_id", value: currentUserID.uuidString)
+                .eq("blocked_id", value: user.id.uuidString)
+                .execute()
+
+            await MainActor.run {
+                blockedUsers.removeAll { $0.id == user.id }
+            }
         } catch {
             return
         }

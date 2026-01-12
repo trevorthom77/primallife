@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import Combine
+import CoreLocation
 import MapboxMaps
 
 struct MapTribeView: View {
@@ -481,8 +483,13 @@ private struct MapTribeDetailsView: View {
 
 private struct MapTribeLocationView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
+    @AppStorage("mapSavedDestinationLongitude") private var savedDestinationLongitude: Double = 0
+    @AppStorage("mapHasSavedDestination") private var hasSavedDestination = false
     @State private var isShowingGender = false
     @State private var locationViewport: Viewport = .styleDefault
+    @State private var hasCenteredMap = false
+    @StateObject private var locationManager = MapTribeLocationManager()
 
     var body: some View {
         ScrollView {
@@ -531,6 +538,14 @@ private struct MapTribeLocationView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .onAppear {
+            applySavedDestination()
+            locationManager.requestPermission()
+        }
+        .onReceive(locationManager.$coordinate) { coordinate in
+            guard !hasCenteredMap, let coordinate else { return }
+            setInitialViewport(center: coordinate)
+        }
         .background(
             Colors.background
                 .ignoresSafeArea()
@@ -559,6 +574,55 @@ private struct MapTribeLocationView: View {
             MapTribeGenderView()
         }
     }
+
+    private func applySavedDestination() {
+        guard hasSavedDestination else { return }
+        let coordinate = CLLocationCoordinate2D(
+            latitude: savedDestinationLatitude,
+            longitude: savedDestinationLongitude
+        )
+        setInitialViewport(center: coordinate)
+    }
+
+    private func setInitialViewport(center coordinate: CLLocationCoordinate2D) {
+        locationViewport = .camera(
+            center: coordinate,
+            zoom: 10,
+            bearing: 0,
+            pitch: 0
+        )
+        hasCenteredMap = true
+    }
+}
+
+private final class MapTribeLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    @Published var coordinate: CLLocationCoordinate2D?
+    private let manager = CLLocationManager()
+    
+    override init() {
+        super.init()
+        manager.delegate = self
+    }
+    
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.requestLocation()
+        default:
+            break
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        coordinate = locations.last?.coordinate
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 
 private struct CroppingImagePicker: UIViewControllerRepresentable {

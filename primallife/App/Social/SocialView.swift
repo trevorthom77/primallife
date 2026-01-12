@@ -226,6 +226,7 @@ struct MessagesView: View {
                         }
                         .padding(.vertical, 16)
                         .padding(.horizontal, 24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .scrollIndicators(.hidden)
                     .safeAreaInset(edge: .bottom) {

@@ -66,8 +66,6 @@ struct SettingsView: View {
                     
                     settingsSection(title: "Store") {
                         settingRow("Write a Review") { }
-                        divider
-                        settingRow("Restore Purchases") { }
                     }
                     
                     settingsSection(title: "Legal") {

@@ -518,9 +518,15 @@ private struct MapTribeLocationView: View {
                         Spacer()
                     }
 
-                    Text("Where is your tribe located")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Where is your tribe located")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text("Drag the map to center where this tribe meets.")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                    }
 
                     Map(viewport: $locationViewport) {
                     }
@@ -546,7 +552,7 @@ private struct MapTribeLocationView: View {
                             minZoom: 3.0
                         )
                     )
-                    .frame(height: 500)
+                    .frame(height: 320)
                     .frame(maxWidth: .infinity)
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

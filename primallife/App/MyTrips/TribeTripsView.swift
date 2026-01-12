@@ -201,7 +201,7 @@ private struct CreateTribeFormView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Group photo")
+                    Text("Tribe photo")
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 

@@ -136,7 +136,6 @@ private struct CreateTribeFormView: View {
     let onFinish: () -> Void
     @State private var groupName: String = ""
     @State private var privacy: TribePrivacy = .public
-    @State private var hasSelectedPrivacy = false
     @FocusState private var isGroupNameFocused: Bool
     @State private var groupPhoto: UIImage?
     @State private var groupPhotoData: Data?
@@ -266,37 +265,6 @@ private struct CreateTribeFormView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Privacy")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
-
-                    VStack(spacing: 12) {
-                        ForEach(TribePrivacy.allCases) { option in
-                            let isSelected = isPrivacySelected(option)
-
-                            Button {
-                                privacy = option
-                                hasSelectedPrivacy = true
-                            } label: {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(option.label)
-                                        .font(.travelDetail)
-                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
-
-                                    Text(option.description)
-                                        .font(.travelBody)
-                                        .foregroundStyle(isSelected ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(16)
-                                .background(isSelected ? Colors.accent : Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -348,14 +316,9 @@ private struct CreateTribeFormView: View {
         }
     }
 
-    private func isPrivacySelected(_ option: TribePrivacy) -> Bool {
-        hasSelectedPrivacy && privacy == option
-    }
-
     private var isContinueEnabled: Bool {
         !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && groupPhoto != nil
-            && hasSelectedPrivacy
     }
 }
 

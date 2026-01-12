@@ -346,7 +346,10 @@ private struct MapTribeCreateFormView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingDetails) {
-            MapTribeDetailsView()
+            MapTribeDetailsView(
+                groupName: groupName,
+                groupPhoto: groupPhoto
+            )
         }
     }
 
@@ -356,6 +359,8 @@ private struct MapTribeCreateFormView: View {
 }
 
 private struct MapTribeDetailsView: View {
+    let groupName: String
+    let groupPhoto: UIImage?
     @Environment(\.dismiss) private var dismiss
     @State private var aboutText: String = ""
     @State private var isShowingLocation = false
@@ -464,7 +469,12 @@ private struct MapTribeDetailsView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingLocation) {
-            MapTribeLocationView()
+            MapTribeLocationView(
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                aboutText: aboutText,
+                selectedInterests: Array(selectedInterests)
+            )
         }
     }
 
@@ -482,6 +492,10 @@ private struct MapTribeDetailsView: View {
 }
 
 private struct MapTribeLocationView: View {
+    let groupName: String
+    let groupPhoto: UIImage?
+    let aboutText: String
+    let selectedInterests: [String]
     @Environment(\.dismiss) private var dismiss
     @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
     @AppStorage("mapSavedDestinationLongitude") private var savedDestinationLongitude: Double = 0
@@ -580,7 +594,12 @@ private struct MapTribeLocationView: View {
             .background(Colors.background)
         }
         .navigationDestination(isPresented: $isShowingGender) {
-            MapTribeGenderView()
+            MapTribeGenderView(
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                aboutText: aboutText,
+                selectedInterests: selectedInterests
+            )
         }
     }
 
@@ -682,11 +701,16 @@ private struct CroppingImagePicker: UIViewControllerRepresentable {
 }
 
 private struct MapTribeGenderView: View {
+    let groupName: String
+    let groupPhoto: UIImage?
+    let aboutText: String
+    let selectedInterests: [String]
     @Environment(\.dismiss) private var dismiss
     @State private var selectedGender: MapTribeGenderOption = .everyone
     @State private var showReturnPicker = false
     @State private var returnDate = Date()
     @State private var hasSelectedReturn = false
+    @State private var isShowingReview = false
     private let genderOptions = MapTribeGenderOption.allCases
     
     private var accentColor: Color {
@@ -786,7 +810,9 @@ private struct MapTribeGenderView: View {
         .navigationBarBackButtonHidden(true)
         .safeAreaInset(edge: .bottom) {
             VStack {
-                Button(action: {}) {
+                Button(action: {
+                    isShowingReview = true
+                }) {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -802,6 +828,16 @@ private struct MapTribeGenderView: View {
                 .padding(.bottom, 48)
             }
             .background(Colors.background)
+        }
+        .navigationDestination(isPresented: $isShowingReview) {
+            MapTribeReviewView(
+                groupName: groupName,
+                groupPhoto: groupPhoto,
+                aboutText: aboutText,
+                selectedInterests: selectedInterests,
+                selectedGender: selectedGender,
+                returnDate: returnDate
+            )
         }
         .sheet(isPresented: $showReturnPicker) {
             ZStack {
@@ -855,6 +891,153 @@ private struct MapTribeGenderView: View {
 
     private var isContinueEnabled: Bool {
         hasSelectedReturn && returnDate >= tribeStartDate
+    }
+}
+
+private struct MapTribeReviewView: View {
+    let groupName: String
+    let groupPhoto: UIImage?
+    let aboutText: String
+    let selectedInterests: [String]
+    let selectedGender: MapTribeGenderOption
+    let returnDate: Date
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Review your tribe")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("This is what travelers will see.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(alignment: .leading, spacing: 16) {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Colors.card)
+                        .frame(height: 200)
+                        .frame(maxWidth: .infinity)
+                        .overlay {
+                            if let image = groupPhoto {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            } else {
+                                Text("No photo added")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(groupName.isEmpty ? "Untitled tribe" : groupName)
+                            .font(.customTitle)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Travel dates")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(dateRangeText)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Who can join")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(selectedGender.label)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("About")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Text(aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "No description added yet." : aboutText)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Interests")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        if selectedInterests.isEmpty {
+                            Text("No interests selected.")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                        } else {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 12) {
+                                ForEach(selectedInterests, id: \.self) { interest in
+                                    Text(interest)
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 12)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Colors.card)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+                .background(Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {}) {
+                    Text("Create Tribe")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+    }
+
+    private var dateRangeText: String {
+        returnDate.formatted(date: .abbreviated, time: .omitted)
     }
 }
 

@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import UIKit
 
@@ -188,6 +189,9 @@ private struct MapTribeCreateFormView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var groupName: String = ""
     @State private var isShowingDetails = false
+    @State private var groupPhoto: UIImage?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @FocusState private var isGroupNameFocused: Bool
     private let nameLimit = 60
 
     var body: some View {
@@ -213,6 +217,16 @@ private struct MapTribeCreateFormView: View {
                             .padding()
                             .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .focused($isGroupNameFocused)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                isGroupNameFocused = false
+                            }
+                            .onChange(of: groupName) { _, newValue in
+                                if newValue.count > nameLimit {
+                                    groupName = String(newValue.prefix(nameLimit))
+                                }
+                            }
 
                         HStack {
                             Text("Up to \(nameLimit) characters")
@@ -231,27 +245,46 @@ private struct MapTribeCreateFormView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    Button(action: {}) {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Colors.card)
                             .frame(height: 220)
                             .frame(maxWidth: .infinity)
                             .overlay {
-                                VStack(spacing: 8) {
-                                    Text("Add photo")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
+                                if let groupPhoto {
+                                    Image(uiImage: groupPhoto)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .clipped()
+                                } else {
+                                    VStack(spacing: 8) {
+                                        Text("Add photo")
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
 
-                                    Text("Tap to upload a cover for this tribe.")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.secondaryText)
+                                        Text("Tap to upload a cover for this tribe.")
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.secondaryText)
+                                    }
+                                    .padding(.horizontal, 16)
                                 }
-                                .padding(.horizontal, 16)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
+                    .onChange(of: selectedPhotoItem) { _, newValue in
+                        guard let newValue else { return }
+                        Task {
+                            if let data = try? await newValue.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                await MainActor.run {
+                                    groupPhoto = image
+                                }
+                            }
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Use free, beautiful photos from Unsplash for your tribe image.")
@@ -281,6 +314,11 @@ private struct MapTribeCreateFormView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isGroupNameFocused = false
+        }
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
@@ -294,6 +332,8 @@ private struct MapTribeCreateFormView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -304,10 +344,15 @@ private struct MapTribeCreateFormView: View {
             Colors.background
                 .ignoresSafeArea()
         )
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingDetails) {
             MapTribeDetailsView()
         }
+    }
+
+    private var isContinueEnabled: Bool {
+        !groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && groupPhoto != nil
     }
 }
 
@@ -315,7 +360,10 @@ private struct MapTribeDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var aboutText: String = ""
     @State private var isShowingGender = false
+    @State private var selectedInterests: Set<String> = []
+    @FocusState private var isAboutFocused: Bool
     private let interests = InterestOptions.all
+    private let interestsLimit = 6
 
     var body: some View {
         ScrollView {
@@ -349,6 +397,7 @@ private struct MapTribeDetailsView: View {
                             .padding(12)
                             .frame(height: 140)
                             .scrollContentBackground(.hidden)
+                            .focused($isAboutFocused)
                     }
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -361,14 +410,18 @@ private struct MapTribeDetailsView: View {
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(interests, id: \.self) { interest in
-                            Button(action: {}) {
+                            let isSelected = selectedInterests.contains(interest)
+
+                            Button(action: {
+                                toggleInterest(interest)
+                            }) {
                                 Text(interest)
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
+                                    .font(isSelected ? .custom(Fonts.semibold, size: 18) : .travelBody)
+                                    .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 12)
                                     .frame(maxWidth: .infinity)
-                                    .background(Colors.card)
+                                    .background(isSelected ? Colors.accent : Colors.card)
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
@@ -378,6 +431,11 @@ private struct MapTribeDetailsView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isAboutFocused = false
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -392,6 +450,8 @@ private struct MapTribeDetailsView: View {
                         .background(Colors.accent)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
@@ -402,10 +462,23 @@ private struct MapTribeDetailsView: View {
             Colors.background
                 .ignoresSafeArea()
         )
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingGender) {
             MapTribeGenderView()
         }
+    }
+
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else if selectedInterests.count < interestsLimit {
+            selectedInterests.insert(interest)
+        }
+    }
+
+    private var isContinueEnabled: Bool {
+        !aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedInterests.isEmpty
     }
 }
 

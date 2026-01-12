@@ -503,103 +503,113 @@ private struct MapTribeLocationView: View {
     @State private var isShowingGender = false
     @State private var locationViewport: Viewport = .styleDefault
     @State private var hasCenteredMap = false
+    @State private var selectedLocation: CLLocationCoordinate2D?
     @StateObject private var locationManager = MapTribeLocationManager()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack {
-                    BackButton {
-                        dismiss()
+        MapReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack {
+                        BackButton {
+                            dismiss()
+                        }
+
+                        Spacer()
                     }
 
-                    Spacer()
-                }
+                    Text("Where is your tribe located")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
 
-                Text("Where is your tribe located")
-                    .font(.travelTitle)
-                    .foregroundStyle(Colors.primaryText)
-
-                Map(viewport: $locationViewport) {
-                }
-                .ornamentOptions(
-                    OrnamentOptions(
-                        scaleBar: ScaleBarViewOptions(
-                            position: .topLeading,
-                            margins: .zero,
-                            visibility: .hidden,
-                            useMetricUnits: true
+                    Map(viewport: $locationViewport) {
+                    }
+                    .ornamentOptions(
+                        OrnamentOptions(
+                            scaleBar: ScaleBarViewOptions(
+                                position: .topLeading,
+                                margins: .zero,
+                                visibility: .hidden,
+                                useMetricUnits: true
+                            )
                         )
                     )
-                )
-                .mapStyle(
-                    MapStyle(
-                        uri: StyleURI(
-                            rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
-                        )!
+                    .mapStyle(
+                        MapStyle(
+                            uri: StyleURI(
+                                rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
+                            )!
+                        )
                     )
-                )
-                .cameraBounds(
-                    CameraBoundsOptions(
-                        minZoom: 3.0
+                    .cameraBounds(
+                        CameraBoundsOptions(
+                            minZoom: 3.0
+                        )
                     )
-                )
-                .frame(height: 500)
-                .frame(maxWidth: .infinity)
-                .background(Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(alignment: .center) {
-                    Image("map")
-                        .resizable()
-                        .renderingMode(.template)
-                        .scaledToFit()
-                        .frame(width: 48, height: 48)
-                        .foregroundStyle(Colors.secondaryText)
-                        .allowsHitTesting(false)
+                    .frame(height: 500)
+                    .frame(maxWidth: .infinity)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(alignment: .center) {
+                        Image("map")
+                            .resizable()
+                            .renderingMode(.template)
+                            .scaledToFit()
+                            .frame(width: 48, height: 48)
+                            .foregroundStyle(Colors.secondaryText)
+                            .allowsHitTesting(false)
+                    }
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 24)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 24)
-        }
-        .onAppear {
-            applySavedDestination()
-            locationManager.requestPermission()
-        }
-        .onReceive(locationManager.$coordinate) { coordinate in
-            guard !hasCenteredMap, let coordinate else { return }
-            setInitialViewport(center: coordinate)
-        }
-        .background(
-            Colors.background
-                .ignoresSafeArea()
-        )
-        .navigationBarBackButtonHidden(true)
-        .safeAreaInset(edge: .bottom) {
-            VStack {
-                Button(action: {
-                    isShowingGender = true
-                }) {
-                    Text("Continue")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 48)
+            .onAppear {
+                applySavedDestination()
+                locationManager.requestPermission()
             }
-            .background(Colors.background)
-        }
-        .navigationDestination(isPresented: $isShowingGender) {
-            MapTribeGenderView(
-                groupName: groupName,
-                groupPhoto: groupPhoto,
-                aboutText: aboutText,
-                selectedInterests: selectedInterests
+            .onReceive(locationManager.$coordinate) { coordinate in
+                guard !hasCenteredMap, let coordinate else { return }
+                setInitialViewport(center: coordinate)
+            }
+            .background(
+                Colors.background
+                    .ignoresSafeArea()
             )
+            .navigationBarBackButtonHidden(true)
+            .safeAreaInset(edge: .bottom) {
+                VStack {
+                    Button(action: {
+                        selectedLocation = proxy.map?.cameraState.center ?? selectedLocation
+                        isShowingGender = true
+                    }) {
+                        Text("Continue")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(Colors.accent)
+                            .cornerRadius(16)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 48)
+                }
+                .background(Colors.background)
+            }
+            .navigationDestination(isPresented: $isShowingGender) {
+                MapTribeGenderView(
+                    groupName: groupName,
+                    groupPhoto: groupPhoto,
+                    aboutText: aboutText,
+                    selectedInterests: selectedInterests,
+                    selectedLocation: selectedLocation
+                        ?? proxy.map?.cameraState.center
+                        ?? CLLocationCoordinate2D(
+                            latitude: savedDestinationLatitude,
+                            longitude: savedDestinationLongitude
+                        )
+                )
+            }
         }
     }
 
@@ -705,6 +715,7 @@ private struct MapTribeGenderView: View {
     let groupPhoto: UIImage?
     let aboutText: String
     let selectedInterests: [String]
+    let selectedLocation: CLLocationCoordinate2D
     @Environment(\.dismiss) private var dismiss
     @State private var selectedGender: MapTribeGenderOption = .everyone
     @State private var showReturnPicker = false
@@ -836,7 +847,8 @@ private struct MapTribeGenderView: View {
                 aboutText: aboutText,
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
-                returnDate: returnDate
+                returnDate: returnDate,
+                selectedLocation: selectedLocation
             )
         }
         .sheet(isPresented: $showReturnPicker) {
@@ -901,7 +913,35 @@ private struct MapTribeReviewView: View {
     let selectedInterests: [String]
     let selectedGender: MapTribeGenderOption
     let returnDate: Date
+    let selectedLocation: CLLocationCoordinate2D
+    @State private var reviewViewport: Viewport
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        groupName: String,
+        groupPhoto: UIImage?,
+        aboutText: String,
+        selectedInterests: [String],
+        selectedGender: MapTribeGenderOption,
+        returnDate: Date,
+        selectedLocation: CLLocationCoordinate2D
+    ) {
+        self.groupName = groupName
+        self.groupPhoto = groupPhoto
+        self.aboutText = aboutText
+        self.selectedInterests = selectedInterests
+        self.selectedGender = selectedGender
+        self.returnDate = returnDate
+        self.selectedLocation = selectedLocation
+        _reviewViewport = State(
+            initialValue: .camera(
+                center: selectedLocation,
+                zoom: 10,
+                bearing: 0,
+                pitch: 0
+            )
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -948,6 +988,41 @@ private struct MapTribeReviewView: View {
                         Text(groupName.isEmpty ? "Untitled tribe" : groupName)
                             .font(.customTitle)
                             .foregroundStyle(Colors.primaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location")
+                            .font(.travelTitle)
+                            .foregroundStyle(Colors.primaryText)
+
+                        Map(viewport: $reviewViewport) {
+                        }
+                        .ornamentOptions(
+                            OrnamentOptions(
+                                scaleBar: ScaleBarViewOptions(
+                                    position: .topLeading,
+                                    margins: .zero,
+                                    visibility: .hidden,
+                                    useMetricUnits: true
+                                )
+                            )
+                        )
+                        .mapStyle(
+                            MapStyle(
+                                uri: StyleURI(
+                                    rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
+                                )!
+                            )
+                        )
+                        .cameraBounds(
+                            CameraBoundsOptions(
+                                minZoom: 3.0
+                            )
+                        )
+                        .frame(height: 160)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .allowsHitTesting(false)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {

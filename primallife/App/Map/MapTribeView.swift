@@ -557,12 +557,9 @@ private struct MapTribeLocationView: View {
                     .background(Colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(alignment: .center) {
-                        Image("map")
-                            .resizable()
-                            .renderingMode(.template)
-                            .scaledToFit()
-                            .frame(width: 48, height: 48)
-                            .foregroundStyle(Colors.secondaryText)
+                        Circle()
+                            .fill(Colors.accent)
+                            .frame(width: 10, height: 10)
                             .allowsHitTesting(false)
                     }
                 }

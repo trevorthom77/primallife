@@ -1,4 +1,3 @@
-import PhotosUI
 import SwiftUI
 import UIKit
 
@@ -190,9 +189,11 @@ private struct MapTribeCreateFormView: View {
     @State private var groupName: String = ""
     @State private var isShowingDetails = false
     @State private var groupPhoto: UIImage?
-    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var groupPhotoData: Data?
+    @State private var isShowingPhotoPicker = false
     @FocusState private var isGroupNameFocused: Bool
     private let nameLimit = 60
+    private let unsplashURL = URL(string: "https://unsplash.com")!
 
     var body: some View {
         ScrollView {
@@ -245,14 +246,16 @@ private struct MapTribeCreateFormView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Button {
+                        isShowingPhotoPicker = true
+                    } label: {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Colors.card)
                             .frame(height: 220)
                             .frame(maxWidth: .infinity)
                             .overlay {
-                                if let groupPhoto {
-                                    Image(uiImage: groupPhoto)
+                                if let image = groupPhoto {
+                                    Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -274,16 +277,9 @@ private struct MapTribeCreateFormView: View {
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
-                    .onChange(of: selectedPhotoItem) { _, newValue in
-                        guard let newValue else { return }
-                        Task {
-                            if let data = try? await newValue.loadTransferable(type: Data.self),
-                               let image = UIImage(data: data) {
-                                await MainActor.run {
-                                    groupPhoto = image
-                                }
-                            }
-                        }
+                    .sheet(isPresented: $isShowingPhotoPicker) {
+                        CroppingImagePicker(image: $groupPhoto, imageData: $groupPhotoData)
+                            .ignoresSafeArea()
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -291,7 +287,7 @@ private struct MapTribeCreateFormView: View {
                             .font(.travelBody)
                             .foregroundStyle(Colors.secondaryText)
 
-                        Button(action: {}) {
+                        Link(destination: unsplashURL) {
                             HStack {
                                 Spacer()
                                 Image("unsplashblack")
@@ -479,6 +475,53 @@ private struct MapTribeDetailsView: View {
 
     private var isContinueEnabled: Bool {
         !aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedInterests.isEmpty
+    }
+}
+
+private struct CroppingImagePicker: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Binding var imageData: Data?
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: CroppingImagePicker
+
+        init(parent: CroppingImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            guard let selectedImage else {
+                parent.dismiss()
+                return
+            }
+
+            parent.image = selectedImage
+            parent.imageData = selectedImage.jpegData(compressionQuality: 0.9)
+            parent.dismiss()
+        }
     }
 }
 

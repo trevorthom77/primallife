@@ -146,6 +146,7 @@ struct MapTribeView: View {
 private struct MapTribeCreateFormView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var groupName: String = ""
+    @State private var isShowingDetails = false
     private let nameLimit = 60
 
     var body: some View {
@@ -233,6 +234,103 @@ private struct MapTribeCreateFormView: View {
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {
+                    isShowingDetails = true
+                }) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $isShowingDetails) {
+            MapTribeDetailsView()
+        }
+    }
+}
+
+private struct MapTribeDetailsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var aboutText: String = ""
+    private let interests = InterestOptions.all
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("About this tribe")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    ZStack(alignment: .topLeading) {
+                        if aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text("Share what travelers should know about this tribe.")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 18)
+                                .allowsHitTesting(false)
+                        }
+
+                        TextEditor(text: $aboutText)
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(12)
+                            .frame(height: 140)
+                            .scrollContentBackground(.hidden)
+                    }
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Interests")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(interests, id: \.self) { interest in
+                            Button(action: {}) {
+                                Text(interest)
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Colors.card)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }

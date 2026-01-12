@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import MapboxMaps
 
 struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -355,7 +356,7 @@ private struct MapTribeCreateFormView: View {
 private struct MapTribeDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var aboutText: String = ""
-    @State private var isShowingGender = false
+    @State private var isShowingLocation = false
     @State private var selectedInterests: Set<String> = []
     @FocusState private var isAboutFocused: Bool
     private let interests = InterestOptions.all
@@ -436,7 +437,7 @@ private struct MapTribeDetailsView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
-                    isShowingGender = true
+                    isShowingLocation = true
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
@@ -460,8 +461,8 @@ private struct MapTribeDetailsView: View {
         )
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $isShowingGender) {
-            MapTribeGenderView()
+        .navigationDestination(isPresented: $isShowingLocation) {
+            MapTribeLocationView()
         }
     }
 
@@ -475,6 +476,88 @@ private struct MapTribeDetailsView: View {
 
     private var isContinueEnabled: Bool {
         !aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedInterests.isEmpty
+    }
+}
+
+private struct MapTribeLocationView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var isShowingGender = false
+    @State private var locationViewport: Viewport = .styleDefault
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                Text("Where is your tribe located")
+                    .font(.travelTitle)
+                    .foregroundStyle(Colors.primaryText)
+
+                Map(viewport: $locationViewport) {
+                }
+                .ornamentOptions(
+                    OrnamentOptions(
+                        scaleBar: ScaleBarViewOptions(
+                            position: .topLeading,
+                            margins: .zero,
+                            visibility: .hidden,
+                            useMetricUnits: true
+                        )
+                    )
+                )
+                .mapStyle(
+                    MapStyle(
+                        uri: StyleURI(
+                            rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
+                        )!
+                    )
+                )
+                .cameraBounds(
+                    CameraBoundsOptions(
+                        minZoom: 3.0
+                    )
+                )
+                .frame(height: 500)
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {
+                    isShowingGender = true
+                }) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+        .navigationDestination(isPresented: $isShowingGender) {
+            MapTribeGenderView()
+        }
     }
 }
 

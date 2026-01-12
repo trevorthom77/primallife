@@ -293,7 +293,8 @@ struct BlockedUsersView: View {
                             Text("No blocked users yet")
                                 .font(.travelBody)
                                 .foregroundStyle(Colors.secondaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, alignment: .center)
                         } else {
                             ForEach(blockedUsers) { user in
                                 blockedUserCard(user)

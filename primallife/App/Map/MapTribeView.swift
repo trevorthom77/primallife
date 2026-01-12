@@ -273,6 +273,7 @@ private struct MapTribeCreateFormView: View {
 private struct MapTribeDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var aboutText: String = ""
+    @State private var isShowingGender = false
     private let interests = InterestOptions.all
 
     var body: some View {
@@ -339,7 +340,9 @@ private struct MapTribeDetailsView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
-                Button(action: {}) {
+                Button(action: {
+                    isShowingGender = true
+                }) {
                     Text("Continue")
                         .font(.travelDetail)
                         .foregroundColor(Colors.tertiaryText)
@@ -359,5 +362,134 @@ private struct MapTribeDetailsView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $isShowingGender) {
+            MapTribeGenderView()
+        }
+    }
+}
+
+private struct MapTribeGenderView: View {
+    @Environment(\.dismiss) private var dismiss
+    private let genderOptions = MapTribeGenderOption.allCases
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Tribe dates")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("Lock in when this tribe is traveling.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(spacing: 12) {
+                    Button(action: {}) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tribe end date")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                Text("When does the tribe wrap up?")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+
+                                Spacer()
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Select gender")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Text("Choose who can join this tribe.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(genderOptions) { option in
+                        Button(action: {}) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(option.label)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Text(option.description)
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
+        .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {}) {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+    }
+}
+
+private enum MapTribeGenderOption: String, CaseIterable, Identifiable {
+    case everyone = "Everyone"
+    case girlsOnly = "Girls Only"
+    case boysOnly = "Boys Only"
+
+    var id: String { rawValue }
+    var label: String { rawValue }
+    var description: String {
+        switch self {
+        case .everyone:
+            return "Open to all travelers."
+        case .girlsOnly:
+            return "Only women travelers can join."
+        case .boysOnly:
+            return "Only men travelers can join."
+        }
     }
 }

@@ -3,6 +3,7 @@ import UIKit
 import Combine
 import CoreLocation
 import MapboxMaps
+import Supabase
 
 struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -1116,6 +1117,25 @@ private struct MapTribeReviewView: View {
 
     private var dateRangeText: String {
         returnDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func uploadGroupPhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> URL? {
+        guard let image = groupPhoto,
+              let imageData = image.jpegData(compressionQuality: 0.9) else { return nil }
+
+        let path = "\(userID)/tribes/\(UUID().uuidString).jpg"
+
+        try await supabase.storage
+            .from("tribe-photos")
+            .upload(
+                path,
+                data: imageData,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+
+        return try supabase.storage
+            .from("tribe-photos")
+            .getPublicURL(path: path)
     }
 }
 

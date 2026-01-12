@@ -3,13 +3,13 @@ import SwiftUI
 struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
 
-    private let exampleTrips: [(title: String, count: Int)] = [
-        ("Surf Trip in Costa Rica", 101),
-        ("Island Hopping in Fiji", 124),
-        ("Snorkel Week in Belize", 86),
-        ("Sailing the Bahamas", 139),
-        ("Rainforest Escape in Puerto Rico", 117),
-        ("Beach Hike in Maui", 92)
+    private let exampleTrips: [(title: String, count: Int, imageName: String)] = [
+        ("Beach Hike in Maui", 92, "maui"),
+        ("Island Hopping in Fiji", 124, "fiji"),
+        ("Lagoon Escape in Aruba", 117, "aruba"),
+        ("Surf Trip in Costa Rica", 101, "costa rica"),
+        ("Sailing the Bahamas", 139, "bahamas"),
+        ("Snorkel Week in Belize", 86, "belize")
     ]
 
     var body: some View {
@@ -27,26 +27,24 @@ struct MapTribeView: View {
                     .font(.customTitle)
                     .foregroundStyle(Colors.primaryText)
 
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12)
-                    ],
-                    spacing: 12
-                ) {
-                    ForEach(exampleTrips, id: \.title) { example in
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 12) {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Colors.contentview)
-                                    .frame(width: 48, height: 48)
+                Text("Your tribe shows up on the map wherever your plans take place.")
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
 
-                                Text(example.title)
-                                    .font(.tripsfont)
-                                    .foregroundStyle(Colors.primaryText)
-                                    .lineLimit(2)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    ForEach(exampleTrips, id: \.title) { example in
+                        VStack(alignment: .leading, spacing: 14) {
+                            Image(example.imageName)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 140)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                            Text(example.title)
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.primaryText)
+                                .lineLimit(2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                             HStack(spacing: -8) {
                                 Image("profile4")
@@ -104,10 +102,10 @@ struct MapTribeView: View {
                                 }
                             }
                         }
-                        .padding(12)
+                        .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
                 }
             }

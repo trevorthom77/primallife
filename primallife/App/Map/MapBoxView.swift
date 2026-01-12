@@ -611,26 +611,6 @@ struct MapBoxView: View {
         )
     }
     
-    private func updateDestination(to destination: String) async {
-        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        
-        struct DestinationUpdate: Encodable {
-            let upcoming_destination: String
-        }
-        
-        do {
-            try await supabase
-                .from("onboarding")
-                .update(DestinationUpdate(upcoming_destination: destination))
-                .eq("id", value: userID.uuidString)
-                .execute()
-            
-            await profileStore.loadProfile(for: userID, supabase: supabase)
-        } catch {
-            print("Failed to update destination: \(error.localizedDescription)")
-        }
-    }
-    
     private func upsertUserLocation(_ coordinate: CLLocationCoordinate2D) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         

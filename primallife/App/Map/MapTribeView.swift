@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -35,9 +36,7 @@ struct MapTribeView: View {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     ForEach(exampleTrips, id: \.title) { example in
                         VStack(alignment: .leading, spacing: 14) {
-                            Image(example.imageName)
-                                .resizable()
-                                .scaledToFill()
+                            AssetAsyncImage(name: example.imageName)
                                 .frame(height: 140)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -139,6 +138,48 @@ struct MapTribeView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingCreateForm) {
             MapTribeCreateFormView()
+        }
+    }
+}
+
+private struct AssetAsyncImage: View {
+    let name: String
+
+    @Environment(\.displayScale) private var displayScale
+    @State private var image: UIImage?
+
+    var body: some View {
+        GeometryReader { proxy in
+            let pixelWidth = Int(proxy.size.width * displayScale)
+            let pixelHeight = Int(proxy.size.height * displayScale)
+
+            Group {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.clear
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
+            .task(id: "\(pixelWidth)x\(pixelHeight)") {
+                await loadImage(pixelWidth: pixelWidth, pixelHeight: pixelHeight)
+            }
+        }
+    }
+
+    private func loadImage(pixelWidth: Int, pixelHeight: Int) async {
+        guard pixelWidth > 0, pixelHeight > 0, image == nil else { return }
+        let name = name
+        let targetSize = CGSize(width: pixelWidth, height: pixelHeight)
+        let renderedImage = await Task.detached(priority: .userInitiated) {
+            let baseImage = UIImage(named: name)
+            return baseImage?.preparingThumbnail(of: targetSize) ?? baseImage
+        }.value
+        await MainActor.run {
+            image = renderedImage
         }
     }
 }
@@ -370,7 +411,19 @@ private struct MapTribeDetailsView: View {
 
 private struct MapTribeGenderView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedGender: MapTribeGenderOption = .everyone
+    @State private var showReturnPicker = false
+    @State private var returnDate = Date()
+    @State private var hasSelectedReturn = false
     private let genderOptions = MapTribeGenderOption.allCases
+    
+    private var accentColor: Color {
+        selectedGender == .girlsOnly ? Colors.girlsPink : Colors.accent
+    }
+
+    private var tribeStartDate: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
 
     var body: some View {
         ScrollView {
@@ -394,16 +447,18 @@ private struct MapTribeGenderView: View {
                 }
 
                 VStack(spacing: 12) {
-                    Button(action: {}) {
+                    Button(action: {
+                        showReturnPicker = true
+                    }) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Tribe end date")
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
 
                             HStack {
-                                Text("When does the tribe wrap up?")
+                                Text(hasSelectedReturn ? returnDateText : "When does the tribe wrap up?")
                                     .font(.travelBody)
-                                    .foregroundStyle(Colors.secondaryText)
+                                    .foregroundStyle(hasSelectedReturn ? Colors.primaryText : Colors.secondaryText)
 
                                 Spacer()
                             }
@@ -428,19 +483,21 @@ private struct MapTribeGenderView: View {
 
                 VStack(spacing: 12) {
                     ForEach(genderOptions) { option in
-                        Button(action: {}) {
+                        Button(action: {
+                            selectedGender = option
+                        }) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(option.label)
                                     .font(.travelDetail)
-                                    .foregroundStyle(Colors.primaryText)
+                                    .foregroundStyle(selectedGenderTextColor(for: option))
 
                                 Text(option.description)
                                     .font(.travelBody)
-                                    .foregroundStyle(Colors.secondaryText)
+                                    .foregroundStyle(selectedGenderSubtextColor(for: option))
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
-                            .background(Colors.card)
+                            .background(selectedGender == option ? accentColor : Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .buttonStyle(.plain)
@@ -463,15 +520,69 @@ private struct MapTribeGenderView: View {
                         .foregroundColor(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Colors.accent)
+                        .background(accentColor)
                         .cornerRadius(16)
                 }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
             .background(Colors.background)
         }
+        .sheet(isPresented: $showReturnPicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            showReturnPicker = false
+                            hasSelectedReturn = true
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    DatePicker(
+                        "",
+                        selection: $returnDate,
+                        in: tribeStartDate...,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(Colors.accent)
+                    .onChange(of: returnDate) {
+                        hasSelectedReturn = true
+                    }
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
+        }
+    }
+
+    private func selectedGenderTextColor(for option: MapTribeGenderOption) -> Color {
+        option == selectedGender ? Colors.tertiaryText : Colors.primaryText
+    }
+
+    private func selectedGenderSubtextColor(for option: MapTribeGenderOption) -> Color {
+        option == selectedGender ? Colors.tertiaryText.opacity(0.9) : Colors.secondaryText
+    }
+
+    private var returnDateText: String {
+        returnDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var isContinueEnabled: Bool {
+        hasSelectedReturn && returnDate >= tribeStartDate
     }
 }
 

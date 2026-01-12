@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct TribesView: View {
+struct MapTribeView: View {
     var body: some View {
         Colors.background
             .ignoresSafeArea()

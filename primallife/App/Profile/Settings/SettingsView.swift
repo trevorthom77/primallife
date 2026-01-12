@@ -332,6 +332,14 @@ struct BlockedUsersView: View {
             }
 
             Spacer()
+
+            Text("Unblock")
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Colors.contentview)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .padding()
         .background(Colors.card)

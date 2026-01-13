@@ -21,6 +21,18 @@ private let mapTripsDateFormatter: DateFormatter = {
     return formatter
 }()
 
+private let mapTripsTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let mapTripsTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
     @EnvironmentObject private var profileStore: ProfileStore
@@ -835,7 +847,7 @@ struct MapBoxView: View {
         do {
             let tribes: [MapTribeLocation] = try await supabase
                 .from("tribes")
-                .select("id, name, destination, photo_url, latitude, longitude")
+                .select("id, owner_id, name, destination, description, end_date, created_at, gender, interests, photo_url, latitude, longitude")
                 .eq("is_map_tribe", value: true)
                 .gte("latitude", value: bounds.minLatitude)
                 .lte("latitude", value: bounds.maxLatitude)
@@ -1221,16 +1233,28 @@ private struct OtherUserLocation: Identifiable {
 
 private struct MapTribeLocation: Identifiable, Decodable {
     let id: UUID
+    let ownerID: UUID
     let name: String
     let destination: String
+    let description: String?
+    let endDate: Date
+    let createdAt: Date
+    let gender: String?
+    let interests: [String]
     let latitude: Double
     let longitude: Double
     let photoURL: URL?
 
     enum CodingKeys: String, CodingKey {
         case id
+        case ownerID = "owner_id"
         case name
         case destination
+        case description
+        case endDate = "end_date"
+        case createdAt = "created_at"
+        case gender
+        case interests
         case latitude
         case longitude
         case photoURL = "photo_url"
@@ -1239,8 +1263,30 @@ private struct MapTribeLocation: Identifiable, Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
+        ownerID = try container.decode(UUID.self, forKey: .ownerID)
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
         destination = try container.decodeIfPresent(String.self, forKey: .destination) ?? ""
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        guard let decodedEndDate = mapTripsDateFormatter.date(from: endDateString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.endDate], debugDescription: "Invalid end date format")
+            )
+        }
+        endDate = decodedEndDate
+
+        let createdAtString = try container.decode(String.self, forKey: .createdAt)
+        guard let decodedCreatedAt = mapTripsTimestampFormatterWithFractional.date(from: createdAtString)
+            ?? mapTripsTimestampFormatter.date(from: createdAtString) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
+            )
+        }
+        createdAt = decodedCreatedAt
+
+        gender = try container.decodeIfPresent(String.self, forKey: .gender)
+        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
         latitude = try container.decode(Double.self, forKey: .latitude)
         longitude = try container.decode(Double.self, forKey: .longitude)
         if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
@@ -1341,7 +1387,26 @@ private struct MapCommunityPanel: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(tribes) { tribe in
-                                tribeCard(tribe)
+                                let flag = tribeFlags[tribe.id] ?? ""
+                                NavigationLink {
+                                    TribesSocialView(
+                                        imageURL: tribe.photoURL,
+                                        title: tribe.name,
+                                        location: tribe.destination,
+                                        flag: flag,
+                                        endDate: tribe.endDate,
+                                        createdAt: tribe.createdAt,
+                                        gender: tribe.gender,
+                                        aboutText: tribe.description,
+                                        interests: tribe.interests,
+                                        placeName: tribe.destination,
+                                        tribeID: tribe.id,
+                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
+                                    )
+                                } label: {
+                                    tribeCard(tribe)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.vertical, 4)

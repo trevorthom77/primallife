@@ -14,6 +14,7 @@ struct OthersProfileView: View {
     @Environment(\.supabaseClient) private var supabase
     @State private var profile: UserProfile?
     @State private var trips: [Trip] = []
+    @State private var countries: [ProfileCountry] = []
     @State private var isLoadingTrips = false
     @State private var isShowingSeeAllSheet = false
     @State private var hasRequestedFriend = false
@@ -53,6 +54,16 @@ struct OthersProfileView: View {
 
         enum CodingKeys: String, CodingKey {
             case blockerID = "blocker_id"
+        }
+    }
+
+    private struct UserCountryRow: Decodable {
+        let id: UUID
+        let countryISO: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case countryISO = "country_iso"
         }
     }
 
@@ -254,6 +265,36 @@ struct OthersProfileView: View {
                                 Text("No trips yet.")
                                     .font(.custom(Fonts.regular, size: 16))
                                     .foregroundStyle(Colors.secondaryText)
+                            }
+                        }
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Countries")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            if countries.isEmpty {
+                                Text("No countries yet.")
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(countries) { country in
+                                        TravelCard(
+                                            flag: country.flag,
+                                            location: country.name,
+                                            dates: country.note,
+                                            imageQuery: country.imageQuery,
+                                            showsParticipants: false,
+                                            width: nil,
+                                            height: 140
+                                        )
+                                        .allowsHitTesting(false)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .frame(height: 140)
+                                    }
+                                }
                             }
                         }
                         .padding(.top, 8)
@@ -532,6 +573,7 @@ struct OthersProfileView: View {
             }
             await loadProfile(for: userID)
             await loadTrips(for: userID)
+            await loadCountries(for: userID)
             await loadFriendStatus(for: userID)
             await loadFriendRequestStatus(for: userID)
             await MainActor.run {
@@ -685,6 +727,37 @@ struct OthersProfileView: View {
 
             await MainActor.run {
                 trips = fetchedTrips
+            }
+        } catch {
+            return
+        }
+    }
+
+    private func loadCountries(for userID: UUID) async {
+        guard let supabase else { return }
+
+        do {
+            let rows: [UserCountryRow] = try await supabase
+                .from("user_countries")
+                .select("id, country_iso")
+                .eq("id", value: userID.uuidString)
+                .execute()
+                .value
+
+            let isoCodes: [String] = rows.map { $0.countryISO.uppercased() }
+            let loadedCountries: [ProfileCountry] = isoCodes.compactMap { isoCode in
+                guard let country = CountryDatabase.all.first(where: { $0.id == isoCode }) else { return nil }
+                return ProfileCountry(
+                    flag: country.flag,
+                    name: country.name,
+                    isoCode: country.isoCode,
+                    note: "",
+                    imageQuery: country.name
+                )
+            }
+
+            await MainActor.run {
+                countries = loadedCountries
             }
         } catch {
             return

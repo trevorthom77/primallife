@@ -37,7 +37,7 @@ struct HomeView: View {
             case "map":
                 MapBoxView(hideChrome: $hideChrome)
             case "airplane":
-                Color.clear
+                 Color.clear
             case "message":
                 MessagesView()
             default:

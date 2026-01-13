@@ -270,9 +270,21 @@ struct OthersProfileView: View {
                         .padding(.top, 8)
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Countries")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
+                            HStack {
+                                Text("Countries")
+                                    .font(.travelTitle)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Spacer()
+
+                                NavigationLink {
+                                    TravelStatsView(countries: countries) { _ in }
+                                } label: {
+                                    Text("See More")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.accent)
+                                }
+                            }
 
                             if countries.isEmpty {
                                 Text("No countries yet.")

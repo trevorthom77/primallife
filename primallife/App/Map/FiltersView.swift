@@ -16,6 +16,10 @@ struct FiltersView: View {
     @State private var selectedCountryID: String?
     @State private var showCountryPicker = false
 
+    private var hasSelectedCountry: Bool {
+        selectedCountryID != nil
+    }
+
     private var selectedCountryLabel: String {
         guard let selectedCountryID,
               let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
@@ -89,10 +93,10 @@ struct FiltersView: View {
                     } label: {
                         Text(selectedCountryLabel)
                             .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
+                            .foregroundStyle(hasSelectedCountry ? Colors.primaryText : Colors.tertiaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Colors.accent)
+                            .background(hasSelectedCountry ? Colors.contentview : Colors.accent)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)

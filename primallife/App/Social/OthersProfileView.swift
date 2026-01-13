@@ -174,9 +174,9 @@ struct OthersProfileView: View {
                         }
 
                         HStack(spacing: 12) {
-                            statCard(title: "Trips", value: "12")
-                            statCard(title: "Countries", value: "9")
-                            statCard(title: "World", value: "7%")
+                            statCard(title: "Trips", value: "\(tripsCount)")
+                            statCard(title: "Countries", value: "\(countriesCount)")
+                            statCard(title: "World", value: "\(worldPercent)%")
                         }
 
                     if hasBlockedUser {
@@ -663,6 +663,24 @@ struct OthersProfileView: View {
 
     private var avatarURL: URL? {
         profile?.avatarURL(using: supabase)
+    }
+
+    private var tripsCount: Int {
+        trips.count
+    }
+
+    private var countriesCount: Int {
+        countries.count
+    }
+
+    private var worldPercent: Int {
+        let totalCountries = CountryDatabase.all.count
+        guard totalCountries > 0 else { return 0 }
+
+        let visitedISOSet = Set(countries.map { $0.isoCode.uppercased() })
+        let visitedCount = CountryDatabase.all.filter { visitedISOSet.contains($0.isoCode.uppercased()) }.count
+
+        return Int((Double(visitedCount) / Double(totalCountries)) * 100)
     }
 
     @ViewBuilder

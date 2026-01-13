@@ -43,6 +43,7 @@ struct MapBoxView: View {
     @State private var airplaneFeedbackToggle = false
     @State private var flyFeedbackToggle = false
     @State private var otherUserLocations: [OtherUserLocation] = []
+    @State private var mapTribes: [MapTribeLocation] = []
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
@@ -83,6 +84,13 @@ struct MapBoxView: View {
                             } else {
                                 otherUserAnnotation(for: location)
                             }
+                        }
+                        .allowOverlap(true)
+                    }
+                    
+                    ForEvery(mapTribes) { tribe in
+                        MapViewAnnotation(coordinate: tribe.coordinate) {
+                            mapTribeAnnotation(for: tribe)
                         }
                         .allowOverlap(true)
                     }
@@ -782,6 +790,25 @@ struct MapBoxView: View {
             print("Failed to fetch other locations: \(error.localizedDescription)")
         }
     }
+
+    private func fetchMapTribes() async {
+        guard let supabase else { return }
+
+        do {
+            let tribes: [MapTribeLocation] = try await supabase
+                .from("tribes")
+                .select("id, photo_url, latitude, longitude")
+                .eq("is_map_tribe", value: true)
+                .execute()
+                .value
+
+            await MainActor.run {
+                mapTribes = tribes
+            }
+        } catch {
+            print("Failed to fetch map tribes: \(error.localizedDescription)")
+        }
+    }
     
     private func nearbyBounds(around coordinate: CLLocationCoordinate2D, radius: CLLocationDistance) -> (minLatitude: Double, maxLatitude: Double, minLongitude: Double, maxLongitude: Double) {
         let metersPerDegreeLatitude: Double = 111_000
@@ -828,10 +855,12 @@ struct MapBoxView: View {
         locationsRefreshTask?.cancel()
         locationsRefreshTask = Task {
             await fetchOtherLocations()
+            await fetchMapTribes()
             
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 15 * 1_000_000_000)
                 await fetchOtherLocations()
+                await fetchMapTribes()
             }
         }
     }
@@ -901,6 +930,36 @@ struct MapBoxView: View {
             .clipShape(Circle())
             .overlay {
                 Circle()
+                    .stroke(Colors.card, lineWidth: 4)
+            }
+        }
+    }
+
+    private func mapTribeAnnotation(for tribe: MapTribeLocation) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Colors.card)
+                .frame(width: 66, height: 66)
+
+            Group {
+                if let photoURL = tribe.photoURL {
+                    AsyncImage(url: photoURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Colors.secondaryText.opacity(0.3)
+                        }
+                    }
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: 58, height: 58)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Colors.card, lineWidth: 4)
             }
         }
@@ -996,6 +1055,36 @@ private struct OtherUserLocation: Identifiable {
         } catch {
             return nil
         }
+    }
+}
+
+private struct MapTribeLocation: Identifiable, Decodable {
+    let id: UUID
+    let latitude: Double
+    let longitude: Double
+    let photoURL: URL?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case latitude
+        case longitude
+        case photoURL = "photo_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        latitude = try container.decode(Double.self, forKey: .latitude)
+        longitude = try container.decode(Double.self, forKey: .longitude)
+        if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
+            photoURL = URL(string: photoURLString)
+        } else {
+            photoURL = nil
+        }
+    }
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 

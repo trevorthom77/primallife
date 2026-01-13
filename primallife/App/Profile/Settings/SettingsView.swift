@@ -44,8 +44,6 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                     
                     settingsSection(title: "Preferences") {
-                        settingRow("Unit of Measurement") { }
-                        divider
                         NavigationLink {
                             BlockedUsersView()
                         } label: {
@@ -64,13 +62,7 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
                     
-                    settingsSection(title: "Store") {
-                        settingRow("Write a Review") { }
-                    }
-                    
                     settingsSection(title: "Legal") {
-                        settingRow("Rules") { }
-                        divider
                         settingRow("Terms and Conditions") { }
                         divider
                         settingRow("Privacy Policy") { }

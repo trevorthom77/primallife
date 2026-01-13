@@ -118,7 +118,26 @@ struct MapBoxView: View {
                     if communityTab == .tribes {
                         ForEvery(mapTribes) { tribe in
                             MapViewAnnotation(coordinate: tribe.coordinate) {
-                                mapTribeAnnotation(for: tribe)
+                                let flag = tribeCountryFlags[tribe.id] ?? ""
+                                NavigationLink {
+                                    TribesSocialView(
+                                        imageURL: tribe.photoURL,
+                                        title: tribe.name,
+                                        location: tribe.destination,
+                                        flag: flag,
+                                        endDate: tribe.endDate,
+                                        createdAt: tribe.createdAt,
+                                        gender: tribe.gender,
+                                        aboutText: tribe.description,
+                                        interests: tribe.interests,
+                                        placeName: tribe.destination,
+                                        tribeID: tribe.id,
+                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
+                                    )
+                                } label: {
+                                    mapTribeAnnotation(for: tribe)
+                                }
+                                .buttonStyle(.plain)
                             }
                             .allowOverlap(true)
                         }

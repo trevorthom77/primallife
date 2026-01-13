@@ -162,6 +162,12 @@ struct OthersProfileView: View {
                                 .frame(maxWidth: .infinity)
                         }
 
+                        HStack(spacing: 12) {
+                            statCard(title: "Trips", value: "12")
+                            statCard(title: "Countries", value: "9")
+                            statCard(title: "World", value: "7%")
+                        }
+
                     if hasBlockedUser {
                         Text("You blocked this user.")
                             .font(.custom(Fonts.regular, size: 16))
@@ -758,6 +764,22 @@ struct OthersProfileView: View {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func statCard(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(value)
+                .font(.travelTitle)
+                .foregroundStyle(Colors.primaryText)
+
+            Text(title)
+                .font(.custom(Fonts.regular, size: 16))
+                .foregroundStyle(Colors.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private func orderedFriendPair(

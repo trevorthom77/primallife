@@ -73,27 +73,31 @@ struct MapBoxView: View {
                         .priority(1)
                     }
                     
-                    ForEvery(otherUserLocations) { location in
-                        MapViewAnnotation(coordinate: location.coordinate) {
-                            if let userID = UUID(uuidString: location.id) {
-                                NavigationLink {
-                                    OthersProfileView(userID: userID)
-                                } label: {
+                    if communityTab == .travelers {
+                        ForEvery(otherUserLocations) { location in
+                            MapViewAnnotation(coordinate: location.coordinate) {
+                                if let userID = UUID(uuidString: location.id) {
+                                    NavigationLink {
+                                        OthersProfileView(userID: userID)
+                                    } label: {
+                                        otherUserAnnotation(for: location)
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
                                     otherUserAnnotation(for: location)
                                 }
-                                .buttonStyle(.plain)
-                            } else {
-                                otherUserAnnotation(for: location)
                             }
+                            .allowOverlap(true)
                         }
-                        .allowOverlap(true)
                     }
                     
-                    ForEvery(mapTribes) { tribe in
-                        MapViewAnnotation(coordinate: tribe.coordinate) {
-                            mapTribeAnnotation(for: tribe)
+                    if communityTab == .tribes {
+                        ForEvery(mapTribes) { tribe in
+                            MapViewAnnotation(coordinate: tribe.coordinate) {
+                                mapTribeAnnotation(for: tribe)
+                            }
+                            .allowOverlap(true)
                         }
-                        .allowOverlap(true)
                     }
                 }
                     .ornamentOptions(

@@ -26,7 +26,7 @@ enum LanguageDatabase {
         Language(name: "Bosnian", flag: "🇧🇦", isoCode: "bs"),
         Language(name: "Bulgarian", flag: "🇧🇬", isoCode: "bg"),
         Language(name: "Catalan", flag: "🇦🇩", isoCode: "ca"),
-        Language(name: "Chinese (Mandarin)", flag: "🇨🇳", isoCode: "zh"),
+        Language(name: "Chinese", flag: "🇨🇳", isoCode: "zh"),
         Language(name: "Croatian", flag: "🇭🇷", isoCode: "hr"),
         Language(name: "Czech", flag: "🇨🇿", isoCode: "cs"),
         Language(name: "Danish", flag: "🇩🇰", isoCode: "da"),

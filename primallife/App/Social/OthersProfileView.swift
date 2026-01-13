@@ -589,7 +589,13 @@ struct OthersProfileView: View {
 
     private var languagesText: String? {
         if let profile {
-            let languages = profile.languages.joined(separator: ", ")
+            let labels = profile.languages.map { languageID in
+                if let language = LanguageDatabase.all.first(where: { $0.id == languageID }) {
+                    return "\(language.flag) \(language.name)"
+                }
+                return languageID
+            }
+            let languages = labels.joined(separator: ", ")
             return languages.isEmpty ? nil : languages
         }
 

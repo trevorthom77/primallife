@@ -13,6 +13,16 @@ struct FiltersView: View {
     @State private var maxAge: Int = 100
     @State private var selectedPreset: String = "All Ages"
     @State private var selectedGender: String = "All"
+    @State private var selectedCountryID: String?
+    @State private var showCountryPicker = false
+
+    private var selectedCountryLabel: String {
+        guard let selectedCountryID,
+              let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
+            return "Add Country"
+        }
+        return "\(country.flag) \(country.name)"
+    }
     
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -74,8 +84,10 @@ struct FiltersView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
                     
-                    Button(action: { }) {
-                        Text("Add Country")
+                    Button {
+                        showCountryPicker = true
+                    } label: {
+                        Text(selectedCountryLabel)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.tertiaryText)
                             .frame(maxWidth: .infinity)
@@ -114,6 +126,9 @@ struct FiltersView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $showCountryPicker) {
+            CountryPickerView(selectedCountryID: $selectedCountryID)
+        }
     }
     
     private func presetButton(title: String, range: ClosedRange<Int>?) -> some View {
@@ -158,6 +173,112 @@ struct FiltersView: View {
         minAge = 18
         maxAge = 100
         selectedGender = "All"
+        selectedCountryID = nil
+    }
+}
+
+private struct CountryPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedCountryID: String?
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+
+    private var selectedCountryText: String {
+        guard let selectedCountryID,
+              let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
+            return ""
+        }
+        return "\(country.flag) \(country.name)"
+    }
+
+    private var filteredCountries: [Country] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+
+        if query.isEmpty || query == selectedCountryText {
+            return CountryDatabase.all
+        }
+        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text("Origin")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField("Search city or country", text: $searchText)
+                        .font(.travelBody)
+                        .foregroundColor(Colors.primaryText)
+                        .focused($isSearchFocused)
+                        .submitLabel(.search)
+                        .onSubmit {
+                            isSearchFocused = false
+                        }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredCountries) { country in
+                            let isSelected = selectedCountryID == country.id
+
+                            Button {
+                                if isSelected {
+                                    selectedCountryID = nil
+                                    searchText = ""
+                                } else {
+                                    selectedCountryID = country.id
+                                    searchText = "\(country.flag) \(country.name)"
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(country.flag)
+                                        .font(.travelTitle)
+                                    Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .scrollIndicators(.hidden)
+            }
+            .padding(.top, 8)
+        }
+        .onTapGesture {
+            isSearchFocused = false
+        }
+        .ignoresSafeArea(.keyboard)
     }
 }
 

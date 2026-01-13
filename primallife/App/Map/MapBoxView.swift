@@ -190,17 +190,19 @@ struct MapBoxView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                     }
                                 }
-                                
-                                Button(action: {
-                                    isShowingFilters = true
-                                }) {
-                                    Text("Filter")
-                                        .font(.travelTitle)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 12)
-                                        .background(Colors.accent)
-                                        .clipShape(Capsule())
+
+                                if communityTab == .travelers {
+                                    Button(action: {
+                                        isShowingFilters = true
+                                    }) {
+                                        Text("Filter")
+                                            .font(.travelTitle)
+                                            .foregroundStyle(Colors.tertiaryText)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 12)
+                                            .background(Colors.accent)
+                                            .clipShape(Capsule())
+                                    }
                                 }
                             }
                             .padding(.horizontal)

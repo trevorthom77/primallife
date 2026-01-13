@@ -920,6 +920,9 @@ private struct MapTribeReviewView: View {
     let selectedLocation: CLLocationCoordinate2D
     @State private var reviewViewport: Viewport
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
+    @State private var isCreating = false
+    @State private var errorMessage: String?
 
     init(
         groupName: String,
@@ -1097,26 +1100,108 @@ private struct MapTribeReviewView: View {
         )
         .navigationBarBackButtonHidden(true)
         .safeAreaInset(edge: .bottom) {
-            VStack {
-                Button(action: {}) {
-                    Text("Create Tribe")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+            VStack(spacing: 12) {
+                Button {
+                    guard !isCreating else { return }
+                    isCreating = true
+                    Task {
+                        await createTribe()
+                        await MainActor.run {
+                            isCreating = false
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Create Tribe")
+                            .font(.travelDetail)
+                            .foregroundColor(Colors.tertiaryText)
+
+                        if isCreating {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 48)
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 48)
             .background(Colors.background)
         }
     }
 
     private var dateRangeText: String {
         returnDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    @MainActor
+    private func createTribe() async {
+        guard let supabase else {
+            errorMessage = "Unable to connect right now."
+            return
+        }
+
+        guard let userID = supabase.auth.currentUser?.id else {
+            errorMessage = "You need to sign in."
+            return
+        }
+
+        let trimmedName = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = trimmedName.isEmpty ? "Untitled tribe" : trimmedName
+        let trimmedAbout = aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        errorMessage = nil
+
+        do {
+            let photoURL = try await uploadGroupPhotoIfNeeded(supabase: supabase, userID: userID)
+            guard let destination = await resolveDestinationName(for: selectedLocation) else {
+                errorMessage = "Unable to resolve location."
+                return
+            }
+
+            let payload = NewMapTribe(
+                ownerID: userID,
+                destination: destination,
+                name: resolvedName,
+                description: trimmedAbout.isEmpty ? nil : trimmedAbout,
+                endDate: returnDate,
+                gender: selectedGender.rawValue,
+                privacy: "Public",
+                interests: selectedInterests,
+                photoURL: photoURL?.absoluteString,
+                isMapTribe: true,
+                latitude: selectedLocation.latitude,
+                longitude: selectedLocation.longitude
+            )
+
+            let createdRecord: CreatedTribeRow = try await supabase
+                .from("tribes")
+                .insert(payload)
+                .select("id")
+                .single()
+                .execute()
+                .value
+
+            let joinPayload = TribeJoinPayload(id: userID, tribeID: createdRecord.id)
+            try await supabase
+                .from("tribes_join")
+                .insert(joinPayload)
+                .execute()
+        } catch {
+            errorMessage = "Unable to create tribe right now."
+        }
     }
 
     private func uploadGroupPhotoIfNeeded(supabase: SupabaseClient, userID: UUID) async throws -> URL? {
@@ -1225,4 +1310,18 @@ private struct NewMapTribe: Encodable {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+}
+
+private struct CreatedTribeRow: Decodable {
+    let id: UUID
+}
+
+private struct TribeJoinPayload: Encodable {
+    let id: UUID
+    let tribeID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case tribeID = "tribe_id"
+    }
 }

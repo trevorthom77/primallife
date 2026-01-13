@@ -256,6 +256,13 @@ struct UpcomingTripsFullView: View {
                                                                     .font(.travelDetail)
                                                                     .foregroundStyle(Colors.secondaryText)
                                                             }
+
+                                                            if let dateRangeText = travelerDateRangeText(for: travelerID) {
+                                                                Text(dateRangeText)
+                                                                    .font(.travelDetail)
+                                                                    .foregroundStyle(Colors.secondaryText)
+                                                                    .lineLimit(1)
+                                                            }
                                                         }
 
                                                         let originFlag = viewModel.creatorOriginFlag(for: travelerID)
@@ -321,6 +328,13 @@ struct UpcomingTripsFullView: View {
     private func tripDateRange(for trip: Trip) -> String {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
+        return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func travelerDateRangeText(for travelerID: UUID) -> String? {
+        guard let dateRange = viewModel.travelerDatesByTrip[trip.id]?[travelerID] else { return nil }
+        let start = dateRange.checkIn.formatted(.dateTime.month(.abbreviated).day())
+        let end = dateRange.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
     }
 

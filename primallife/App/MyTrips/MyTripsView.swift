@@ -1062,12 +1062,6 @@ struct MyTripsView: View {
                                                                     }
                                                                 }
                                                             }
-
-                                                            if let dateRangeText = travelerDateRangeText(for: travelerID, tripID: trip.id) {
-                                                                Text(dateRangeText)
-                                                                    .font(.travelDetail)
-                                                                    .foregroundStyle(Colors.secondaryText)
-                                                            }
                                                         }
 
                                                         Spacer()

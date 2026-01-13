@@ -6,6 +6,7 @@ import MapboxMaps
 import Supabase
 
 struct MapTribeView: View {
+    @Binding var isShowingTribes: Bool
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingCreateForm = false
 
@@ -141,7 +142,11 @@ struct MapTribeView: View {
         )
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isShowingCreateForm) {
-            MapTribeCreateFormView()
+            MapTribeCreateFormView(
+                onFinish: {
+                    isShowingTribes = false
+                }
+            )
         }
     }
 }
@@ -189,6 +194,7 @@ private struct AssetAsyncImage: View {
 }
 
 private struct MapTribeCreateFormView: View {
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var groupName: String = ""
     @State private var isShowingDetails = false
@@ -349,7 +355,8 @@ private struct MapTribeCreateFormView: View {
         .navigationDestination(isPresented: $isShowingDetails) {
             MapTribeDetailsView(
                 groupName: groupName,
-                groupPhoto: groupPhoto
+                groupPhoto: groupPhoto,
+                onFinish: onFinish
             )
         }
     }
@@ -362,6 +369,7 @@ private struct MapTribeCreateFormView: View {
 private struct MapTribeDetailsView: View {
     let groupName: String
     let groupPhoto: UIImage?
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var aboutText: String = ""
     @State private var isShowingLocation = false
@@ -474,7 +482,8 @@ private struct MapTribeDetailsView: View {
                 groupName: groupName,
                 groupPhoto: groupPhoto,
                 aboutText: aboutText,
-                selectedInterests: Array(selectedInterests)
+                selectedInterests: Array(selectedInterests),
+                onFinish: onFinish
             )
         }
     }
@@ -497,6 +506,7 @@ private struct MapTribeLocationView: View {
     let groupPhoto: UIImage?
     let aboutText: String
     let selectedInterests: [String]
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
     @AppStorage("mapSavedDestinationLongitude") private var savedDestinationLongitude: Double = 0
@@ -611,7 +621,8 @@ private struct MapTribeLocationView: View {
                         ?? CLLocationCoordinate2D(
                             latitude: savedDestinationLatitude,
                             longitude: savedDestinationLongitude
-                        )
+                        ),
+                    onFinish: onFinish
                 )
             }
         }
@@ -720,6 +731,7 @@ private struct MapTribeGenderView: View {
     let aboutText: String
     let selectedInterests: [String]
     let selectedLocation: CLLocationCoordinate2D
+    let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var selectedGender: MapTribeGenderOption = .everyone
     @State private var showReturnPicker = false
@@ -852,7 +864,8 @@ private struct MapTribeGenderView: View {
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
                 returnDate: returnDate,
-                selectedLocation: selectedLocation
+                selectedLocation: selectedLocation,
+                onFinish: onFinish
             )
         }
         .sheet(isPresented: $showReturnPicker) {
@@ -918,6 +931,7 @@ private struct MapTribeReviewView: View {
     let selectedGender: MapTribeGenderOption
     let returnDate: Date
     let selectedLocation: CLLocationCoordinate2D
+    let onFinish: () -> Void
     @State private var reviewViewport: Viewport
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -931,7 +945,8 @@ private struct MapTribeReviewView: View {
         selectedInterests: [String],
         selectedGender: MapTribeGenderOption,
         returnDate: Date,
-        selectedLocation: CLLocationCoordinate2D
+        selectedLocation: CLLocationCoordinate2D,
+        onFinish: @escaping () -> Void
     ) {
         self.groupName = groupName
         self.groupPhoto = groupPhoto
@@ -940,6 +955,7 @@ private struct MapTribeReviewView: View {
         self.selectedGender = selectedGender
         self.returnDate = returnDate
         self.selectedLocation = selectedLocation
+        self.onFinish = onFinish
         _reviewViewport = State(
             initialValue: .camera(
                 center: selectedLocation,
@@ -1199,6 +1215,8 @@ private struct MapTribeReviewView: View {
                 .from("tribes_join")
                 .insert(joinPayload)
                 .execute()
+
+            onFinish()
         } catch {
             errorMessage = "Unable to create tribe right now."
         }

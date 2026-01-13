@@ -442,7 +442,7 @@ struct MapBoxView: View {
                 FiltersView()
             }
             .navigationDestination(isPresented: $isShowingTribes) {
-                MapTribeView()
+                MapTribeView(isShowingTribes: $isShowingTribes)
             }
         }
     }

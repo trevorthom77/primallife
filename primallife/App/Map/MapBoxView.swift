@@ -50,6 +50,8 @@ struct MapBoxView: View {
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     @State private var locationQueryRadius: CLLocationDistance = 0
+    @State private var isLoadingLocations = false
+    @State private var loadingFeedbackToggle = false
     private let otherUserJitterRadius: CLLocationDistance = 500
     
     private let customPlaceImageNames = [
@@ -128,6 +130,7 @@ struct MapBoxView: View {
                         updateSearchArea(using: map)
                         refreshLocations()
                     }
+                    .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
                     .overlay(alignment: .top) {
                         if !hideChrome {
                             VStack(alignment: .leading, spacing: 12) {
@@ -237,6 +240,13 @@ struct MapBoxView: View {
                             }
                             .padding(.leading)
                             .padding(.top, 58)
+                        }
+                    }
+                    .overlay(alignment: .top) {
+                        if isLoadingLocations {
+                            loadingIndicator
+                                .padding(.top, hideChrome ? 58 : 120)
+                                .padding(.horizontal)
                         }
                     }
                     .overlay(alignment: .bottom) {
@@ -942,15 +952,41 @@ struct MapBoxView: View {
 
     private func refreshLocations() {
         locationsRefreshTask?.cancel()
+        guard mapCenterCoordinate != nil, locationQueryRadius > 0 else {
+            isLoadingLocations = false
+            return
+        }
+        isLoadingLocations = true
+        loadingFeedbackToggle.toggle()
         locationsRefreshTask = Task {
             await fetchOtherLocations()
             await fetchMapTribes()
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                isLoadingLocations = false
+            }
         }
     }
     
     private func stopLocationsRefresh() {
         locationsRefreshTask?.cancel()
         locationsRefreshTask = nil
+        isLoadingLocations = false
+    }
+
+    private var loadingIndicator: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .tint(Colors.primaryText)
+
+            Text("Loading...")
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Colors.card)
+        .clipShape(Capsule())
     }
     
     private var userLocationAnnotation: some View {

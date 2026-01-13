@@ -51,10 +51,16 @@ struct MapBoxView: View {
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
     @State private var locationQueryRadius: CLLocationDistance = 0
+    @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
+    @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
+    @State private var lastLocationsRefreshTime: TimeInterval = 0
     @State private var isLoadingLocations = false
     @State private var loadingFeedbackToggle = false
     @StateObject private var tribeImageStore = TribeImageStore()
     private let otherUserJitterRadius: CLLocationDistance = 500
+    private let refreshMovementThresholdFraction: Double = 0.5
+    private let refreshRadiusChangeThresholdFraction: Double = 0.5
+    private let refreshMinimumInterval: TimeInterval = 5
     
     private let customPlaceImageNames = [
         "italy",
@@ -130,6 +136,10 @@ struct MapBoxView: View {
                     .onMapIdle { _ in
                         guard let map = proxy.map else { return }
                         updateSearchArea(using: map)
+                        guard let center = mapCenterCoordinate else { return }
+                        let radius = locationQueryRadius
+                        guard radius > 0 else { return }
+                        guard shouldRefreshLocations(for: center, radius: radius) else { return }
                         refreshLocations()
                     }
                     .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
@@ -953,12 +963,32 @@ struct MapBoxView: View {
         return min(verticalRadius, horizontalRadius)
     }
 
+    private func shouldRefreshLocations(for center: CLLocationCoordinate2D, radius: CLLocationDistance) -> Bool {
+        let now = Date().timeIntervalSinceReferenceDate
+        if now - lastLocationsRefreshTime < refreshMinimumInterval {
+            return false
+        }
+        guard let lastCenter = lastLocationsRefreshCenter, lastLocationsRefreshRadius > 0 else {
+            return true
+        }
+        let lastRadius = lastLocationsRefreshRadius
+        let lastLocation = CLLocation(latitude: lastCenter.latitude, longitude: lastCenter.longitude)
+        let currentLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let distance = currentLocation.distance(from: lastLocation)
+        let moveThreshold = radius * refreshMovementThresholdFraction
+        let radiusThreshold = lastRadius * refreshRadiusChangeThresholdFraction
+        return distance >= moveThreshold || abs(radius - lastRadius) >= radiusThreshold
+    }
+
     private func refreshLocations() {
         locationsRefreshTask?.cancel()
-        guard mapCenterCoordinate != nil, locationQueryRadius > 0 else {
+        guard let center = mapCenterCoordinate, locationQueryRadius > 0 else {
             isLoadingLocations = false
             return
         }
+        lastLocationsRefreshCenter = center
+        lastLocationsRefreshRadius = locationQueryRadius
+        lastLocationsRefreshTime = Date().timeIntervalSinceReferenceDate
         isLoadingLocations = true
         loadingFeedbackToggle.toggle()
         locationsRefreshTask = Task {

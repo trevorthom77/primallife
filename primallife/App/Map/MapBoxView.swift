@@ -1041,10 +1041,14 @@ struct MapBoxView: View {
     }
     
     private var userLocationAnnotation: some View {
-        ZStack {
+        let outerSize: CGFloat = communityTab == .tribes ? 50 : 66
+        let innerSize: CGFloat = communityTab == .tribes ? 44 : 58
+        let strokeWidth: CGFloat = communityTab == .tribes ? 3 : 4
+
+        return ZStack {
             Circle()
                 .fill(Colors.card)
-                .frame(width: 66, height: 66)
+                .frame(width: outerSize, height: outerSize)
             
             let avatarURL = userAvatarURL
             
@@ -1072,11 +1076,11 @@ struct MapBoxView: View {
                     Colors.secondaryText.opacity(0.3)
                 }
             }
-            .frame(width: 58, height: 58)
+            .frame(width: innerSize, height: innerSize)
             .clipShape(Circle())
             .overlay {
                 Circle()
-                    .stroke(Colors.card, lineWidth: 4)
+                    .stroke(Colors.card, lineWidth: strokeWidth)
             }
         }
     }

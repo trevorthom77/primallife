@@ -1190,15 +1190,26 @@ private struct MapCommunityPanel: View {
             }
             
             if tab == .tribes {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(tribes) { tribe in
-                            tribeCard(tribe)
-                        }
+                if tribes.isEmpty {
+                    HStack {
+                        Spacer()
+                        Text("No tribes nearby yet.")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.secondaryText)
+                        Spacer()
                     }
-                    .padding(.vertical, 4)
+                    .frame(height: 92)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(tribes) { tribe in
+                                tribeCard(tribe)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .frame(height: 92)
                 }
-                .frame(height: 92)
             } else if travelers.isEmpty {
                 HStack {
                     Spacer()

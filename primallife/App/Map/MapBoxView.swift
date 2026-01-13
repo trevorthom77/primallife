@@ -849,6 +849,7 @@ struct MapBoxView: View {
 
             await MainActor.run {
                 mapTribes = nearbyTribes
+                tribeImageStore.preloadImages(for: nearbyTribes)
             }
             await updateTribeCountryFlags(for: nearbyTribes)
         } catch {
@@ -1249,13 +1250,25 @@ private struct MapTribeLocation: Identifiable, Decodable {
     }
 }
 
+private enum MapTribeImageCache {
+    static var images: [URL: Image] = [:]
+}
+
 @MainActor
 private final class TribeImageStore: ObservableObject {
-    @Published private(set) var images: [URL: Image] = [:]
+    @Published private(set) var images: [URL: Image] = MapTribeImageCache.images
     private var inFlight: Set<URL> = []
 
     func image(for url: URL) -> Image? {
         images[url]
+    }
+
+    func preloadImages(for tribes: [MapTribeLocation]) {
+        for tribe in tribes {
+            if let url = tribe.photoURL {
+                loadImage(for: url)
+            }
+        }
     }
 
     func loadImage(for url: URL) {
@@ -1268,7 +1281,9 @@ private final class TribeImageStore: ObservableObject {
             do {
                 let (data, _) = try await URLSession.shared.data(for: request)
                 guard let uiImage = UIImage(data: data) else { return }
-                images[url] = Image(uiImage: uiImage)
+                let image = Image(uiImage: uiImage)
+                images[url] = image
+                MapTribeImageCache.images[url] = image
             } catch { }
         }
     }

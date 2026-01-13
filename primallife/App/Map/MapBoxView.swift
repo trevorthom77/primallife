@@ -1272,35 +1272,33 @@ private struct MapCommunityPanel: View {
                 }
             }
             .frame(width: 52, height: 52)
-            .clipShape(Circle())
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    if !traveler.name.isEmpty {
-                        Text(traveler.name)
+            VStack(alignment: .leading, spacing: 8) {
+                if !traveler.name.isEmpty {
+                    Text(traveler.name)
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.primaryText)
+                }
+                
+                HStack(spacing: 6) {
+                    if let originDisplay = traveler.originDisplay {
+                        Text(originDisplay)
                             .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
+                            .foregroundStyle(Colors.accent)
                     }
                     
-                if let originDisplay = traveler.originDisplay {
-                    Text(originDisplay)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
-                }
-                }
-                
-                Spacer(minLength: 8)
-                
-                if let distanceMiles = traveler.distanceMiles {
-                    Text(String(format: "%.1f mi", distanceMiles))
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.secondaryText)
+                    if let distanceMiles = traveler.distanceMiles {
+                        Text(String(format: "%.1f mi", distanceMiles))
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.accent)
+                    }
                 }
             }
         }
         .frame(width: 220, alignment: .leading)
         .padding(16)
-        .background(Colors.secondaryText.opacity(0.18))
+        .background(Colors.background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

@@ -280,7 +280,7 @@ struct OthersProfileView: View {
                                     .foregroundStyle(Colors.secondaryText)
                             } else {
                                 VStack(spacing: 12) {
-                                    ForEach(countries) { country in
+                                    ForEach(countries.prefix(1)) { country in
                                         TravelCard(
                                             flag: country.flag,
                                             location: country.name,
@@ -297,6 +297,7 @@ struct OthersProfileView: View {
                                 }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 8)
 
                         VStack(alignment: .leading, spacing: 8) {

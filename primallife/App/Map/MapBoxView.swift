@@ -367,7 +367,7 @@ struct MapBoxView: View {
                         if selectedPlace == nil {
                             MapCommunityPanel(
                                 tab: $communityTab,
-                                tribes: [],
+                                tribes: mapTribes,
                                 travelers: nearbyTravelers
                             )
                             .padding(.horizontal)
@@ -797,7 +797,7 @@ struct MapBoxView: View {
         do {
             let tribes: [MapTribeLocation] = try await supabase
                 .from("tribes")
-                .select("id, photo_url, latitude, longitude")
+                .select("id, name, destination, photo_url, latitude, longitude")
                 .eq("is_map_tribe", value: true)
                 .execute()
                 .value
@@ -1060,12 +1060,16 @@ private struct OtherUserLocation: Identifiable {
 
 private struct MapTribeLocation: Identifiable, Decodable {
     let id: UUID
+    let name: String
+    let destination: String
     let latitude: Double
     let longitude: Double
     let photoURL: URL?
 
     enum CodingKeys: String, CodingKey {
         case id
+        case name
+        case destination
         case latitude
         case longitude
         case photoURL = "photo_url"
@@ -1074,6 +1078,8 @@ private struct MapTribeLocation: Identifiable, Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        destination = try container.decodeIfPresent(String.self, forKey: .destination) ?? ""
         latitude = try container.decode(Double.self, forKey: .latitude)
         longitude = try container.decode(Double.self, forKey: .longitude)
         if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
@@ -1091,7 +1097,7 @@ private struct MapTribeLocation: Identifiable, Decodable {
 private struct MapCommunityPanel: View {
     @Environment(\.supabaseClient) private var supabase
     @Binding var tab: CommunityTab
-    let tribes: [ProfileTribe]
+    let tribes: [MapTribeLocation]
     let travelers: [MapTraveler]
     
     var body: some View {
@@ -1165,11 +1171,9 @@ private struct MapCommunityPanel: View {
         .animation(.none, value: tab)
     }
     
-    private func tribeCard(_ tribe: ProfileTribe) -> some View {
+    private func tribeCard(_ tribe: MapTribeLocation) -> some View {
         HStack(spacing: 12) {
-            Image(tribe.imageName)
-                .resizable()
-                .scaledToFill()
+            tribeImage(for: tribe)
                 .frame(width: 52, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
@@ -1178,7 +1182,7 @@ private struct MapCommunityPanel: View {
                     .font(.travelBody)
                     .foregroundStyle(Colors.primaryText)
                 
-                Text(tribe.status)
+                Text(tribe.destination)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.accent)
             }
@@ -1187,6 +1191,23 @@ private struct MapCommunityPanel: View {
         .padding(16)
         .background(Colors.background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func tribeImage(for tribe: MapTribeLocation) -> some View {
+        if let photoURL = tribe.photoURL {
+            AsyncImage(url: photoURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
     }
     
     private func travelerCard(_ traveler: MapTraveler) -> some View {

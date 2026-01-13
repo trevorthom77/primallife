@@ -70,6 +70,7 @@ struct MapBoxView: View {
     @State private var loadingFeedbackToggle = false
     @State private var suppressLoadingFeedback = true
     @StateObject private var tribeImageStore = TribeImageStore()
+    @StateObject private var travelerImageStore = TravelerImageStore()
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let refreshMovementThresholdFraction: Double = 0.5
     private let refreshRadiusChangeThresholdFraction: Double = 0.5
@@ -437,7 +438,8 @@ struct MapBoxView: View {
                                 tribes: mapTribes,
                                 tribeFlags: tribeCountryFlags,
                                 travelers: nearbyTravelers,
-                                tribeImageStore: tribeImageStore
+                                tribeImageStore: tribeImageStore,
+                                travelerImageStore: travelerImageStore
                             )
                             .padding(.horizontal)
                             .padding(.bottom, 120)
@@ -1112,13 +1114,24 @@ struct MapBoxView: View {
                 .fill(Colors.card)
                 .frame(width: 66, height: 66)
             
-            AsyncImage(url: location.avatarURL(using: supabase)) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
+            let avatarURL = location.avatarURL(using: supabase)
+
+            Group {
+                if let avatarURL {
+                    if let cachedImage = travelerImageStore.image(for: avatarURL) {
+                        cachedImage
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.3)
+                    }
                 } else {
                     Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .task(id: avatarURL) {
+                if let avatarURL {
+                    travelerImageStore.loadImage(for: avatarURL)
                 }
             }
             .frame(width: 58, height: 58)
@@ -1365,6 +1378,37 @@ private final class TribeImageStore: ObservableObject {
     }
 }
 
+private enum MapTravelerImageCache {
+    static var images: [URL: Image] = [:]
+}
+
+@MainActor
+private final class TravelerImageStore: ObservableObject {
+    @Published private(set) var images: [URL: Image] = MapTravelerImageCache.images
+    private var inFlight: Set<URL> = []
+
+    func image(for url: URL) -> Image? {
+        images[url]
+    }
+
+    func loadImage(for url: URL) {
+        guard images[url] == nil, !inFlight.contains(url) else { return }
+        inFlight.insert(url)
+
+        Task {
+            defer { inFlight.remove(url) }
+            let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30)
+            do {
+                let (data, _) = try await URLSession.shared.data(for: request)
+                guard let uiImage = UIImage(data: data) else { return }
+                let image = Image(uiImage: uiImage)
+                images[url] = image
+                MapTravelerImageCache.images[url] = image
+            } catch { }
+        }
+    }
+}
+
 private struct MapCommunityPanel: View {
     @Environment(\.supabaseClient) private var supabase
     @Binding var tab: CommunityTab
@@ -1372,6 +1416,7 @@ private struct MapCommunityPanel: View {
     let tribeFlags: [UUID: String]
     let travelers: [MapTraveler]
     @ObservedObject var tribeImageStore: TribeImageStore
+    @ObservedObject var travelerImageStore: TravelerImageStore
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1521,17 +1566,9 @@ private struct MapCommunityPanel: View {
     
     private func travelerCard(_ traveler: MapTraveler) -> some View {
         HStack(spacing: 12) {
-            AsyncImage(url: traveler.avatarURL(using: supabase)) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Colors.secondaryText.opacity(0.3)
-                }
-            }
-            .frame(width: 52, height: 52)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            travelerImage(for: traveler)
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
             VStack(alignment: .leading, spacing: 8) {
                 if !traveler.name.isEmpty {
@@ -1559,6 +1596,26 @@ private struct MapCommunityPanel: View {
         .padding(16)
         .background(Colors.background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func travelerImage(for traveler: MapTraveler) -> some View {
+        if let avatarURL = traveler.avatarURL(using: supabase) {
+            Group {
+                if let cachedImage = travelerImageStore.image(for: avatarURL) {
+                    cachedImage
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .task(id: avatarURL) {
+                travelerImageStore.loadImage(for: avatarURL)
+            }
+        } else {
+            Colors.secondaryText.opacity(0.3)
+        }
     }
 }
 

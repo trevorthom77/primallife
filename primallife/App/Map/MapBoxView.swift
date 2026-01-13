@@ -44,6 +44,7 @@ struct MapBoxView: View {
     @State private var flyFeedbackToggle = false
     @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var mapTribes: [MapTribeLocation] = []
+    @State private var tribeCountryFlags: [UUID: String] = [:]
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
@@ -368,6 +369,7 @@ struct MapBoxView: View {
                             MapCommunityPanel(
                                 tab: $communityTab,
                                 tribes: mapTribes,
+                                tribeFlags: tribeCountryFlags,
                                 travelers: nearbyTravelers
                             )
                             .padding(.horizontal)
@@ -805,8 +807,52 @@ struct MapBoxView: View {
             await MainActor.run {
                 mapTribes = tribes
             }
+            await updateTribeCountryFlags(for: tribes)
         } catch {
             print("Failed to fetch map tribes: \(error.localizedDescription)")
+        }
+    }
+
+    private func updateTribeCountryFlags(for tribes: [MapTribeLocation]) async {
+        let missingTribes = await MainActor.run {
+            tribes.filter { tribeCountryFlags[$0.id] == nil }
+        }
+        guard !missingTribes.isEmpty else { return }
+
+        for tribe in missingTribes {
+            let flag = await fetchCountryFlag(for: tribe.coordinate)
+            guard !flag.isEmpty else { continue }
+            await MainActor.run {
+                tribeCountryFlags[tribe.id] = flag
+            }
+        }
+    }
+
+    private func fetchCountryFlag(for coordinate: CLLocationCoordinate2D) async -> String {
+        guard
+            let accessToken = Bundle.main.object(forInfoDictionaryKey: "MBXAccessToken") as? String,
+            !accessToken.isEmpty
+        else {
+            return ""
+        }
+
+        let coordinateString = "\(coordinate.longitude),\(coordinate.latitude)"
+        var components = URLComponents(string: "https://api.mapbox.com/geocoding/v5/mapbox.places/\(coordinateString).json")
+        components?.queryItems = [
+            URLQueryItem(name: "types", value: "country"),
+            URLQueryItem(name: "limit", value: "1"),
+            URLQueryItem(name: "language", value: "en"),
+            URLQueryItem(name: "access_token", value: accessToken)
+        ]
+
+        guard let url = components?.url else { return "" }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(MapboxGeocodingResponse.self, from: data)
+            return response.features.first?.flagEmoji ?? ""
+        } catch {
+            return ""
         }
     }
     
@@ -1098,6 +1144,7 @@ private struct MapCommunityPanel: View {
     @Environment(\.supabaseClient) private var supabase
     @Binding var tab: CommunityTab
     let tribes: [MapTribeLocation]
+    let tribeFlags: [UUID: String]
     let travelers: [MapTraveler]
     
     var body: some View {
@@ -1172,7 +1219,10 @@ private struct MapCommunityPanel: View {
     }
     
     private func tribeCard(_ tribe: MapTribeLocation) -> some View {
-        HStack(spacing: 12) {
+        let flag = tribeFlags[tribe.id] ?? ""
+        let destination = flag.isEmpty ? tribe.destination : "\(flag) \(tribe.destination)"
+
+        return HStack(spacing: 12) {
             tribeImage(for: tribe)
                 .frame(width: 52, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -1182,7 +1232,7 @@ private struct MapCommunityPanel: View {
                     .font(.travelBody)
                     .foregroundStyle(Colors.primaryText)
                 
-                Text(tribe.destination)
+                Text(destination)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.accent)
             }

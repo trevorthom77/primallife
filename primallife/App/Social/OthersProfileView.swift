@@ -101,64 +101,66 @@ struct OthersProfileView: View {
                                 .foregroundStyle(Colors.secondaryText)
                         }
 
-                        HStack(spacing: 12) {
-                            Button(action: {
-                                guard !isBlocked else { return }
-                                if hasIncomingFriendRequest {
-                                    Task {
-                                        _ = await acceptFriendRequest()
-                                    }
-                                } else if hasRequestedFriend {
-                                    isShowingCancelRequestConfirm = true
-                                } else {
-                                    Task {
-                                        let didRequest = await sendFriendRequest()
-                                        if didRequest {
-                                            await MainActor.run {
-                                                hasRequestedFriend = true
+                        if !isViewingOwnProfile {
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    guard !isBlocked else { return }
+                                    if hasIncomingFriendRequest {
+                                        Task {
+                                            _ = await acceptFriendRequest()
+                                        }
+                                    } else if hasRequestedFriend {
+                                        isShowingCancelRequestConfirm = true
+                                    } else {
+                                        Task {
+                                            let didRequest = await sendFriendRequest()
+                                            if didRequest {
+                                                await MainActor.run {
+                                                    hasRequestedFriend = true
+                                                }
                                             }
                                         }
                                     }
+                                }) {
+                                    Text(friendButtonTitle)
+                                        .font(.custom(Fonts.semibold, size: 16))
+                                        .foregroundStyle(Colors.primaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Colors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
                                 }
-                            }) {
-                                Text(friendButtonTitle)
-                                    .font(.custom(Fonts.semibold, size: 16))
-                                    .foregroundStyle(Colors.primaryText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(.plain)
-                            .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
-                            .allowsHitTesting(!isFriend && !isBlocked)
+                                .buttonStyle(.plain)
+                                .opacity((hasRequestedFriend && !isFriend) || isBlocked ? 0.6 : 1)
+                                .allowsHitTesting(!isFriend && !isBlocked)
 
-                        NavigationLink {
-                            if let userID {
-                                FriendsChatView(friendID: userID)
+                                NavigationLink {
+                                    if let userID {
+                                        FriendsChatView(friendID: userID)
+                                    }
+                                } label: {
+                                    Text("Message")
+                                        .font(.custom(Fonts.semibold, size: 16))
+                                        .foregroundStyle(Colors.primaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Colors.card)
+                                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                                }
+                                .buttonStyle(.plain)
+                                .opacity(isFriend && !isBlocked ? 1 : 0.6)
+                                .allowsHitTesting(isFriend && !isBlocked)
                             }
-                        } label: {
-                            Text("Message")
-                                .font(.custom(Fonts.semibold, size: 16))
-                                .foregroundStyle(Colors.primaryText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .padding(.top, 8)
                         }
-                        .buttonStyle(.plain)
-                        .opacity(isFriend && !isBlocked ? 1 : 0.6)
-                        .allowsHitTesting(isFriend && !isBlocked)
-                    }
-                        .padding(.top, 8)
 
-                    if !isFriend {
-                        Text("Messaging is available for friends only.")
-                            .font(.custom(Fonts.regular, size: 16))
-                            .foregroundStyle(Colors.secondaryText)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                    }
+                        if !isFriend && !isViewingOwnProfile {
+                            Text("Messaging is available for friends only.")
+                                .font(.custom(Fonts.regular, size: 16))
+                                .foregroundStyle(Colors.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                        }
 
                     if hasBlockedUser {
                         Text("You blocked this user.")
@@ -538,6 +540,14 @@ struct OthersProfileView: View {
 
     private var isBlocked: Bool {
         hasBlockedUser || isBlockedByUser
+    }
+
+    private var isViewingOwnProfile: Bool {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let userID
+        else { return false }
+        return currentUserID == userID
     }
 
     private var blockedProfileView: some View {

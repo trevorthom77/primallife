@@ -38,6 +38,7 @@ struct MapBoxView: View {
     @State private var selectedPlaceTravelerCount = 0
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
@@ -48,7 +49,7 @@ struct MapBoxView: View {
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
-    private let locationQueryRadius: CLLocationDistance = 50_000
+    @State private var locationQueryRadius: CLLocationDistance = 0
     private let otherUserJitterRadius: CLLocationDistance = 500
     
     private let customPlaceImageNames = [
@@ -122,6 +123,11 @@ struct MapBoxView: View {
                             minZoom: 3.0
                         )
                     )
+                    .onMapIdle { _ in
+                        guard let map = proxy.map else { return }
+                        updateSearchArea(using: map)
+                        refreshLocations()
+                    }
                     .overlay(alignment: .top) {
                         if !hideChrome {
                             VStack(alignment: .leading, spacing: 12) {
@@ -384,7 +390,6 @@ struct MapBoxView: View {
                     .onAppear {
                         applySavedDestination(using: proxy.camera)
                         locationManager.requestPermission()
-                        startLocationsRefresh()
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
                         if let coordinate {
@@ -395,12 +400,6 @@ struct MapBoxView: View {
                         
                         guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
-                        
-                        if coordinate != nil {
-                            Task {
-                                await fetchOtherLocations()
-                            }
-                        }
                         
                         guard !hasCenteredOnUser, let coordinate else { return }
                         viewport = .camera(
@@ -709,9 +708,11 @@ struct MapBoxView: View {
 
     private func fetchOtherLocations() async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard let coordinate = userCoordinate else { return }
+        guard let coordinate = mapCenterCoordinate else { return }
+        let radius = locationQueryRadius
+        guard radius > 0 else { return }
         
-        let bounds = nearbyBounds(around: coordinate, radius: locationQueryRadius)
+        let bounds = nearbyBounds(around: coordinate, radius: radius)
         let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         
         do {
@@ -728,7 +729,7 @@ struct MapBoxView: View {
             
             let nearbyRows = rows.filter { row in
                 let location = CLLocation(latitude: row.latitude, longitude: row.longitude)
-                return location.distance(from: originLocation) <= locationQueryRadius
+                return location.distance(from: originLocation) <= radius
             }
             
             guard !nearbyRows.isEmpty else {
@@ -799,9 +800,11 @@ struct MapBoxView: View {
 
     private func fetchMapTribes() async {
         guard let supabase else { return }
-        guard let coordinate = userCoordinate else { return }
+        guard let coordinate = mapCenterCoordinate else { return }
+        let radius = locationQueryRadius
+        guard radius > 0 else { return }
 
-        let bounds = nearbyBounds(around: coordinate, radius: locationQueryRadius)
+        let bounds = nearbyBounds(around: coordinate, radius: radius)
         let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
 
         do {
@@ -818,7 +821,7 @@ struct MapBoxView: View {
 
             let nearbyTribes = tribes.filter { tribe in
                 let location = CLLocation(latitude: tribe.latitude, longitude: tribe.longitude)
-                return location.distance(from: originLocation) <= locationQueryRadius
+                return location.distance(from: originLocation) <= radius
             }
 
             await MainActor.run {
@@ -914,17 +917,34 @@ struct MapBoxView: View {
         return hash
     }
     
-    private func startLocationsRefresh() {
+    private func updateSearchArea(using map: MapboxMap) {
+        let cameraState = map.cameraState
+        let cameraOptions = CameraOptions(cameraState: cameraState)
+        let bounds = map.coordinateBounds(for: cameraOptions)
+        guard !bounds.isEmpty else { return }
+        let center = cameraState.center
+        let radius = visibleRadius(for: center, in: bounds)
+        guard radius > 0 else { return }
+        mapCenterCoordinate = center
+        locationQueryRadius = radius
+    }
+
+    private func visibleRadius(for center: CLLocationCoordinate2D, in bounds: CoordinateBounds) -> CLLocationDistance {
+        let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let northLocation = CLLocation(latitude: bounds.north, longitude: center.longitude)
+        let southLocation = CLLocation(latitude: bounds.south, longitude: center.longitude)
+        let eastLocation = CLLocation(latitude: center.latitude, longitude: bounds.east)
+        let westLocation = CLLocation(latitude: center.latitude, longitude: bounds.west)
+        let verticalRadius = min(centerLocation.distance(from: northLocation), centerLocation.distance(from: southLocation))
+        let horizontalRadius = min(centerLocation.distance(from: eastLocation), centerLocation.distance(from: westLocation))
+        return min(verticalRadius, horizontalRadius)
+    }
+
+    private func refreshLocations() {
         locationsRefreshTask?.cancel()
         locationsRefreshTask = Task {
             await fetchOtherLocations()
             await fetchMapTribes()
-            
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 15 * 1_000_000_000)
-                await fetchOtherLocations()
-                await fetchMapTribes()
-            }
         }
     }
     

@@ -59,6 +59,7 @@ struct MapBoxView: View {
     @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var mapTribes: [MapTribeLocation] = []
     @State private var tribeCountryFlags: [UUID: String] = [:]
+    @State private var tribeCreatorsByID: [String: MapTribeCreator] = [:]
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
@@ -133,6 +134,8 @@ struct MapBoxView: View {
                                         interests: tribe.interests,
                                         placeName: tribe.destination,
                                         tribeID: tribe.id,
+                                        createdBy: creatorName(for: tribe.ownerID),
+                                        createdByAvatarPath: creatorAvatarPath(for: tribe.ownerID),
                                         isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
                                     )
                                 } label: {
@@ -437,6 +440,7 @@ struct MapBoxView: View {
                                 tab: $communityTab,
                                 tribes: mapTribes,
                                 tribeFlags: tribeCountryFlags,
+                                tribeCreators: tribeCreatorsByID,
                                 travelers: nearbyTravelers,
                                 tribeImageStore: tribeImageStore,
                                 travelerImageStore: travelerImageStore
@@ -888,9 +892,38 @@ struct MapBoxView: View {
                 mapTribes = nearbyTribes
                 tribeImageStore.preloadImages(for: nearbyTribes)
             }
+            let ownerIDs = Array(Set(nearbyTribes.map(\.ownerID)))
+            await loadMapTribeCreators(for: ownerIDs)
             await updateTribeCountryFlags(for: nearbyTribes)
         } catch {
             print("Failed to fetch map tribes: \(error.localizedDescription)")
+        }
+    }
+
+    private func loadMapTribeCreators(for userIDs: [UUID]) async {
+        guard let supabase else { return }
+        guard !userIDs.isEmpty else { return }
+
+        let normalizedIDs = Set(userIDs.map { $0.uuidString.lowercased() })
+        let missingIDs = await MainActor.run {
+            normalizedIDs.filter { tribeCreatorsByID[$0] == nil }
+        }
+        guard !missingIDs.isEmpty else { return }
+
+        do {
+            let creators: [MapTribeCreator] = try await supabase
+                .from("onboarding")
+                .select("id, full_name, avatar_url")
+                .in("id", values: Array(missingIDs))
+                .execute()
+                .value
+
+            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id.lowercased(), $0) })
+            await MainActor.run {
+                tribeCreatorsByID.merge(lookup) { _, new in new }
+            }
+        } catch {
+            return
         }
     }
 
@@ -1217,6 +1250,18 @@ private struct TravelerRow: Decodable {
     }
 }
 
+private struct MapTribeCreator: Decodable {
+    let id: String
+    let fullName: String
+    let avatarPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullName = "full_name"
+        case avatarPath = "avatar_url"
+    }
+}
+
 private struct MapTraveler: Identifiable {
     let id: String
     let name: String
@@ -1339,6 +1384,16 @@ private struct MapTribeLocation: Identifiable, Decodable {
     }
 }
 
+private extension MapBoxView {
+    func creatorName(for ownerID: UUID) -> String? {
+        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
+    }
+
+    func creatorAvatarPath(for ownerID: UUID) -> String? {
+        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.avatarPath
+    }
+}
+
 private enum MapTribeImageCache {
     static var images: [URL: Image] = [:]
 }
@@ -1414,6 +1469,7 @@ private struct MapCommunityPanel: View {
     @Binding var tab: CommunityTab
     let tribes: [MapTribeLocation]
     let tribeFlags: [UUID: String]
+    let tribeCreators: [String: MapTribeCreator]
     let travelers: [MapTraveler]
     @ObservedObject var tribeImageStore: TribeImageStore
     @ObservedObject var travelerImageStore: TravelerImageStore
@@ -1458,6 +1514,7 @@ private struct MapCommunityPanel: View {
                         HStack(spacing: 12) {
                             ForEach(tribes) { tribe in
                                 let flag = tribeFlags[tribe.id] ?? ""
+                                let creator = tribeCreators[tribe.ownerID.uuidString.lowercased()]
                                 NavigationLink {
                                     TribesSocialView(
                                         imageURL: tribe.photoURL,
@@ -1471,6 +1528,8 @@ private struct MapCommunityPanel: View {
                                         interests: tribe.interests,
                                         placeName: tribe.destination,
                                         tribeID: tribe.id,
+                                        createdBy: creator?.fullName,
+                                        createdByAvatarPath: creator?.avatarPath,
                                         isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
                                     )
                                 } label: {

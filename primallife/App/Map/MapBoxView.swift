@@ -799,19 +799,32 @@ struct MapBoxView: View {
 
     private func fetchMapTribes() async {
         guard let supabase else { return }
+        guard let coordinate = userCoordinate else { return }
+
+        let bounds = nearbyBounds(around: coordinate, radius: locationQueryRadius)
+        let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
 
         do {
             let tribes: [MapTribeLocation] = try await supabase
                 .from("tribes")
                 .select("id, name, destination, photo_url, latitude, longitude")
                 .eq("is_map_tribe", value: true)
+                .gte("latitude", value: bounds.minLatitude)
+                .lte("latitude", value: bounds.maxLatitude)
+                .gte("longitude", value: bounds.minLongitude)
+                .lte("longitude", value: bounds.maxLongitude)
                 .execute()
                 .value
 
-            await MainActor.run {
-                mapTribes = tribes
+            let nearbyTribes = tribes.filter { tribe in
+                let location = CLLocation(latitude: tribe.latitude, longitude: tribe.longitude)
+                return location.distance(from: originLocation) <= locationQueryRadius
             }
-            await updateTribeCountryFlags(for: tribes)
+
+            await MainActor.run {
+                mapTribes = nearbyTribes
+            }
+            await updateTribeCountryFlags(for: nearbyTribes)
         } catch {
             print("Failed to fetch map tribes: \(error.localizedDescription)")
         }

@@ -56,6 +56,7 @@ struct MapBoxView: View {
     @State private var lastLocationsRefreshTime: TimeInterval = 0
     @State private var isLoadingLocations = false
     @State private var loadingFeedbackToggle = false
+    @State private var suppressLoadingFeedback = true
     @StateObject private var tribeImageStore = TribeImageStore()
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let refreshMovementThresholdFraction: Double = 0.5
@@ -413,6 +414,7 @@ struct MapBoxView: View {
                     .onAppear {
                         applySavedDestination(using: proxy.camera)
                         locationManager.requestPermission()
+                        suppressLoadingFeedback = true
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
                         if let coordinate {
@@ -990,14 +992,17 @@ struct MapBoxView: View {
         lastLocationsRefreshCenter = center
         lastLocationsRefreshRadius = locationQueryRadius
         lastLocationsRefreshTime = Date().timeIntervalSinceReferenceDate
-        isLoadingLocations = true
-        loadingFeedbackToggle.toggle()
+        if !suppressLoadingFeedback {
+            isLoadingLocations = true
+            loadingFeedbackToggle.toggle()
+        }
         locationsRefreshTask = Task {
             await fetchOtherLocations()
             await fetchMapTribes()
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 isLoadingLocations = false
+                suppressLoadingFeedback = false
             }
         }
     }

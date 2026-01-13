@@ -192,23 +192,6 @@ struct OthersProfileView: View {
                         .padding(.top, 8)
 
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Languages")
-                                .font(.custom(Fonts.semibold, size: 18))
-                                .foregroundStyle(Colors.primaryText)
-
-                            if let languagesText {
-                                Text(languagesText)
-                                    .font(.custom(Fonts.regular, size: 16))
-                                    .foregroundStyle(Colors.secondaryText)
-                            }
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .padding(.top, 8)
-
-                        VStack(alignment: .leading, spacing: 8) {
                             Text("Likes")
                                 .font(.custom(Fonts.semibold, size: 18))
                                 .foregroundStyle(Colors.primaryText)
@@ -265,6 +248,23 @@ struct OthersProfileView: View {
                                     .foregroundStyle(Colors.secondaryText)
                             }
                         }
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Languages")
+                                .font(.custom(Fonts.semibold, size: 18))
+                                .foregroundStyle(Colors.primaryText)
+
+                            if let languagesText {
+                                Text(languagesText)
+                                    .font(.custom(Fonts.regular, size: 16))
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                         .padding(.top, 8)
                     }
 

@@ -108,6 +108,11 @@ struct Recommendation: Decodable, Identifiable {
     }
 }
 
+struct TravelerDateRange {
+    let checkIn: Date
+    let returnDate: Date
+}
+
 struct NewRecommendation: Encodable {
     let creatorID: UUID
     let destination: String
@@ -217,6 +222,7 @@ final class MyTripsViewModel: ObservableObject {
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published var travelersByTrip: [UUID: [UUID]] = [:]
+    @Published var travelerDatesByTrip: [UUID: [UUID: TravelerDateRange]] = [:]
     @Published var recommendationsByDestination: [String: [Recommendation]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
@@ -322,9 +328,34 @@ final class MyTripsViewModel: ObservableObject {
 
         struct TripTraveler: Decodable {
             let userID: UUID
+            let checkIn: Date
+            let returnDate: Date
 
             enum CodingKeys: String, CodingKey {
                 case userID = "user_id"
+                case checkIn = "check_in"
+                case returnDate = "return_date"
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                userID = try container.decode(UUID.self, forKey: .userID)
+
+                let checkInString = try container.decode(String.self, forKey: .checkIn)
+                guard let decodedCheckIn = myTripsDateFormatter.date(from: checkInString) else {
+                    throw DecodingError.dataCorrupted(
+                        .init(codingPath: [CodingKeys.checkIn], debugDescription: "Invalid check-in date format")
+                    )
+                }
+                checkIn = decodedCheckIn
+
+                let returnDateString = try container.decode(String.self, forKey: .returnDate)
+                guard let decodedReturnDate = myTripsDateFormatter.date(from: returnDateString) else {
+                    throw DecodingError.dataCorrupted(
+                        .init(codingPath: [CodingKeys.returnDate], debugDescription: "Invalid return date format")
+                    )
+                }
+                returnDate = decodedReturnDate
             }
         }
 
@@ -333,7 +364,7 @@ final class MyTripsViewModel: ObservableObject {
             let startOfTodayString = myTripsDateFormatter.string(from: startOfToday)
             let fetchedTravelers: [TripTraveler] = try await supabase
                 .from("mytrips")
-                .select("user_id")
+                .select("user_id, check_in, return_date")
                 .eq("destination", value: trip.destination)
                 .gte("return_date", value: startOfTodayString)
                 .execute()
@@ -341,9 +372,27 @@ final class MyTripsViewModel: ObservableObject {
 
             let uniqueUserIDs = Array(Set(fetchedTravelers.map { $0.userID }))
             travelersByTrip[trip.id] = uniqueUserIDs
+            var dateRanges: [UUID: TravelerDateRange] = [:]
+            for traveler in fetchedTravelers {
+                if let existing = dateRanges[traveler.userID] {
+                    if traveler.checkIn < existing.checkIn {
+                        dateRanges[traveler.userID] = TravelerDateRange(
+                            checkIn: traveler.checkIn,
+                            returnDate: traveler.returnDate
+                        )
+                    }
+                } else {
+                    dateRanges[traveler.userID] = TravelerDateRange(
+                        checkIn: traveler.checkIn,
+                        returnDate: traveler.returnDate
+                    )
+                }
+            }
+            travelerDatesByTrip[trip.id] = dateRanges
             await loadCreators(for: uniqueUserIDs, supabase: supabase)
         } catch {
             travelersByTrip[trip.id] = []
+            travelerDatesByTrip[trip.id] = [:]
         }
 
         loadingTravelerTripIDs.remove(trip.id)
@@ -1013,6 +1062,12 @@ struct MyTripsView: View {
                                                                     }
                                                                 }
                                                             }
+
+                                                            if let dateRangeText = travelerDateRangeText(for: travelerID, tripID: trip.id) {
+                                                                Text(dateRangeText)
+                                                                    .font(.travelDetail)
+                                                                    .foregroundStyle(Colors.secondaryText)
+                                                            }
                                                         }
 
                                                         Spacer()
@@ -1337,6 +1392,13 @@ struct MyTripsView: View {
     private func tripDateRange(for trip: Trip) -> String {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())
         let end = trip.returnDate.formatted(.dateTime.month(.abbreviated).day())
+        return start == end ? start : "\(start)–\(end)"
+    }
+
+    private func travelerDateRangeText(for travelerID: UUID, tripID: UUID) -> String? {
+        guard let dateRange = viewModel.travelerDatesByTrip[tripID]?[travelerID] else { return nil }
+        let start = dateRange.checkIn.formatted(.dateTime.month(.abbreviated).day())
+        let end = dateRange.returnDate.formatted(.dateTime.month(.abbreviated).day())
         return start == end ? start : "\(start)–\(end)"
     }
 

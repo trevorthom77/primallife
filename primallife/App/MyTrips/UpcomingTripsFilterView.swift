@@ -46,6 +46,12 @@ struct UpcomingTripsFilterView: View {
                     }
 
                     Spacer()
+
+                    Button("Reset") {
+                        resetFilters()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -204,5 +210,14 @@ struct UpcomingTripsFilterView: View {
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func resetFilters() {
+        filterCheckInDate = nil
+        filterReturnDate = nil
+        hasCheckInDate = false
+        hasReturnDate = false
+        checkInDate = Date()
+        returnDate = Date()
     }
 }

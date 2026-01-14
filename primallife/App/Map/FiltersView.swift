@@ -12,7 +12,7 @@ struct FiltersView: View {
     @Binding var minAge: Int
     @Binding var maxAge: Int
     @State private var selectedGender: String = "All"
-    @State private var selectedCountryID: String?
+    @Binding var selectedCountryID: String?
     @State private var showCountryPicker = false
 
     private var hasSelectedCountry: Bool {

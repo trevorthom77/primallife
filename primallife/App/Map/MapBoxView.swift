@@ -65,6 +65,7 @@ struct MapBoxView: View {
     @State private var communityTab: CommunityTab = .tribes
     @State private var minAgeFilter = 18
     @State private var maxAgeFilter = 100
+    @State private var selectedCountryID: String?
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -94,16 +95,25 @@ struct MapBoxView: View {
         minAgeFilter != 18 || maxAgeFilter != 100
     }
 
+    private var isOriginFilterActive: Bool {
+        selectedCountryID != nil
+    }
+
     private var filteredTravelers: [MapTraveler] {
-        guard isAgeFilterActive else { return nearbyTravelers }
         return nearbyTravelers.filter { traveler in
-            guard let age = traveler.age else { return false }
-            return age >= minAgeFilter && age <= maxAgeFilter
+            if isAgeFilterActive {
+                guard let age = traveler.age else { return false }
+                guard age >= minAgeFilter && age <= maxAgeFilter else { return false }
+            }
+            if let selectedCountryID {
+                return traveler.origin == selectedCountryID
+            }
+            return true
         }
     }
 
     private var filteredOtherUserLocations: [OtherUserLocation] {
-        guard isAgeFilterActive else { return otherUserLocations }
+        guard isAgeFilterActive || isOriginFilterActive else { return otherUserLocations }
         let allowedIDs = Set(filteredTravelers.map(\.id))
         return otherUserLocations.filter { allowedIDs.contains($0.id) }
     }
@@ -528,7 +538,7 @@ struct MapBoxView: View {
                 profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
-                FiltersView(minAge: $minAgeFilter, maxAge: $maxAgeFilter)
+                FiltersView(minAge: $minAgeFilter, maxAge: $maxAgeFilter, selectedCountryID: $selectedCountryID)
             }
             .navigationDestination(isPresented: $isShowingTribes) {
                 MapTribeView(isShowingTribes: $isShowingTribes)

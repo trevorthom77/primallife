@@ -507,7 +507,7 @@ struct MapBoxView: View {
                         suppressLoadingFeedback = true
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
-                        if let coordinate, !isUsingSelectedDestination {
+                        if let coordinate {
                             Task {
                                 await upsertUserLocation(coordinate)
                             }
@@ -704,7 +704,6 @@ struct MapBoxView: View {
         cacheDestinationCoordinate(coordinate)
         
         Task {
-            await upsertUserLocation(coordinate)
             await fetchOtherLocations()
         }
     }

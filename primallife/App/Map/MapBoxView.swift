@@ -66,6 +66,7 @@ struct MapBoxView: View {
     @State private var minAgeFilter = 18
     @State private var maxAgeFilter = 100
     @State private var selectedCountryID: String?
+    @State private var selectedGender = "All"
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -99,6 +100,10 @@ struct MapBoxView: View {
         selectedCountryID != nil
     }
 
+    private var isGenderFilterActive: Bool {
+        selectedGender != "All"
+    }
+
     private var filteredTravelers: [MapTraveler] {
         return nearbyTravelers.filter { traveler in
             if isAgeFilterActive {
@@ -106,14 +111,19 @@ struct MapBoxView: View {
                 guard age >= minAgeFilter && age <= maxAgeFilter else { return false }
             }
             if let selectedCountryID {
-                return traveler.origin == selectedCountryID
+                guard traveler.origin == selectedCountryID else { return false }
+            }
+            if isGenderFilterActive {
+                guard let gender = traveler.gender?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !gender.isEmpty else { return false }
+                guard gender.localizedCaseInsensitiveCompare(selectedGender) == .orderedSame else { return false }
             }
             return true
         }
     }
 
     private var filteredOtherUserLocations: [OtherUserLocation] {
-        guard isAgeFilterActive || isOriginFilterActive else { return otherUserLocations }
+        guard isAgeFilterActive || isOriginFilterActive || isGenderFilterActive else { return otherUserLocations }
         let allowedIDs = Set(filteredTravelers.map(\.id))
         return otherUserLocations.filter { allowedIDs.contains($0.id) }
     }
@@ -538,7 +548,12 @@ struct MapBoxView: View {
                 profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
-                FiltersView(minAge: $minAgeFilter, maxAge: $maxAgeFilter, selectedCountryID: $selectedCountryID)
+                FiltersView(
+                    minAge: $minAgeFilter,
+                    maxAge: $maxAgeFilter,
+                    selectedGender: $selectedGender,
+                    selectedCountryID: $selectedCountryID
+                )
             }
             .navigationDestination(isPresented: $isShowingTribes) {
                 MapTribeView(isShowingTribes: $isShowingTribes)
@@ -860,7 +875,7 @@ struct MapBoxView: View {
             
             let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url, full_name, origin, birthday")
+                .select("id, avatar_url, full_name, origin, birthday, gender")
                 .in("id", values: ids)
                 .execute()
                 .value
@@ -895,7 +910,8 @@ struct MapBoxView: View {
                         origin: traveler.origin?.trimmingCharacters(in: .whitespacesAndNewlines),
                         avatarPath: traveler.avatarPath,
                         distanceMiles: distanceByID[row.id],
-                        age: travelerAge(from: traveler.birthday)
+                        age: travelerAge(from: traveler.birthday),
+                        gender: traveler.gender?.trimmingCharacters(in: .whitespacesAndNewlines)
                     )
                 }
             }
@@ -1284,6 +1300,7 @@ private struct TravelerRow: Decodable {
     let fullName: String?
     let origin: String?
     let birthday: String?
+    let gender: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -1291,6 +1308,7 @@ private struct TravelerRow: Decodable {
         case fullName = "full_name"
         case origin
         case birthday
+        case gender
     }
 }
 
@@ -1313,6 +1331,7 @@ private struct MapTraveler: Identifiable {
     let avatarPath: String?
     let distanceMiles: Double?
     let age: Int?
+    let gender: String?
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,

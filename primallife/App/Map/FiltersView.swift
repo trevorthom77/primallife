@@ -11,7 +11,7 @@ struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var minAge: Int
     @Binding var maxAge: Int
-    @State private var selectedGender: String = "All"
+    @Binding var selectedGender: String
     @Binding var selectedCountryID: String?
     @State private var showCountryPicker = false
 

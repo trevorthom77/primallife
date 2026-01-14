@@ -51,6 +51,7 @@ struct MapBoxView: View {
     @State private var selectedPlaceTravelerCount = 0
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var userLocationName = ""
     @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
@@ -245,7 +246,7 @@ struct MapBoxView: View {
                                             Image(systemName: "magnifyingglass")
                                                 .foregroundStyle(Colors.secondaryText)
                                             
-                                            Text("Search")
+                                            Text(userLocationName.isEmpty ? "Search" : userLocationName)
                                                 .font(.travelBody)
                                                 .foregroundStyle(Colors.primaryText)
                                         }
@@ -499,7 +500,7 @@ struct MapBoxView: View {
                         suppressLoadingFeedback = true
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
-                        if let coordinate {
+                        if let coordinate, !isUsingSelectedDestination {
                             Task {
                                 await upsertUserLocation(coordinate)
                             }
@@ -507,6 +508,11 @@ struct MapBoxView: View {
                         
                         guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
+                        if let coordinate {
+                            resolveUserLocationName(for: coordinate)
+                        } else {
+                            userLocationName = ""
+                        }
                         
                         guard !hasCenteredOnUser, let coordinate else { return }
                         viewport = .camera(
@@ -679,6 +685,7 @@ struct MapBoxView: View {
     private func applyDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
         isUsingSelectedDestination = true
         userCoordinate = coordinate
+        resolveUserLocationName(for: coordinate)
         viewport = .camera(
             center: coordinate,
             zoom: 10,
@@ -689,6 +696,7 @@ struct MapBoxView: View {
         cacheDestinationCoordinate(coordinate)
         
         Task {
+            await upsertUserLocation(coordinate)
             await fetchOtherLocations()
         }
     }
@@ -714,6 +722,26 @@ struct MapBoxView: View {
         hasSavedDestination = true
         savedDestinationLatitude = coordinate.latitude
         savedDestinationLongitude = coordinate.longitude
+    }
+
+    private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        CLGeocoder().reverseGeocodeLocation(location) { placemarks, _ in
+            let placemark = placemarks?.first
+            let city = placemark?.locality
+                ?? placemark?.subAdministrativeArea
+                ?? placemark?.administrativeArea
+                ?? placemark?.name
+            let country = placemark?.country
+            let cityName = city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let countryName = country?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let parts = [cityName, countryName].filter { !$0.isEmpty }
+            let displayName = parts.joined(separator: ", ")
+            guard !displayName.isEmpty else { return }
+            DispatchQueue.main.async {
+                userLocationName = displayName
+            }
+        }
     }
     
     private func handleFly(to place: MapboxPlace, camera: CameraAnimationsManager?) {

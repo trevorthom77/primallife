@@ -116,11 +116,10 @@ struct FiltersView: View {
                             Text(selectedCountryLabel)
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.tertiaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 14)
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Colors.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }

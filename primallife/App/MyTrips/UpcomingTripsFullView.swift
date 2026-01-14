@@ -45,7 +45,9 @@ struct UpcomingTripsFullView: View {
 
                     Spacer()
 
-                    Button(action: {}) {
+                    NavigationLink {
+                        UpcomingTripsFilterView()
+                    } label: {
                         Text("Filter")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.tertiaryText)

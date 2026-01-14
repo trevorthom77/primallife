@@ -1647,10 +1647,21 @@ private struct MapCommunityPanel: View {
             
             VStack(alignment: .leading, spacing: 6) {
                 if !traveler.name.isEmpty {
-                    let nameDisplay = traveler.age.map { "\(traveler.name), \($0)" } ?? traveler.name
-                    Text(nameDisplay)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.primaryText)
+                    if let age = traveler.age {
+                        HStack(spacing: 4) {
+                            Text(traveler.name)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+                            
+                            Text("\(age)")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                        }
+                    } else {
+                        Text(traveler.name)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                    }
                 }
 
                 if traveler.originDisplay != nil || traveler.distanceMiles != nil {

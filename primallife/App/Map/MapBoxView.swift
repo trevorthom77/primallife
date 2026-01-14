@@ -750,6 +750,17 @@ struct MapBoxView: View {
         }
     }
 
+    private func travelerAge(from birthday: String?) -> Int? {
+        guard let birthday, !birthday.isEmpty else { return nil }
+
+        let birthDate = mapTripsTimestampFormatterWithFractional.date(from: birthday)
+            ?? mapTripsTimestampFormatter.date(from: birthday)
+            ?? mapTripsDateFormatter.date(from: birthday)
+        guard let birthDate else { return nil }
+
+        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+    }
+
     private func fetchBlockedUserIDs(for userID: UUID, supabase: SupabaseClient) async throws -> Set<String> {
         let outgoing: [BlockedUserRow] = try await supabase
             .from("blocks")
@@ -819,7 +830,7 @@ struct MapBoxView: View {
             
             let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url, full_name, origin")
+                .select("id, avatar_url, full_name, origin, birthday")
                 .in("id", values: ids)
                 .execute()
                 .value
@@ -853,7 +864,8 @@ struct MapBoxView: View {
                         name: traveler.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
                         origin: traveler.origin?.trimmingCharacters(in: .whitespacesAndNewlines),
                         avatarPath: traveler.avatarPath,
-                        distanceMiles: distanceByID[row.id]
+                        distanceMiles: distanceByID[row.id],
+                        age: travelerAge(from: traveler.birthday)
                     )
                 }
             }
@@ -1241,12 +1253,14 @@ private struct TravelerRow: Decodable {
     let avatarPath: String?
     let fullName: String?
     let origin: String?
+    let birthday: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case avatarPath = "avatar_url"
         case fullName = "full_name"
         case origin
+        case birthday
     }
 }
 
@@ -1268,6 +1282,7 @@ private struct MapTraveler: Identifiable {
     let origin: String?
     let avatarPath: String?
     let distanceMiles: Double?
+    let age: Int?
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,
@@ -1632,7 +1647,8 @@ private struct MapCommunityPanel: View {
             
             VStack(alignment: .leading, spacing: 6) {
                 if !traveler.name.isEmpty {
-                    Text(traveler.name)
+                    let nameDisplay = traveler.age.map { "\(traveler.name), \($0)" } ?? traveler.name
+                    Text(nameDisplay)
                         .font(.travelBody)
                         .foregroundStyle(Colors.primaryText)
                 }

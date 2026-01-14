@@ -32,6 +32,10 @@ struct HomeView: View {
             MyTripsView()
                 .opacity(selectedTab == "airplane" ? 1 : 0)
                 .allowsHitTesting(selectedTab == "airplane")
+
+            MessagesView()
+                .opacity(selectedTab == "message" ? 1 : 0)
+                .allowsHitTesting(selectedTab == "message")
             
             switch selectedTab {
             case "map":
@@ -39,7 +43,7 @@ struct HomeView: View {
             case "airplane":
                  Color.clear
             case "message":
-                MessagesView()
+                Color.clear
             default:
                 Color.clear
             }

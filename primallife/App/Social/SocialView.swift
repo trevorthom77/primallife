@@ -44,88 +44,13 @@ private let socialPlanMonthDayFormatter: DateFormatter = {
     return formatter
 }()
 
-private enum TribeChatListCache {
-    static var latestChats: [TribeChatPreview] = []
-    static var chatsByUser: [UUID: [TribeChatPreview]] = [:]
-
-    static func cachedChats(for userID: UUID?) -> [TribeChatPreview] {
-        guard let userID else { return latestChats }
-        return chatsByUser[userID] ?? latestChats
-    }
-
-    static func update(_ chats: [TribeChatPreview], for userID: UUID) {
-        chatsByUser[userID] = chats
-        latestChats = chats
-    }
-}
-
-private enum SocialPlanListCache {
-    static var latestPlans: [SocialPlan] = []
-    static var plansByUser: [UUID: [SocialPlan]] = [:]
-
-    static func cachedPlans(for userID: UUID?) -> [SocialPlan] {
-        guard let userID else { return latestPlans }
-        return plansByUser[userID] ?? latestPlans
-    }
-
-    static func update(_ plans: [SocialPlan], for userID: UUID) {
-        plansByUser[userID] = plans
-        latestPlans = plans
-    }
-}
-
-private enum FriendListCache {
-    static var latestFriends: [UserProfile] = []
-    static var friendsByUser: [UUID: [UserProfile]] = [:]
-
-    static func cachedFriends(for userID: UUID?) -> [UserProfile] {
-        guard let userID else { return latestFriends }
-        return friendsByUser[userID] ?? latestFriends
-    }
-
-    static func update(_ friends: [UserProfile], for userID: UUID) {
-        friendsByUser[userID] = friends
-        latestFriends = friends
-    }
-}
-
-private enum FriendChatListCache {
-    static var latestChats: [FriendChatPreview] = []
-    static var chatsByUser: [UUID: [FriendChatPreview]] = [:]
-
-    static func cachedChats(for userID: UUID?) -> [FriendChatPreview] {
-        guard let userID else { return latestChats }
-        return chatsByUser[userID] ?? latestChats
-    }
-
-    static func update(_ chats: [FriendChatPreview], for userID: UUID) {
-        chatsByUser[userID] = chats
-        latestChats = chats
-    }
-}
-
-private enum SocialPlanImageCache {
-    static var images: [URL: Image] = [:]
-}
-
-private enum TribeChatImageCache {
-    static var images: [URL: Image] = [:]
-}
-
-private enum FriendAvatarImageCache {
-    static var images: [URL: Image] = [:]
-}
-
 struct MessagesView: View {
     @State private var isShowingBell = false
-    @State private var joinedTribeChats: [TribeChatPreview] = TribeChatListCache.cachedChats(for: nil)
-    @State private var friendChats: [FriendChatPreview] = FriendChatListCache.cachedChats(for: nil)
-    @State private var activePlans: [SocialPlan] = SocialPlanListCache.cachedPlans(for: nil)
-    @State private var planImageCache: [URL: Image] = SocialPlanImageCache.images
-    @State private var tribeChatImageCache: [URL: Image] = TribeChatImageCache.images
-    @State private var friendImageCache: [URL: Image] = FriendAvatarImageCache.images
+    @State private var joinedTribeChats: [TribeChatPreview] = []
+    @State private var friendChats: [FriendChatPreview] = []
+    @State private var activePlans: [SocialPlan] = []
     @State private var isLoadingTribeChats = false
-    @State private var friends: [UserProfile] = FriendListCache.cachedFriends(for: nil)
+    @State private var friends: [UserProfile] = []
     @State private var notificationCount = 0
     @Environment(\.supabaseClient) private var supabase
     
@@ -401,38 +326,18 @@ struct MessagesView: View {
 
     @ViewBuilder
     private func planImage(for url: URL) -> some View {
-        if let cachedImage = cachedPlanImage(for: url) {
-            cachedImage
-                .resizable()
-                .scaledToFill()
-        } else {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .onAppear {
-                            if planImageCache[url] == nil {
-                                cachePlanImage(image, for: url)
-                            }
-                        }
-                case .empty:
-                    Colors.card
-                default:
-                    Colors.card
-                }
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .empty:
+                Colors.card
+            default:
+                Colors.card
             }
         }
-    }
-
-    private func cachedPlanImage(for url: URL) -> Image? {
-        planImageCache[url]
-    }
-
-    private func cachePlanImage(_ image: Image, for url: URL) {
-        planImageCache[url] = image
-        SocialPlanImageCache.images[url] = image
     }
 
     private func planDateRangeText(_ plan: SocialPlan) -> String {
@@ -449,27 +354,16 @@ struct MessagesView: View {
     @ViewBuilder
     private func tribeChatImage(for chat: TribeChatPreview) -> some View {
         if let photoURL = chat.photoURL {
-            if let cachedImage = cachedTribeChatImage(for: photoURL) {
-                cachedImage
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                AsyncImage(url: photoURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .onAppear {
-                                if tribeChatImageCache[photoURL] == nil {
-                                    cacheTribeChatImage(image, for: photoURL)
-                                }
-                            }
-                    case .empty:
-                        Colors.card
-                    default:
-                        Colors.card
-                    }
+            AsyncImage(url: photoURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
                 }
             }
         } else {
@@ -477,30 +371,11 @@ struct MessagesView: View {
         }
     }
 
-    private func cachedTribeChatImage(for url: URL) -> Image? {
-        tribeChatImageCache[url]
-    }
-
-    private func cacheTribeChatImage(_ image: Image, for url: URL) {
-        tribeChatImageCache[url] = image
-        TribeChatImageCache.images[url] = image
-    }
-
     @MainActor
     private func loadJoinedTribeChats() async {
         guard let supabase,
               let userID = supabase.auth.currentUser?.id,
               !isLoadingTribeChats else { return }
-
-        let cachedChats = TribeChatListCache.cachedChats(for: userID)
-        if joinedTribeChats.isEmpty, !cachedChats.isEmpty {
-            joinedTribeChats = cachedChats
-        }
-
-        let cachedPlans = SocialPlanListCache.cachedPlans(for: userID)
-        if activePlans.isEmpty, !cachedPlans.isEmpty {
-            activePlans = cachedPlans
-        }
 
         isLoadingTribeChats = true
         defer { isLoadingTribeChats = false }
@@ -516,9 +391,7 @@ struct MessagesView: View {
             let tribeIDs = joinRows.map { $0.tribeID }
             if tribeIDs.isEmpty {
                 joinedTribeChats = []
-                TribeChatListCache.update([], for: userID)
                 activePlans = []
-                SocialPlanListCache.update([], for: userID)
                 return
             }
 
@@ -570,13 +443,10 @@ struct MessagesView: View {
                 )
             }
             joinedTribeChats = chats
-            TribeChatListCache.update(chats, for: userID)
             let tribeNamesByID = Dictionary(uniqueKeysWithValues: tribes.map { ($0.id, $0.name) })
             await loadActivePlans(for: tribeIDs, tribeNamesByID: tribeNamesByID, userID: userID)
         } catch {
-            if joinedTribeChats.isEmpty {
-                joinedTribeChats = TribeChatListCache.cachedChats(for: userID)
-            }
+            return
         }
     }
 
@@ -591,7 +461,6 @@ struct MessagesView: View {
         let tribeIDStrings = tribeIDs.map { $0.uuidString }
         if tribeIDStrings.isEmpty {
             activePlans = []
-            SocialPlanListCache.update([], for: userID)
             return
         }
 
@@ -632,11 +501,8 @@ struct MessagesView: View {
             }
 
             activePlans = newPlans
-            SocialPlanListCache.update(newPlans, for: userID)
         } catch {
-            if activePlans.isEmpty {
-                activePlans = SocialPlanListCache.cachedPlans(for: userID)
-            }
+            return
         }
     }
     
@@ -645,11 +511,6 @@ struct MessagesView: View {
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id
         else { return }
-
-        let cachedFriends = FriendListCache.cachedFriends(for: currentUserID)
-        if friends.isEmpty, !cachedFriends.isEmpty {
-            friends = cachedFriends
-        }
 
         do {
             let userRows: [FriendRow] = try await supabase
@@ -669,7 +530,6 @@ struct MessagesView: View {
             let friendIDs = Set(userRows.map { $0.friendID } + friendRows.map { $0.userID })
             if friendIDs.isEmpty {
                 friends = []
-                FriendListCache.update([], for: currentUserID)
                 return
             }
 
@@ -681,11 +541,8 @@ struct MessagesView: View {
                 .value
 
             friends = profiles
-            FriendListCache.update(profiles, for: currentUserID)
         } catch {
-            if friends.isEmpty {
-                friends = FriendListCache.cachedFriends(for: currentUserID)
-            }
+            return
         }
     }
 
@@ -695,15 +552,9 @@ struct MessagesView: View {
               let currentUserID = supabase.auth.currentUser?.id
         else { return }
 
-        let cachedChats = FriendChatListCache.cachedChats(for: currentUserID)
-        if friendChats.isEmpty, !cachedChats.isEmpty {
-            friendChats = cachedChats
-        }
-
         let friendIDs = friends.map { $0.id }
         if friendIDs.isEmpty {
             friendChats = []
-            FriendChatListCache.update([], for: currentUserID)
             return
         }
 
@@ -749,11 +600,8 @@ struct MessagesView: View {
             }
 
             friendChats = chats
-            FriendChatListCache.update(chats, for: currentUserID)
         } catch {
-            if friendChats.isEmpty {
-                friendChats = FriendChatListCache.cachedChats(for: currentUserID)
-            }
+            return
         }
     }
     
@@ -830,41 +678,21 @@ struct MessagesView: View {
     @ViewBuilder
     private func friendAvatar(for friend: UserProfile) -> some View {
         if let avatarURL = friend.avatarURL(using: supabase) {
-            if let cachedImage = cachedFriendImage(for: avatarURL) {
-                cachedImage
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                AsyncImage(url: avatarURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .onAppear {
-                                if friendImageCache[avatarURL] == nil {
-                                    cacheFriendImage(image, for: avatarURL)
-                                }
-                            }
-                    case .empty:
-                        Colors.secondaryText.opacity(0.3)
-                    default:
-                        Colors.secondaryText.opacity(0.3)
-                    }
+            AsyncImage(url: avatarURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    Colors.secondaryText.opacity(0.3)
+                default:
+                    Colors.secondaryText.opacity(0.3)
                 }
             }
         } else {
             Colors.secondaryText.opacity(0.3)
         }
-    }
-
-    private func cachedFriendImage(for url: URL) -> Image? {
-        friendImageCache[url]
-    }
-
-    private func cacheFriendImage(_ image: Image, for url: URL) {
-        friendImageCache[url] = image
-        FriendAvatarImageCache.images[url] = image
     }
 
     private func friendOriginDisplay(for friend: UserProfile) -> String? {

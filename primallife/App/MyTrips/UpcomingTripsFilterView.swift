@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct UpcomingTripsFilterView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var checkInDate = Date()
     @State private var returnDate = Date()
     @State private var hasCheckInDate = false
@@ -26,6 +27,19 @@ struct UpcomingTripsFilterView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+
+                    Spacer()
+                }
+
+                Text("Trip Filters")
+                    .font(.customTitle)
+                    .foregroundStyle(Colors.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 VStack(spacing: 12) {
                     Button {
                         activeDatePicker = .checkIn
@@ -94,6 +108,7 @@ struct UpcomingTripsFilterView: View {
             .padding(.horizontal, 24)
             .padding(.top, 24)
         }
+        .navigationBarBackButtonHidden(true)
         .sheet(
             isPresented: Binding(
                 get: { activeDatePicker != nil },

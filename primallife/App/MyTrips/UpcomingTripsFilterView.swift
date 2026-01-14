@@ -61,7 +61,7 @@ struct UpcomingTripsFilterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text("Shows travelers whose dates overlap your selected range.")
-                        .font(.travelDetail)
+                        .font(.travelBody)
                         .foregroundStyle(Colors.secondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

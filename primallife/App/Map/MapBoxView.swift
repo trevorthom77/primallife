@@ -52,6 +52,7 @@ struct MapBoxView: View {
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var userLocationName = ""
+    @State private var userLocationFlag = ""
     @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
@@ -245,6 +246,12 @@ struct MapBoxView: View {
                                         HStack(spacing: 8) {
                                             Image(systemName: "magnifyingglass")
                                                 .foregroundStyle(Colors.secondaryText)
+
+                                            if !userLocationName.isEmpty, !userLocationFlag.isEmpty {
+                                                Text(userLocationFlag)
+                                                    .font(.travelBody)
+                                                    .foregroundStyle(Colors.primaryText)
+                                            }
                                             
                                             Text(userLocationName.isEmpty ? "Search" : userLocationName)
                                                 .font(.travelBody)
@@ -512,6 +519,7 @@ struct MapBoxView: View {
                             resolveUserLocationName(for: coordinate)
                         } else {
                             userLocationName = ""
+                            userLocationFlag = ""
                         }
                         
                         guard !hasCenteredOnUser, let coordinate else { return }
@@ -725,6 +733,7 @@ struct MapBoxView: View {
     }
 
     private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {
+        userLocationFlag = ""
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(location) { placemarks, _ in
             let placemark = placemarks?.first
@@ -740,6 +749,14 @@ struct MapBoxView: View {
             guard !displayName.isEmpty else { return }
             DispatchQueue.main.async {
                 userLocationName = displayName
+            }
+        }
+
+        Task {
+            let flag = await fetchCountryFlag(for: coordinate)
+            guard !flag.isEmpty else { return }
+            await MainActor.run {
+                userLocationFlag = flag
             }
         }
     }

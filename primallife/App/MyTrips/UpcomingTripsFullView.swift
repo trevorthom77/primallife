@@ -44,6 +44,17 @@ struct UpcomingTripsFullView: View {
                     }
 
                     Spacer()
+
+                    Button(action: {}) {
+                        Text("Filter")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 HStack {

@@ -259,12 +259,12 @@ struct MapBoxView: View {
                                         isShowingFilters = true
                                     }) {
                                         Text("Filter")
-                                            .font(.travelTitle)
+                                            .font(.travelDetail)
                                             .foregroundStyle(Colors.tertiaryText)
                                             .padding(.horizontal, 14)
-                                            .padding(.vertical, 12)
+                                            .padding(.vertical, 10)
                                             .background(Colors.accent)
-                                            .clipShape(Capsule())
+                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     }
                                 }
                             }

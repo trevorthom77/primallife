@@ -87,19 +87,43 @@ struct FiltersView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
                     
-                    Button {
-                        showCountryPicker = true
-                    } label: {
-                        Text(selectedCountryLabel)
+                    if hasSelectedCountry {
+                        HStack(spacing: 12) {
+                            Button {
+                                showCountryPicker = true
+                            } label: {
+                                Text(selectedCountryLabel)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button("Remove") {
+                                selectedCountryID = nil
+                            }
                             .font(.travelDetail)
-                            .foregroundStyle(hasSelectedCountry ? Colors.primaryText : Colors.secondaryText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(Colors.contentview)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .foregroundStyle(Colors.accent)
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        Button {
+                            showCountryPicker = true
+                        } label: {
+                            Text(selectedCountryLabel)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .background(Colors.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -147,8 +147,6 @@ private struct ProfilePreviewCard: View {
     var avatarURL: URL? = nil
     @State private var signedAvatarURL: URL?
     @State private var destinationImageURL: URL?
-    @State private var destinationPhotographerName: String?
-    @State private var destinationPhotographerProfileURL: URL?
     private let customDestinationImageNames = [
         "italy",
         "greece",
@@ -231,16 +229,6 @@ private struct ProfilePreviewCard: View {
                         Spacer()
                         
                         VStack(alignment: .leading, spacing: 6) {
-                            if let name = destinationPhotographerName,
-                               let profileURL = destinationPhotographerProfileURL {
-                                Link(name, destination: profileURL)
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.secondaryText)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                                    .frame(maxWidth: 140, alignment: .leading)
-                            }
-                            
                             ZStack {
                                 if let customDestinationImageName {
                                     Image(customDestinationImageName)
@@ -265,22 +253,16 @@ private struct ProfilePreviewCard: View {
                     .task(id: destinationText) {
                         guard let destinationQuery = destinationText else {
                             destinationImageURL = nil
-                            destinationPhotographerName = nil
-                            destinationPhotographerProfileURL = nil
                             return
                         }
 
                         if customDestinationImageName != nil {
                             destinationImageURL = nil
-                            destinationPhotographerName = nil
-                            destinationPhotographerProfileURL = nil
                             return
                         }
 
                         let details = await UnsplashService.fetchImageDetails(for: destinationQuery)
                         destinationImageURL = details?.url
-                        destinationPhotographerName = details?.photographerName
-                        destinationPhotographerProfileURL = details?.photographerProfileURL
                     }
                 }
             }

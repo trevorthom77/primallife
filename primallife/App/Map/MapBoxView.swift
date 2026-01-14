@@ -194,6 +194,9 @@ struct MapBoxView: View {
                                 margins: .zero,
                                 visibility: .hidden,
                                 useMetricUnits: true
+                            ),
+                            compass: CompassViewOptions(
+                                visibility: .hidden
                             )
                         )
                     )

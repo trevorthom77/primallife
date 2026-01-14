@@ -131,12 +131,43 @@ struct WelcomeProfileView: View {
                 .from("onboarding")
                 .upsert(payload, onConflict: "id")
                 .execute()
+            await saveUpcomingTripIfNeeded(userID: userID)
             await profileStore.loadProfile(for: userID, supabase: supabase)
             await MainActor.run {
                 onboardingViewModel.hasCompletedOnboarding = true
             }
         } catch {
             print("Profile save failed: \(error)")
+        }
+    }
+
+    private func saveUpcomingTripIfNeeded(userID: UUID) async {
+        guard let supabase else { return }
+        let destination = onboardingViewModel.upcomingDestination.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !destination.isEmpty,
+              onboardingViewModel.hasSelectedArrival,
+              onboardingViewModel.hasSelectedDeparting else {
+            return
+        }
+
+        let checkIn = onboardingViewModel.arrivalDate
+        let returnDate = onboardingViewModel.departingDate
+        guard returnDate >= checkIn else { return }
+
+        let payload = NewTrip(
+            userID: userID,
+            destination: destination,
+            checkIn: checkIn,
+            returnDate: returnDate
+        )
+
+        do {
+            try await supabase
+                .from("mytrips")
+                .insert(payload)
+                .execute()
+        } catch {
+            print("Upcoming trip save failed: \(error)")
         }
     }
 }

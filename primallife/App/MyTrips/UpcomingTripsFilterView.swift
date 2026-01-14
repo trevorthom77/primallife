@@ -2,11 +2,24 @@ import SwiftUI
 
 struct UpcomingTripsFilterView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var checkInDate = Date()
-    @State private var returnDate = Date()
-    @State private var hasCheckInDate = false
-    @State private var hasReturnDate = false
+    @Binding var filterCheckInDate: Date?
+    @Binding var filterReturnDate: Date?
+    @State private var checkInDate: Date
+    @State private var returnDate: Date
+    @State private var hasCheckInDate: Bool
+    @State private var hasReturnDate: Bool
     @State private var activeDatePicker: DatePickerType?
+
+    init(filterCheckInDate: Binding<Date?>, filterReturnDate: Binding<Date?>) {
+        _filterCheckInDate = filterCheckInDate
+        _filterReturnDate = filterReturnDate
+        let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
+        let initialReturn = filterReturnDate.wrappedValue ?? Date()
+        _checkInDate = State(initialValue: initialCheckIn)
+        _returnDate = State(initialValue: initialReturn)
+        _hasCheckInDate = State(initialValue: filterCheckInDate.wrappedValue != nil)
+        _hasReturnDate = State(initialValue: filterReturnDate.wrappedValue != nil)
+    }
 
     private enum DatePickerType {
         case checkIn
@@ -35,10 +48,17 @@ struct UpcomingTripsFilterView: View {
                     Spacer()
                 }
 
-                Text("Trip Filters")
-                    .font(.customTitle)
-                    .foregroundStyle(Colors.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Trip Filters")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("Shows travelers whose dates overlap your selected range.")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 VStack(spacing: 12) {
                     Button {
@@ -90,7 +110,11 @@ struct UpcomingTripsFilterView: View {
                     .buttonStyle(.plain)
                 }
 
-                Button { } label: {
+                Button {
+                    filterCheckInDate = checkInDate
+                    filterReturnDate = returnDate
+                    dismiss()
+                } label: {
                     Text("Update")
                         .font(.travelDetail)
                         .foregroundStyle(Colors.tertiaryText)

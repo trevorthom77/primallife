@@ -11,6 +11,8 @@ struct UpcomingTripsFullView: View {
     @State private var travelerImageCache: [UUID: Image] = [:]
     @State private var travelerImageURLCache: [UUID: URL] = [:]
     @State private var selectedTab: UpcomingTripsTab = .travelers
+    @State private var filterCheckInDate: Date?
+    @State private var filterReturnDate: Date?
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -46,7 +48,10 @@ struct UpcomingTripsFullView: View {
                     Spacer()
 
                     NavigationLink {
-                        UpcomingTripsFilterView()
+                        UpcomingTripsFilterView(
+                            filterCheckInDate: $filterCheckInDate,
+                            filterReturnDate: $filterReturnDate
+                        )
                     } label: {
                         Text("Filter")
                             .font(.travelDetail)
@@ -241,16 +246,14 @@ struct UpcomingTripsFullView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
-                            if let travelers = travelersForTrip {
-                                let currentUserID = supabase?.auth.currentUser?.id
-                                let visibleTravelers = travelers.filter { $0 != currentUserID }
-                                if visibleTravelers.isEmpty {
+                            if let travelers = filteredTravelersForTrip {
+                                if travelers.isEmpty {
                                     Text("No travelers yet.")
                                         .font(.travelDetail)
                                         .foregroundStyle(Colors.secondaryText)
                                         .padding(.vertical, 4)
                                 } else {
-                                    ForEach(visibleTravelers, id: \.self) { travelerID in
+                                    ForEach(travelers, id: \.self) { travelerID in
                                         if let name = viewModel.creatorName(for: travelerID) {
                                             NavigationLink {
                                                 OthersProfileView(userID: travelerID)
@@ -384,6 +387,28 @@ struct UpcomingTripsFullView: View {
 
     private var travelersForTrip: [UUID]? {
         viewModel.travelersByTrip[trip.id]
+    }
+
+    private var filteredTravelersForTrip: [UUID]? {
+        guard let travelers = travelersForTrip else { return nil }
+        let currentUserID = supabase?.auth.currentUser?.id
+        let visibleTravelers = travelers.filter { $0 != currentUserID }
+        guard let filterCheckInDate, let filterReturnDate else {
+            return visibleTravelers
+        }
+        let filterStart = Calendar.current.startOfDay(for: filterCheckInDate)
+        let filterEnd = Calendar.current.startOfDay(for: filterReturnDate)
+        if filterEnd < filterStart {
+            return visibleTravelers
+        }
+        return visibleTravelers.filter { travelerID in
+            guard let dateRange = viewModel.travelerDatesByTrip[trip.id]?[travelerID] else {
+                return true
+            }
+            let travelerStart = Calendar.current.startOfDay(for: dateRange.checkIn)
+            let travelerEnd = Calendar.current.startOfDay(for: dateRange.returnDate)
+            return travelerStart <= filterEnd && travelerEnd >= filterStart
+        }
     }
 
     private var tribeCountText: String {

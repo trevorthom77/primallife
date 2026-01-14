@@ -318,41 +318,6 @@ struct TribesSocialView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Places")
-                                .font(.travelTitle)
-                                .foregroundStyle(Colors.primaryText)
-
-                            Spacer()
-
-                            Button("See More") { }
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
-                        }
-
-                        PlaceCard(
-                            imageURL: placeImageURL,
-                            customImageName: customPlaceImageName,
-                            name: resolvedPlaceName
-                        )
-                            .task {
-                                if customPlaceImageName != nil {
-                                    placeImageURL = nil
-                                    return
-                                }
-                                guard !resolvedPlaceName.isEmpty else {
-                                    placeImageURL = nil
-                                    return
-                                }
-                                placeImageURL = await UnsplashService.fetchImage(for: resolvedPlaceName)
-                            }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                    VStack(alignment: .leading, spacing: 12) {
                         Text("Created By")
                             .font(.travelTitle)
                             .foregroundStyle(Colors.primaryText)

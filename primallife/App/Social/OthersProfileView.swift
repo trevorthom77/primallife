@@ -8,6 +8,26 @@
 import SwiftUI
 import Supabase
 
+private let othersProfileBirthdayDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+private let othersProfileBirthdayTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let othersProfileBirthdayTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 struct OthersProfileView: View {
     let userID: UUID?
     @Environment(\.dismiss) private var dismiss
@@ -104,6 +124,12 @@ struct OthersProfileView: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.system(size: 22, weight: .semibold))
                                 .foregroundStyle(Colors.accent)
+
+                            if let age = userAge {
+                                Text("\(age)")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                            }
                         }
 
                         if let originDisplay {
@@ -640,6 +666,20 @@ struct OthersProfileView: View {
             return "\(flag) \(name)"
         }
         return nil
+    }
+
+    private var userAge: Int? {
+        guard let birthdayString = profile?.birthday,
+              !birthdayString.isEmpty else {
+            return nil
+        }
+
+        let birthDate = othersProfileBirthdayTimestampFormatterWithFractional.date(from: birthdayString)
+            ?? othersProfileBirthdayTimestampFormatter.date(from: birthdayString)
+            ?? othersProfileBirthdayDateFormatter.date(from: birthdayString)
+        guard let birthDate else { return nil }
+
+        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
     }
 
     private var aboutText: String {

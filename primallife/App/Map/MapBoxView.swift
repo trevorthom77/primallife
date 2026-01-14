@@ -63,6 +63,8 @@ struct MapBoxView: View {
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
+    @State private var minAgeFilter = 18
+    @State private var maxAgeFilter = 100
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -87,6 +89,24 @@ struct MapBoxView: View {
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)
     }
+
+    private var isAgeFilterActive: Bool {
+        minAgeFilter != 18 || maxAgeFilter != 100
+    }
+
+    private var filteredTravelers: [MapTraveler] {
+        guard isAgeFilterActive else { return nearbyTravelers }
+        return nearbyTravelers.filter { traveler in
+            guard let age = traveler.age else { return false }
+            return age >= minAgeFilter && age <= maxAgeFilter
+        }
+    }
+
+    private var filteredOtherUserLocations: [OtherUserLocation] {
+        guard isAgeFilterActive else { return otherUserLocations }
+        let allowedIDs = Set(filteredTravelers.map(\.id))
+        return otherUserLocations.filter { allowedIDs.contains($0.id) }
+    }
     
     var body: some View {
         NavigationStack {
@@ -100,7 +120,7 @@ struct MapBoxView: View {
                     }
                     
                     if communityTab == .travelers {
-                        ForEvery(otherUserLocations) { location in
+                        ForEvery(filteredOtherUserLocations) { location in
                             MapViewAnnotation(coordinate: location.coordinate) {
                                 if let userID = UUID(uuidString: location.id) {
                                     NavigationLink {
@@ -441,7 +461,7 @@ struct MapBoxView: View {
                                 tribes: mapTribes,
                                 tribeFlags: tribeCountryFlags,
                                 tribeCreators: tribeCreatorsByID,
-                                travelers: nearbyTravelers,
+                                travelers: filteredTravelers,
                                 tribeImageStore: tribeImageStore,
                                 travelerImageStore: travelerImageStore
                             )
@@ -508,7 +528,7 @@ struct MapBoxView: View {
                 profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
-                FiltersView()
+                FiltersView(minAge: $minAgeFilter, maxAge: $maxAgeFilter)
             }
             .navigationDestination(isPresented: $isShowingTribes) {
                 MapTribeView(isShowingTribes: $isShowingTribes)

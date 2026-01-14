@@ -9,9 +9,8 @@ import SwiftUI
 
 struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var minAge: Int = 18
-    @State private var maxAge: Int = 100
-    @State private var selectedPreset: String = "All Ages"
+    @Binding var minAge: Int
+    @Binding var maxAge: Int
     @State private var selectedGender: String = "All"
     @State private var selectedCountryID: String?
     @State private var showCountryPicker = false
@@ -136,8 +135,10 @@ struct FiltersView: View {
     }
     
     private func presetButton(title: String, range: ClosedRange<Int>?) -> some View {
-        Button {
-            selectedPreset = title
+        let isSelected = range.map { minAge == $0.lowerBound && maxAge == $0.upperBound }
+            ?? (minAge == 18 && maxAge == 100)
+
+        return Button {
             if let range {
                 minAge = range.lowerBound
                 maxAge = range.upperBound
@@ -148,10 +149,10 @@ struct FiltersView: View {
         } label: {
             Text(title)
                 .font(.travelDetail)
-                .foregroundStyle(selectedPreset == title ? Colors.tertiaryText : Colors.primaryText)
+                .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
-                .background(selectedPreset == title ? Colors.accent : Colors.card)
+                .background(isSelected ? Colors.accent : Colors.card)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -173,7 +174,6 @@ struct FiltersView: View {
     }
     
     private func resetFilters() {
-        selectedPreset = "All Ages"
         minAge = 18
         maxAge = 100
         selectedGender = "All"

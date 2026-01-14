@@ -1271,11 +1271,12 @@ private struct MapTraveler: Identifiable {
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,
-              let country = CountryDatabase.all.first(where: { $0.id == origin })
+              let country = CountryDatabase.all.first(where: { $0.id == origin }),
+              !country.flag.isEmpty
         else {
             return nil
         }
-        return "\(country.flag) \(country.name)"
+        return country.flag
     }
 
     func avatarURL(using supabase: SupabaseClient?) -> URL? {
@@ -1629,24 +1630,26 @@ private struct MapCommunityPanel: View {
                 .frame(width: 52, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 if !traveler.name.isEmpty {
                     Text(traveler.name)
                         .font(.travelBody)
                         .foregroundStyle(Colors.primaryText)
                 }
-                
-                HStack(spacing: 6) {
-                    if let originDisplay = traveler.originDisplay {
-                        Text(originDisplay)
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.accent)
-                    }
-                    
-                    if let distanceMiles = traveler.distanceMiles {
-                        Text(String(format: "%.1f mi", distanceMiles))
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.accent)
+
+                if traveler.originDisplay != nil || traveler.distanceMiles != nil {
+                    HStack(spacing: 8) {
+                        if let originDisplay = traveler.originDisplay {
+                            Text(originDisplay)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
+
+                        if let distanceMiles = traveler.distanceMiles {
+                            Text(String(format: "%.1f mi", distanceMiles))
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                        }
                     }
                 }
             }

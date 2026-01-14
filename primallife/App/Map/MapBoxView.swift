@@ -73,9 +73,9 @@ struct MapBoxView: View {
     @StateObject private var tribeImageStore = TribeImageStore()
     @StateObject private var travelerImageStore = TravelerImageStore()
     private let otherUserJitterRadius: CLLocationDistance = 500
-    private let refreshMovementThresholdFraction: Double = 0.5
-    private let refreshRadiusChangeThresholdFraction: Double = 0.5
-    private let refreshMinimumInterval: TimeInterval = 5
+    private let refreshMovementThresholdFraction: Double = 0.3
+    private let refreshRadiusChangeThresholdFraction: Double = 0.3
+    private let refreshMinimumInterval: TimeInterval = 3
     
     private let customPlaceImageNames = [
         "italy",
@@ -1605,7 +1605,7 @@ private struct MapCommunityPanel: View {
             
             VStack(alignment: .leading, spacing: 8) {
                 Text(tribe.name)
-                    .font(.travelBody)
+                    .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
                 
                 Text(destination)
@@ -1649,7 +1649,7 @@ private struct MapCommunityPanel: View {
                 if !traveler.name.isEmpty {
                     let nameDisplay = traveler.age.map { "\(traveler.name), \($0)" } ?? traveler.name
                     Text(nameDisplay)
-                        .font(.travelBody)
+                        .font(.travelDetail)
                         .foregroundStyle(Colors.primaryText)
                 }
 

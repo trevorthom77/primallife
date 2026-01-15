@@ -8,6 +8,7 @@ struct ReportView: View {
     @State private var selectedOption: String?
     @State private var reportDetails = ""
     @State private var isSubmitting = false
+    @State private var isShowingBlockPrompt = false
     @FocusState private var isDetailsFocused: Bool
     
     private let reportOptions = [
@@ -103,9 +104,8 @@ struct ReportView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button {
-                    Task {
-                        await submitReport()
-                    }
+                    guard !isSubmitting else { return }
+                    isShowingBlockPrompt = true
                 } label: {
                     HStack(spacing: 8) {
                         Text("Submit")
@@ -137,10 +137,33 @@ struct ReportView: View {
             .padding(.leading, 16)
             .padding(.top, 16)
         }
+        .overlay {
+            if isShowingBlockPrompt {
+                confirmationOverlay(
+                    title: "Block this user?",
+                    message: "Do you want to block this user as well?",
+                    secondaryTitle: "Report Only",
+                    primaryTitle: "Report & Block",
+                    isDestructive: true,
+                    primaryAction: {
+                        isShowingBlockPrompt = false
+                        Task {
+                            await submitReport(shouldBlock: true)
+                        }
+                    },
+                    secondaryAction: {
+                        isShowingBlockPrompt = false
+                        Task {
+                            await submitReport(shouldBlock: false)
+                        }
+                    }
+                )
+            }
+        }
     }
 
     @MainActor
-    private func submitReport() async {
+    private func submitReport(shouldBlock: Bool) async {
         let trimmedDetails = reportDetails.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !isSubmitting,
               let supabase,
@@ -173,10 +196,126 @@ struct ReportView: View {
                 .from("user_reports")
                 .insert(payload)
                 .execute()
+            if shouldBlock {
+                await blockUser(reportedUserID: reportedUserID)
+            }
             dismiss()
         } catch {
             isSubmitting = false
             return
+        }
+    }
+
+    private func blockUser(reportedUserID: UUID) async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              currentUserID != reportedUserID
+        else { return }
+
+        struct BlockInsert: Encodable {
+            let blockerID: UUID
+            let blockedID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case blockerID = "blocker_id"
+                case blockedID = "blocked_id"
+            }
+        }
+
+        do {
+            try await supabase
+                .from("blocks")
+                .insert(
+                    BlockInsert(
+                        blockerID: currentUserID,
+                        blockedID: reportedUserID
+                    )
+                )
+                .execute()
+
+            _ = try? await supabase
+                .from("friend_requests")
+                .delete()
+                .eq("requester_id", value: currentUserID.uuidString)
+                .eq("receiver_id", value: reportedUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friend_requests")
+                .delete()
+                .eq("requester_id", value: reportedUserID.uuidString)
+                .eq("receiver_id", value: currentUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: currentUserID.uuidString)
+                .eq("friend_id", value: reportedUserID.uuidString)
+                .execute()
+
+            _ = try? await supabase
+                .from("friends")
+                .delete()
+                .eq("user_id", value: reportedUserID.uuidString)
+                .eq("friend_id", value: currentUserID.uuidString)
+                .execute()
+        } catch {
+            return
+        }
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        secondaryTitle: String,
+        primaryTitle: String,
+        isDestructive: Bool,
+        primaryAction: @escaping () -> Void,
+        secondaryAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: secondaryAction) {
+                        Text(secondaryTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: primaryAction) {
+                        Text(primaryTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
         }
     }
 }

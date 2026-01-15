@@ -24,6 +24,8 @@ struct TribesSocialView: View {
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingMembersSheet = false
     @State private var isShowingMoreSheet = false
+    @State private var isShowingReport = false
+    @State private var reportUserID: UUID?
     @State private var totalTravelers = 0
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
@@ -458,11 +460,20 @@ struct TribesSocialView: View {
                 EmptyView()
             }
         }
+        .navigationDestination(isPresented: $isShowingReport) {
+            ReportView(reportedUserID: reportUserID)
+        }
         .sheet(isPresented: $isShowingMembersSheet) {
             membersSheet
         }
         .sheet(isPresented: $isShowingMoreSheet) {
-            TribesSocialMoreSheetView()
+            TribesSocialMoreSheetView(reportAction: {
+                isShowingMoreSheet = false
+                Task { @MainActor in
+                    guard await resolveReportUserID() != nil else { return }
+                    isShowingReport = true
+                }
+            })
         }
     }
 }
@@ -483,6 +494,14 @@ private struct TribeJoinRecord: Decodable {
 
 private struct TribeMemberRow: Decodable {
     let id: UUID
+}
+
+private struct TribeOwnerRow: Decodable {
+    let ownerID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case ownerID = "owner_id"
+    }
 }
 
 private struct TribeMemberProfileRow: Decodable {
@@ -789,6 +808,29 @@ private extension TribesSocialView {
     }
 
     @MainActor
+    func resolveReportUserID() async -> UUID? {
+        if let reportUserID {
+            return reportUserID
+        }
+        guard let supabase, let tribeID else { return nil }
+
+        do {
+            let rows: [TribeOwnerRow] = try await supabase
+                .from("tribes")
+                .select("owner_id")
+                .eq("id", value: tribeID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            let ownerID = rows.first?.ownerID
+            reportUserID = ownerID
+            return ownerID
+        } catch {
+            return nil
+        }
+    }
+
+    @MainActor
     func deleteTribe() async -> Bool {
         guard let supabase,
               let tribeID,
@@ -1064,6 +1106,7 @@ private struct PlaceCard: View {
 
 private struct TribesSocialMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    let reportAction: () -> Void
 
     var body: some View {
         ZStack {
@@ -1082,7 +1125,7 @@ private struct TribesSocialMoreSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Button(action: {}) {
+                    Button(action: reportAction) {
                         HStack {
                             Text("Report")
                                 .font(.travelDetail)

@@ -251,11 +251,14 @@ struct MapBoxView: View {
                                                 Text(userLocationFlag)
                                                     .font(.travelBody)
                                                     .foregroundStyle(Colors.primaryText)
+                                                    .lineLimit(1)
                                             }
                                             
                                             Text(userLocationName.isEmpty ? "Search" : userLocationName)
                                                 .font(.travelBody)
                                                 .foregroundStyle(Colors.primaryText)
+                                                .lineLimit(1)
+                                                .truncationMode(.tail)
                                         }
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.vertical, 16)

@@ -80,16 +80,6 @@ struct ReportView: View {
                             .focused($isDetailsFocused)
                     }
 
-                    Button(action: {}) {
-                        Text("Submit")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Colors.accent)
-                            .cornerRadius(16)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 72)
@@ -101,6 +91,23 @@ struct ReportView: View {
                 isDetailsFocused = false
             }
             .scrollIndicators(.hidden)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button(action: {}) {
+                    Text("Submit")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
         }
         .navigationBarBackButtonHidden(true)
         .overlay(alignment: .topLeading) {

@@ -23,6 +23,7 @@ struct TribesSocialView: View {
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingMembersSheet = false
+    @State private var isShowingMoreSheet = false
     @State private var totalTravelers = 0
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
@@ -123,6 +124,18 @@ struct TribesSocialView: View {
                                     .padding(.horizontal, 16)
                                     .background(Colors.card)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Button(action: {
+                                isShowingMoreSheet = true
+                            }) {
+                                Image(systemName: "ellipsis")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .frame(width: 36, height: 36)
+                                    .background(Colors.card.opacity(0.9))
+                                    .clipShape(Circle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -447,6 +460,9 @@ struct TribesSocialView: View {
         }
         .sheet(isPresented: $isShowingMembersSheet) {
             membersSheet
+        }
+        .sheet(isPresented: $isShowingMoreSheet) {
+            TribesSocialMoreSheetView()
         }
     }
 }
@@ -1043,5 +1059,53 @@ private struct PlaceCard: View {
                 .padding(.horizontal, 16)
         }
         .clipped()
+    }
+}
+
+private struct TribesSocialMoreSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Button(action: {}) {
+                        HStack {
+                            Text("Report")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
+                Spacer()
+            }
+            .padding(20)
+        }
+        .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
+        .presentationDragIndicator(.hidden)
     }
 }

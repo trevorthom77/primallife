@@ -1,9 +1,13 @@
 import SwiftUI
+import Supabase
 
 struct ReportView: View {
+    let reportedUserID: UUID?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabaseClient) private var supabase
     @State private var selectedOption: String?
     @State private var reportDetails = ""
+    @State private var isSubmitting = false
     @FocusState private var isDetailsFocused: Bool
     
     private let reportOptions = [
@@ -94,7 +98,11 @@ struct ReportView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
-                Button(action: {}) {
+                Button {
+                    Task {
+                        await submitReport()
+                    }
+                } label: {
                     Text("Submit")
                         .font(.travelDetail)
                         .foregroundStyle(Colors.tertiaryText)
@@ -116,6 +124,46 @@ struct ReportView: View {
             }
             .padding(.leading, 16)
             .padding(.top, 16)
+        }
+    }
+
+    @MainActor
+    private func submitReport() async {
+        guard !isSubmitting,
+              let supabase,
+              let reportedUserID,
+              let reason = selectedOption
+        else { return }
+
+        isSubmitting = true
+        let trimmedDetails = reportDetails.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        struct ReportInsert: Encodable {
+            let reportedID: UUID
+            let reason: String
+            let details: String?
+
+            enum CodingKeys: String, CodingKey {
+                case reportedID = "reported_id"
+                case reason
+                case details
+            }
+        }
+
+        do {
+            let payload = ReportInsert(
+                reportedID: reportedUserID,
+                reason: reason,
+                details: trimmedDetails.isEmpty ? nil : trimmedDetails
+            )
+            try await supabase
+                .from("user_reports")
+                .insert(payload)
+                .execute()
+            dismiss()
+        } catch {
+            isSubmitting = false
+            return
         }
     }
 }

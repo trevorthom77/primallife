@@ -523,7 +523,7 @@ struct OthersProfileView: View {
             )
         }
         .navigationDestination(isPresented: $isShowingReport) {
-            ReportView()
+            ReportView(reportedUserID: userID)
         }
         .overlay {
             if isShowingAvatarPreview {

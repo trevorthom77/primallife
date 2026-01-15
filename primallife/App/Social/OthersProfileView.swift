@@ -45,6 +45,7 @@ struct OthersProfileView: View {
     @State private var isShowingUnfriendConfirm = false
     @State private var isShowingBlockConfirm = false
     @State private var isShowingUnblockConfirm = false
+    @State private var isShowingReport = false
     @State private var hasBlockedUser = false
     @State private var isBlockedByUser = false
     @State private var isShowingAvatarPreview = false
@@ -514,8 +515,15 @@ struct OthersProfileView: View {
                 unblockAction: {
                     isShowingMoreSheet = false
                     isShowingUnblockConfirm = true
+                },
+                reportAction: {
+                    isShowingMoreSheet = false
+                    isShowingReport = true
                 }
             )
+        }
+        .navigationDestination(isPresented: $isShowingReport) {
+            ReportView()
         }
         .overlay {
             if isShowingAvatarPreview {
@@ -1611,85 +1619,82 @@ private struct OthersProfileMoreSheetView: View {
     let unfriendAction: () -> Void
     let blockAction: () -> Void
     let unblockAction: () -> Void
+    let reportAction: () -> Void
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Colors.background
-                    .ignoresSafeArea()
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
 
-                VStack(spacing: 16) {
-                    HStack {
-                        Spacer()
-
-                        Button("Done") {
-                            dismiss()
-                        }
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.accent)
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        if isFriend {
-                            Button(action: unfriendAction) {
-                                HStack {
-                                    Text("Unfriend")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    Spacer()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        }
-
-                        Button(action: hasBlockedUser ? unblockAction : blockAction) {
-                            HStack {
-                                Text(hasBlockedUser ? "Unblock" : "Block")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(hasBlockedUser ? Colors.primaryText : Color.red)
-
-                                Spacer()
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                        NavigationLink {
-                            ReportView()
-                        } label: {
-                            HStack {
-                                Text("Report")
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Color.red)
-
-                                Spacer()
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    }
-
+            VStack(spacing: 16) {
+                HStack {
                     Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
                 }
-                .padding(20)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    if isFriend {
+                        Button(action: unfriendAction) {
+                            HStack {
+                                Text("Unfriend")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+
+                    Button(action: hasBlockedUser ? unblockAction : blockAction) {
+                        HStack {
+                            Text(hasBlockedUser ? "Unblock" : "Block")
+                                .font(.travelDetail)
+                                .foregroundStyle(hasBlockedUser ? Colors.primaryText : Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    Button(action: reportAction) {
+                        HStack {
+                            Text("Report")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
+                Spacer()
             }
+            .padding(20)
         }
         .presentationDetents([.height(320)])
         .presentationBackground(Colors.background)

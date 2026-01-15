@@ -1715,7 +1715,6 @@ private struct MapCommunityPanel: View {
         }
         .frame(width: 220, alignment: .leading)
         .padding(12)
-        .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -1742,8 +1741,8 @@ private struct MapCommunityPanel: View {
     private func travelerCard(_ traveler: MapTraveler) -> some View {
         HStack(spacing: 12) {
             travelerImage(for: traveler)
-                .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             
             VStack(alignment: .leading, spacing: 6) {
                 if !traveler.name.isEmpty {
@@ -1752,15 +1751,21 @@ private struct MapCommunityPanel: View {
                             Text(traveler.name)
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                             
                             Text("\(age)")
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.secondaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                     } else {
                         Text(traveler.name)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
 
@@ -1769,22 +1774,25 @@ private struct MapCommunityPanel: View {
                         if let originDisplay = traveler.originDisplay {
                             Text(originDisplay)
                                 .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
+                                .foregroundStyle(Colors.secondaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
 
                         if let distanceMiles = traveler.distanceMiles {
                             Text(String(format: "%.1f mi", distanceMiles))
                                 .font(.travelDetail)
-                                .foregroundStyle(Colors.accent)
+                                .foregroundStyle(Colors.secondaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                     }
                 }
             }
         }
         .frame(width: 220, alignment: .leading)
-        .padding(16)
-        .background(Colors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(12)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     @ViewBuilder

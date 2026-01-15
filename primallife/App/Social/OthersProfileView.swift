@@ -1613,28 +1613,66 @@ private struct OthersProfileMoreSheetView: View {
     let unblockAction: () -> Void
 
     var body: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                HStack {
-                    Spacer()
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
 
-                    Button("Done") {
-                        dismiss()
+                        Button("Done") {
+                            dismiss()
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
                     }
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.accent)
-                }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    if isFriend {
-                        Button(action: unfriendAction) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if isFriend {
+                            Button(action: unfriendAction) {
+                                HStack {
+                                    Text("Unfriend")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        }
+
+                        Button(action: hasBlockedUser ? unblockAction : blockAction) {
                             HStack {
-                                Text("Unfriend")
+                                Text(hasBlockedUser ? "Unblock" : "Block")
                                     .font(.travelDetail)
-                                    .foregroundStyle(Colors.primaryText)
+                                    .foregroundStyle(hasBlockedUser ? Colors.primaryText : Color.red)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                        NavigationLink {
+                            ReportView()
+                        } label: {
+                            HStack {
+                                Text("Report")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Color.red)
 
                                 Spacer()
                             }
@@ -1648,27 +1686,10 @@ private struct OthersProfileMoreSheetView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
 
-                    Button(action: hasBlockedUser ? unblockAction : blockAction) {
-                        HStack {
-                            Text(hasBlockedUser ? "Unblock" : "Block")
-                                .font(.travelDetail)
-                                .foregroundStyle(hasBlockedUser ? Colors.primaryText : Color.red)
-
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    Spacer()
                 }
-
-                Spacer()
+                .padding(20)
             }
-            .padding(20)
         }
         .presentationDetents([.height(320)])
         .presentationBackground(Colors.background)

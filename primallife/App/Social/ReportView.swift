@@ -103,13 +103,20 @@ struct ReportView: View {
                         await submitReport()
                     }
                 } label: {
-                    Text("Submit")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
+                    HStack(spacing: 8) {
+                        Text("Submit")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+
+                        if isSubmitting {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Colors.accent)
+                    .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)

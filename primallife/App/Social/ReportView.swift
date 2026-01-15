@@ -289,24 +289,24 @@ struct ReportView: View {
                     .foregroundStyle(Colors.secondaryText)
                     .multilineTextAlignment(.center)
 
-                HStack(spacing: 12) {
-                    Button(action: secondaryAction) {
-                        Text(secondaryTitle)
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Colors.secondaryText.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-
+                VStack(spacing: 12) {
                     Button(action: primaryAction) {
                         Text(primaryTitle)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.tertiaryText)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 16)
                             .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: secondaryAction) {
+                        Text(secondaryTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Colors.secondaryText.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }

@@ -1202,9 +1202,9 @@ struct MapBoxView: View {
     }
     
     private var userLocationAnnotation: some View {
-        let outerSize: CGFloat = communityTab == .tribes ? 50 : 66
-        let innerSize: CGFloat = communityTab == .tribes ? 44 : 58
-        let strokeWidth: CGFloat = communityTab == .tribes ? 3 : 4
+        let outerSize: CGFloat = 66
+        let innerSize: CGFloat = 58
+        let strokeWidth: CGFloat = 4
 
         return ZStack {
             Circle()

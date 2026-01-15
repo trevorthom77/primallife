@@ -1696,23 +1696,27 @@ private struct MapCommunityPanel: View {
 
         return HStack(spacing: 12) {
             tribeImage(for: tribe)
-                .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(tribe.name)
                     .font(.travelDetail)
                     .foregroundStyle(Colors.primaryText)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 
                 Text(destination)
                     .font(.travelDetail)
-                    .foregroundStyle(Colors.accent)
+                    .foregroundStyle(Colors.secondaryText)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
         .frame(width: 220, alignment: .leading)
-        .padding(16)
-        .background(Colors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(12)
+        .background(Colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     @ViewBuilder

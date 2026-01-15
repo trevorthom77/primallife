@@ -21,6 +21,14 @@ struct ReportView: View {
         "Spam",
         "Other"
     ]
+
+    private struct BlockStatusRow: Decodable {
+        let blockerID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case blockerID = "blocker_id"
+        }
+    }
     
     private var isSubmitDisabled: Bool {
         selectedOption == nil || reportDetails.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -105,7 +113,9 @@ struct ReportView: View {
             VStack {
                 Button {
                     guard !isSubmitting else { return }
-                    isShowingBlockPrompt = true
+                    Task {
+                        await handleSubmitTap()
+                    }
                 } label: {
                     HStack(spacing: 8) {
                         Text("Submit")
@@ -159,6 +169,36 @@ struct ReportView: View {
                     }
                 )
             }
+        }
+    }
+
+    @MainActor
+    private func handleSubmitTap() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id,
+              let reportedUserID
+        else {
+            isShowingBlockPrompt = true
+            return
+        }
+
+        do {
+            let rows: [BlockStatusRow] = try await supabase
+                .from("blocks")
+                .select("blocker_id")
+                .eq("blocker_id", value: currentUserID.uuidString)
+                .eq("blocked_id", value: reportedUserID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            if rows.isEmpty {
+                isShowingBlockPrompt = true
+            } else {
+                await submitReport(shouldBlock: false)
+            }
+        } catch {
+            isShowingBlockPrompt = true
         }
     }
 

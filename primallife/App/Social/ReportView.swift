@@ -20,6 +20,10 @@ struct ReportView: View {
         "Spam",
         "Other"
     ]
+    
+    private var isSubmitDisabled: Bool {
+        selectedOption == nil || reportDetails.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         ZStack {
@@ -119,6 +123,7 @@ struct ReportView: View {
                     .cornerRadius(16)
                 }
                 .buttonStyle(.plain)
+                .disabled(isSubmitDisabled)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
@@ -136,14 +141,15 @@ struct ReportView: View {
 
     @MainActor
     private func submitReport() async {
+        let trimmedDetails = reportDetails.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !isSubmitting,
               let supabase,
               let reportedUserID,
-              let reason = selectedOption
+              let reason = selectedOption,
+              !trimmedDetails.isEmpty
         else { return }
 
         isSubmitting = true
-        let trimmedDetails = reportDetails.trimmingCharacters(in: .whitespacesAndNewlines)
 
         struct ReportInsert: Encodable {
             let reportedID: UUID

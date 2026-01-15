@@ -292,7 +292,7 @@ struct MapBoxView: View {
                                     camera.fly(
                                         to: CameraOptions(
                                             center: coordinate,
-                                            zoom: 10,
+                                            zoom: 8,
                                             pitch: 0
                                         ),
                                         duration: 2
@@ -525,7 +525,7 @@ struct MapBoxView: View {
                         guard !hasCenteredOnUser, let coordinate else { return }
                         viewport = .camera(
                             center: coordinate,
-                            zoom: 10,
+                            zoom: 8,
                             bearing: 0,
                             pitch: 0
                         )
@@ -696,7 +696,7 @@ struct MapBoxView: View {
         resolveUserLocationName(for: coordinate)
         viewport = .camera(
             center: coordinate,
-            zoom: 10,
+            zoom: 8,
             bearing: 0,
             pitch: 0
         )
@@ -718,7 +718,7 @@ struct MapBoxView: View {
         camera?.fly(
             to: CameraOptions(
                 center: coordinate,
-                zoom: 10,
+                zoom: 8,
                 pitch: 0
             ),
             duration: 0
@@ -773,7 +773,7 @@ struct MapBoxView: View {
         camera?.fly(
             to: CameraOptions(
                 center: coordinate,
-                zoom: 10,
+                zoom: 8,
                 pitch: 0
             ),
             duration: 2

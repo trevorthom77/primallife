@@ -81,7 +81,7 @@ struct MapBoxView: View {
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let refreshMovementThresholdFraction: Double = 0.3
     private let refreshRadiusChangeThresholdFraction: Double = 0.3
-    private let refreshMinimumInterval: TimeInterval = 3
+    private let refreshMinimumInterval: TimeInterval = 0
     
     private let customPlaceImageNames = [
         "italy",

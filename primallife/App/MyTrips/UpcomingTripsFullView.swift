@@ -60,7 +60,7 @@ struct UpcomingTripsFullView: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)
                                 .background(Colors.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                     }

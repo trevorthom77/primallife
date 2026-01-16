@@ -177,6 +177,8 @@ private struct TribeChatMessage: Identifiable {
 private struct TribePlan: Identifiable {
     let id: UUID
     let creatorID: UUID
+    let creatorName: String
+    let creatorAvatarURL: URL?
     let title: String
     let startDate: Date
     let endDate: Date
@@ -478,6 +480,21 @@ struct TribesChatView: View {
                 .foregroundStyle(Colors.primaryText)
                 .lineLimit(1)
 
+            if !plan.creatorName.isEmpty || plan.creatorAvatarURL != nil {
+                HStack(spacing: 8) {
+                    if let avatarURL = plan.creatorAvatarURL {
+                        messageAvatar(avatarURL, size: 20)
+                    }
+
+                    if !plan.creatorName.isEmpty {
+                        Text(plan.creatorName)
+                            .font(.tripsfont)
+                            .foregroundStyle(Colors.secondaryText)
+                            .lineLimit(1)
+                    }
+                }
+            }
+
             Text(planDateRangeText(plan))
                 .font(.badgeDetail)
                 .foregroundStyle(Colors.secondaryText)
@@ -732,6 +749,34 @@ struct TribesChatView: View {
                 .execute()
                 .value
 
+            var creatorNames: [UUID: String] = [:]
+            var creatorAvatarURLs: [UUID: URL] = [:]
+            let creatorIDs = Set(rows.map { $0.creatorID })
+            if !creatorIDs.isEmpty {
+                let creators: [TribeMemberProfileRow] = try await supabase
+                    .from("onboarding")
+                    .select("id, full_name, avatar_url")
+                    .in("id", values: creatorIDs.map { $0.uuidString })
+                    .execute()
+                    .value
+
+                creatorNames = Dictionary(
+                    uniqueKeysWithValues: creators.map { ($0.id, $0.fullName) }
+                )
+                creatorAvatarURLs = Dictionary(
+                    uniqueKeysWithValues: creators.compactMap { creator in
+                        guard let avatarPath = creator.avatarPath,
+                              !avatarPath.isEmpty,
+                              let avatarURL = try? supabase.storage
+                                .from("profile-photos")
+                                .getPublicURL(path: avatarPath) else {
+                            return nil
+                        }
+                        return (creator.id, avatarURL)
+                    }
+                )
+            }
+
             let newPlans = rows.map { row -> TribePlan in
                 let imageURL: URL?
                 if let imagePath = row.imagePath, !imagePath.isEmpty {
@@ -745,6 +790,8 @@ struct TribesChatView: View {
                 return TribePlan(
                     id: row.id,
                     creatorID: row.creatorID,
+                    creatorName: creatorNames[row.creatorID] ?? "",
+                    creatorAvatarURL: creatorAvatarURLs[row.creatorID],
                     title: row.title,
                     startDate: row.startDate,
                     endDate: row.endDate,

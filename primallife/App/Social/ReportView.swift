@@ -3,6 +3,7 @@ import Supabase
 
 struct ReportView: View {
     let reportedUserID: UUID?
+    let showsBlockPrompt: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
     @State private var selectedOption: String?
@@ -10,6 +11,11 @@ struct ReportView: View {
     @State private var isSubmitting = false
     @State private var isShowingBlockPrompt = false
     @FocusState private var isDetailsFocused: Bool
+
+    init(reportedUserID: UUID?, showsBlockPrompt: Bool = true) {
+        self.reportedUserID = reportedUserID
+        self.showsBlockPrompt = showsBlockPrompt
+    }
     
     private let reportOptions = [
         "Harassment or bullying",
@@ -148,7 +154,7 @@ struct ReportView: View {
             .padding(.top, 16)
         }
         .overlay {
-            if isShowingBlockPrompt {
+            if showsBlockPrompt && isShowingBlockPrompt {
                 confirmationOverlay(
                     title: "Block this user?",
                     message: "Do you want to block this user as well?",
@@ -174,11 +180,17 @@ struct ReportView: View {
 
     @MainActor
     private func handleSubmitTap() async {
+        if !showsBlockPrompt {
+            await submitReport(shouldBlock: false)
+            return
+        }
         guard let supabase,
               let currentUserID = supabase.auth.currentUser?.id,
               let reportedUserID
         else {
-            isShowingBlockPrompt = true
+            if showsBlockPrompt {
+                isShowingBlockPrompt = true
+            }
             return
         }
 
@@ -193,12 +205,16 @@ struct ReportView: View {
                 .value
 
             if rows.isEmpty {
-                isShowingBlockPrompt = true
+                if showsBlockPrompt {
+                    isShowingBlockPrompt = true
+                }
             } else {
                 await submitReport(shouldBlock: false)
             }
         } catch {
-            isShowingBlockPrompt = true
+            if showsBlockPrompt {
+                isShowingBlockPrompt = true
+            }
         }
     }
 
@@ -216,11 +232,13 @@ struct ReportView: View {
 
         struct ReportInsert: Encodable {
             let reportedID: UUID
+            let reportedType: String
             let reason: String
             let details: String?
 
             enum CodingKeys: String, CodingKey {
                 case reportedID = "reported_id"
+                case reportedType = "reported_type"
                 case reason
                 case details
             }
@@ -229,6 +247,7 @@ struct ReportView: View {
         do {
             let payload = ReportInsert(
                 reportedID: reportedUserID,
+                reportedType: showsBlockPrompt ? "user" : "tribe",
                 reason: reason,
                 details: trimmedDetails.isEmpty ? nil : trimmedDetails
             )

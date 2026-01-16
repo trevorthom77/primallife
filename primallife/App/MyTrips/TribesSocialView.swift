@@ -461,7 +461,7 @@ struct TribesSocialView: View {
             }
         }
         .navigationDestination(isPresented: $isShowingReport) {
-            ReportView(reportedUserID: reportUserID)
+            ReportView(reportedUserID: reportUserID, showsBlockPrompt: false)
         }
         .sheet(isPresented: $isShowingMembersSheet) {
             membersSheet
@@ -494,14 +494,6 @@ private struct TribeJoinRecord: Decodable {
 
 private struct TribeMemberRow: Decodable {
     let id: UUID
-}
-
-private struct TribeOwnerRow: Decodable {
-    let ownerID: UUID
-
-    enum CodingKeys: String, CodingKey {
-        case ownerID = "owner_id"
-    }
 }
 
 private struct TribeMemberProfileRow: Decodable {
@@ -812,22 +804,9 @@ private extension TribesSocialView {
         if let reportUserID {
             return reportUserID
         }
-        guard let supabase, let tribeID else { return nil }
-
-        do {
-            let rows: [TribeOwnerRow] = try await supabase
-                .from("tribes")
-                .select("owner_id")
-                .eq("id", value: tribeID.uuidString)
-                .limit(1)
-                .execute()
-                .value
-            let ownerID = rows.first?.ownerID
-            reportUserID = ownerID
-            return ownerID
-        } catch {
-            return nil
-        }
+        guard let tribeID else { return nil }
+        reportUserID = tribeID
+        return tribeID
     }
 
     @MainActor

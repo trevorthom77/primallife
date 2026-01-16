@@ -28,7 +28,9 @@ struct BasicInfoView: View {
     }
     
     private var isContinueEnabled: Bool {
-        !onboardingViewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && onboardingViewModel.hasSelectedBirthday
+        !onboardingViewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && onboardingViewModel.hasSelectedBirthday
+            && onboardingViewModel.hasAcceptedTerms
     }
     
     var body: some View {
@@ -131,6 +133,7 @@ struct BasicInfoView: View {
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
+
                 }
                 
                 Spacer()
@@ -147,19 +150,46 @@ struct BasicInfoView: View {
             LanguagesView()
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                showLanguages = true
-            } label: {
-                Text("Continue")
-                    .font(.travelDetail)
-                    .foregroundColor(Colors.tertiaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Colors.accent)
-                    .cornerRadius(16)
+            VStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    Button {
+                        onboardingViewModel.hasAcceptedTerms.toggle()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: onboardingViewModel.hasAcceptedTerms ? "checkmark.square.fill" : "square")
+                                .font(.travelDetail)
+                                .foregroundColor(onboardingViewModel.hasAcceptedTerms ? Colors.accent : Colors.secondaryText)
+                            
+                            Text("Agree to")
+                                .font(.travelDetail)
+                                .foregroundColor(Colors.primaryText)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Link("terms", destination: URL(string: "https://polyester-tire-f2c.notion.site/2e942fcc204a807c91c9e93983b616c1?pvs=74")!)
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.accent)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Colors.card)
+                .cornerRadius(12)
+                
+                Button {
+                    showLanguages = true
+                } label: {
+                    Text("Continue")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .disabled(!isContinueEnabled)
+                .opacity(isContinueEnabled ? 1 : 0.6)
             }
-            .disabled(!isContinueEnabled)
-            .opacity(isContinueEnabled ? 1 : 0.6)
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
             .background(Colors.background)

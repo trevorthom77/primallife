@@ -6,6 +6,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var name = ""
     @Published var birthday = Date()
     @Published var hasSelectedBirthday = false
+    @Published var hasAcceptedTerms = false
     
     @Published var selectedLanguageIDs: Set<String> = []
     @Published var selectedCountryID: String?

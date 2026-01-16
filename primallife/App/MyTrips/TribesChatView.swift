@@ -481,18 +481,23 @@ struct TribesChatView: View {
                 .lineLimit(1)
 
             if !plan.creatorName.isEmpty || plan.creatorAvatarURL != nil {
-                HStack(spacing: 8) {
-                    if let avatarURL = plan.creatorAvatarURL {
-                        messageAvatar(avatarURL, size: 20)
-                    }
+                NavigationLink {
+                    OthersProfileView(userID: plan.creatorID)
+                } label: {
+                    HStack(spacing: 8) {
+                        if let avatarURL = plan.creatorAvatarURL {
+                            messageAvatar(avatarURL, size: 20)
+                        }
 
-                    if !plan.creatorName.isEmpty {
-                        Text(plan.creatorName)
-                            .font(.tripsfont)
-                            .foregroundStyle(Colors.secondaryText)
-                            .lineLimit(1)
+                        if !plan.creatorName.isEmpty {
+                            Text(plan.creatorName)
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.secondaryText)
+                                .lineLimit(1)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
             }
 
             Text(planDateRangeText(plan))

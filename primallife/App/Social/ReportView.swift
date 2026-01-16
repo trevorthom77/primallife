@@ -10,6 +10,7 @@ struct ReportView: View {
     @State private var reportDetails = ""
     @State private var isSubmitting = false
     @State private var isShowingBlockPrompt = false
+    @State private var isShowingSuccessOverlay = false
     @FocusState private var isDetailsFocused: Bool
 
     init(reportedUserID: UUID?, showsBlockPrompt: Bool = true) {
@@ -176,6 +177,18 @@ struct ReportView: View {
                 )
             }
         }
+        .overlay {
+            if isShowingSuccessOverlay {
+                successOverlay(
+                    title: "Report submitted",
+                    message: "Thanks for letting us know. Reports can take 24 hours to take effect.",
+                    buttonTitle: "OK"
+                ) {
+                    isShowingSuccessOverlay = false
+                    dismiss()
+                }
+            }
+        }
     }
 
     @MainActor
@@ -258,7 +271,8 @@ struct ReportView: View {
             if shouldBlock {
                 await blockUser(reportedUserID: reportedUserID)
             }
-            dismiss()
+            isSubmitting = false
+            isShowingSuccessOverlay = true
         } catch {
             isSubmitting = false
             return
@@ -368,6 +382,45 @@ struct ReportView: View {
                             .background(Colors.secondaryText.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
+    }
+
+    private func successOverlay(
+        title: String,
+        message: String,
+        buttonTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                Button(action: action) {
+                    Text(buttonTitle)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Colors.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }
             .padding(20)

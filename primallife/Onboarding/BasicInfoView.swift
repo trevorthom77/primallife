@@ -141,6 +141,11 @@ struct BasicInfoView: View {
             .padding(.horizontal, 20)
             .padding(.top, 48)
         }
+        .onAppear {
+            if onboardingViewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                onboardingViewModel.name = "Traveler"
+            }
+        }
         .onTapGesture {
             isNameFieldFocused = false
         }

@@ -203,7 +203,6 @@ private struct MapTribeCreateFormView: View {
     @State private var isShowingPhotoPicker = false
     @FocusState private var isGroupNameFocused: Bool
     private let nameLimit = 60
-    private let unsplashURL = URL(string: "https://unsplash.com")!
 
     var body: some View {
         ScrollView {
@@ -292,29 +291,6 @@ private struct MapTribeCreateFormView: View {
                             .ignoresSafeArea()
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Use free, beautiful photos from Unsplash for your tribe image.")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.secondaryText)
-
-                        Link(destination: unsplashURL) {
-                            HStack {
-                                Spacer()
-                                Image("unsplashblack")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 28)
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .contentShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
             }
             .padding(.horizontal, 24)

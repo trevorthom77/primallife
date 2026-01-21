@@ -146,7 +146,6 @@ private struct CreateTribeFormView: View {
     @State private var selectedGender: TribeGender = .everyone
     @Environment(\.dismiss) private var dismiss
     private let nameLimit = 60
-    private let unsplashURL = URL(string: "https://unsplash.com")!
 
     init(trip: Trip, onFinish: @escaping () -> Void) {
         self.trip = trip
@@ -240,29 +239,6 @@ private struct CreateTribeFormView: View {
                             .ignoresSafeArea()
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Use free, beautiful photos from Unsplash for your tribe image.")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.secondaryText)
-
-                        Link(destination: unsplashURL) {
-                            HStack {
-                                Spacer()
-                                Image("unsplashblack")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 28)
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .contentShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
 
             }

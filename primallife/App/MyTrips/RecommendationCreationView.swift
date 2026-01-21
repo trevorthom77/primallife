@@ -305,7 +305,6 @@ private struct RecommendationPhotoPromptView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingPhotoPicker = false
     @State private var isShowingReview = false
-    private let unsplashURL = URL(string: "https://unsplash.com")!
 
     var body: some View {
         ScrollView {
@@ -365,29 +364,6 @@ private struct RecommendationPhotoPromptView: View {
                         .ignoresSafeArea()
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Add beautiful, high-quality nature photos from Unsplash.")
-                        .font(.travelBody)
-                        .foregroundStyle(Colors.secondaryText)
-
-                    Link(destination: unsplashURL) {
-                        HStack {
-                            Spacer()
-                            Image("unsplashblack")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 28)
-                            Spacer()
-                        }
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .contentShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .buttonStyle(.plain)
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)

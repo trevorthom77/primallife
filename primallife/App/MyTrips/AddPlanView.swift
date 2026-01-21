@@ -54,7 +54,6 @@ struct AddPlanView: View {
     @State private var hasEndDate = false
     @State private var activeDatePicker: DatePickerType?
     @State private var isCreating = false
-    private let unsplashURL = URL(string: "https://unsplash.com")!
 
     private var isAddPlanEnabled: Bool {
         let trimmedTitle = planTitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -124,29 +123,6 @@ struct AddPlanView: View {
                             .ignoresSafeArea()
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Use free, beautiful photos from Unsplash for your plan image.")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.secondaryText)
-
-                        Link(destination: unsplashURL) {
-                            HStack {
-                                Spacer()
-                                Image("unsplashblack")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 28)
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .contentShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {

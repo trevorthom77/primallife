@@ -31,6 +31,7 @@ struct TravelCard: View {
         "greece",
         "puerto rico",
         "costa rica",
+        "australiaa",
         "africa",
         "antarctica",
         "asia",

@@ -105,7 +105,8 @@ private struct UpcomingTripPlaceCard: View {
         "italy",
         "greece",
         "puerto rico",
-        "costa rica"
+        "costa rica",
+        "australiaa"
     ]
 
     private var customImageName: String? {

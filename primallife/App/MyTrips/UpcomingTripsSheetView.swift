@@ -5,44 +5,71 @@ struct UpcomingTripsSheetView: View {
     let tripImageDetails: [UUID: UnsplashImageDetails]
     let onDeleteTrip: (Trip) -> Void
     @State private var selectedTrip: Trip?
+    @State private var tribeImageCache: [UUID: Image] = [:]
+    @State private var tribeImageURLCache: [UUID: URL] = [:]
 
     var body: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if trips.isEmpty {
-                        VStack(spacing: 12) {
-                            Text("No upcoming trips yet")
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if trips.isEmpty {
+                            VStack(spacing: 12) {
+                                Text("No upcoming trips yet")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
 
-                            Text("Add your next destination to see it here.")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.secondaryText)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                    } else {
-                        ForEach(trips) { trip in
-                            UpcomingTripPlaceCard(
-                                imageURL: tripImageDetails[trip.id]?.url,
-                                location: trip.destination,
-                                flag: tripFlag(for: trip),
-                                title: tripTitle(for: trip),
-                                onMoreTapped: {
-                                    selectedTrip = trip
+                                Text("Add your next destination to see it here.")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 24)
+                        } else {
+                            ForEach(trips) { trip in
+                                ZStack(alignment: .topTrailing) {
+                                    NavigationLink {
+                                        UpcomingTripsFullView(
+                                            trip: trip,
+                                            prefetchedDetails: tripImageDetails[trip.id],
+                                            tribeImageCache: $tribeImageCache,
+                                            tribeImageURLCache: $tribeImageURLCache
+                                        )
+                                    } label: {
+                                        UpcomingTripPlaceCard(
+                                            imageURL: tripImageDetails[trip.id]?.url,
+                                            location: trip.destination,
+                                            flag: tripFlag(for: trip),
+                                            title: tripTitle(for: trip)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(action: {
+                                        selectedTrip = trip
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .frame(width: 36, height: 36)
+                                            .background(Colors.card.opacity(0.9))
+                                            .clipShape(Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.top, 12)
+                                    .padding(.trailing, 12)
                                 }
-                            )
+                            }
                         }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 32)
             }
         }
         .sheet(item: $selectedTrip) { trip in
@@ -73,7 +100,6 @@ private struct UpcomingTripPlaceCard: View {
     let location: String
     let flag: String
     let title: String
-    let onMoreTapped: () -> Void
 
     private let customImageNames = [
         "italy",
@@ -124,19 +150,6 @@ private struct UpcomingTripPlaceCard: View {
             .foregroundStyle(Colors.card)
             .padding(.top, 20)
             .padding(.horizontal, 16)
-        }
-        .overlay(alignment: .topTrailing) {
-            Button(action: onMoreTapped) {
-                Image(systemName: "ellipsis")
-                    .font(.travelBody)
-                    .foregroundStyle(Colors.primaryText)
-                    .frame(width: 36, height: 36)
-                    .background(Colors.card.opacity(0.9))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 12)
-            .padding(.trailing, 12)
         }
         .clipped()
     }

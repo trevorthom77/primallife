@@ -96,7 +96,6 @@ struct WelcomeProfileView: View {
             let avatar_url: String?
             let meeting_preference: String?
             let meeting_up_preference: String?
-            let split_expenses_preference: String?
             let travel_description: String?
             let upcoming_destination: String
             let upcoming_arrival_date: String?
@@ -116,7 +115,6 @@ struct WelcomeProfileView: View {
             avatar_url: onboardingViewModel.avatarPath,
             meeting_preference: onboardingViewModel.travelCompanionPreference,
             meeting_up_preference: onboardingViewModel.meetingStyle,
-            split_expenses_preference: onboardingViewModel.splitExpensesPreference,
             travel_description: onboardingViewModel.travelDescription,
             upcoming_destination: onboardingViewModel.upcomingDestination,
             upcoming_arrival_date: onboardingViewModel.hasSelectedArrival ? onboardingViewModel.arrivalDate.ISO8601Format() : nil,

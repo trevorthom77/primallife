@@ -14,7 +14,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published var travelCompanionPreference: String?
     @Published var meetingStyle: String?
     @Published var selectedInterests: Set<String> = []
-    @Published var splitExpensesPreference: String?
     @Published var travelDescription: String?
     
     @Published var bio = ""

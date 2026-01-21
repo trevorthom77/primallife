@@ -57,7 +57,6 @@ struct UserProfile: Decodable, Identifiable {
     let avatarPath: String?
     let meetingPreference: String?
     let meetingUpPreference: String?
-    let splitExpensesPreference: String?
     let travelDescription: String?
     let upcomingDestination: String
     let upcomingArrivalDate: String?
@@ -75,7 +74,6 @@ struct UserProfile: Decodable, Identifiable {
         case avatarPath = "avatar_url"
         case meetingPreference = "meeting_preference"
         case meetingUpPreference = "meeting_up_preference"
-        case splitExpensesPreference = "split_expenses_preference"
         case travelDescription = "travel_description"
         case upcomingDestination = "upcoming_destination"
         case upcomingArrivalDate = "upcoming_arrival_date"
@@ -95,7 +93,6 @@ struct UserProfile: Decodable, Identifiable {
         avatarPath = try container.decodeIfPresent(String.self, forKey: .avatarPath)
         meetingPreference = try container.decodeIfPresent(String.self, forKey: .meetingPreference)
         meetingUpPreference = try container.decodeIfPresent(String.self, forKey: .meetingUpPreference)
-        splitExpensesPreference = try container.decodeIfPresent(String.self, forKey: .splitExpensesPreference)
         travelDescription = try container.decodeIfPresent(String.self, forKey: .travelDescription)
         upcomingDestination = try container.decode(String.self, forKey: .upcomingDestination)
         upcomingArrivalDate = try container.decodeIfPresent(String.self, forKey: .upcomingArrivalDate)

@@ -56,7 +56,7 @@ struct BellView: View {
                         VStack(spacing: 12) {
                             Text("No notifications yet")
                                 .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
+                                .foregroundStyle(Colors.secondaryText)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 24)

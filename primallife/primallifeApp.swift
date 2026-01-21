@@ -83,7 +83,9 @@ struct primallifeApp: App {
             Group {
                 if isCheckingSession {
                     ZStack {
-                        Colors.background
+                        Image("launchscreen")
+                            .resizable()
+                            .scaledToFill()
                             .ignoresSafeArea()
                         
                         HStack(spacing: 12) {
@@ -93,9 +95,9 @@ struct primallifeApp: App {
                                 .frame(width: 56, height: 56)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             
-                            Text("Live Life")
+                            Text("LiveLife")
                                 .font(.loadingTitle)
-                                .foregroundColor(Colors.primaryText)
+                                .foregroundColor(Colors.tertiaryText)
                         }
                     }
                 } else if isAuthenticated && onboardingViewModel.hasCompletedOnboarding {

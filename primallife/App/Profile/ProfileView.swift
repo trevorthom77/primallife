@@ -263,10 +263,6 @@ struct ProfileView: View {
                         Text(profile?.fullName ?? name)
                             .font(.customTitle)
                             .foregroundStyle(Colors.primaryText)
-                        
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(Colors.accent)
                     }
                     
                     if let originDisplay {

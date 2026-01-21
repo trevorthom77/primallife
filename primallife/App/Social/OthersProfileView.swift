@@ -122,10 +122,6 @@ struct OthersProfileView: View {
                                 .font(.customTitle)
                                 .foregroundStyle(Colors.primaryText)
 
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(Colors.accent)
-
                             if let age = userAge {
                                 Text("\(age)")
                                     .font(.travelDetail)

@@ -3,7 +3,7 @@ import SwiftUI
 struct MeetingUpView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
-    @State private var showSplitExpenses = false
+    @State private var showDescription = false
     private let options = ["Travel together", "Meet at destination", "Open to both"]
     
     private var isContinueEnabled: Bool {
@@ -77,7 +77,7 @@ struct MeetingUpView: View {
             
             VStack(spacing: 16) {
                 Button {
-                    showSplitExpenses = true
+                    showDescription = true
                 } label: {
                     Text("Continue")
                         .font(.travelDetail)
@@ -103,8 +103,8 @@ struct MeetingUpView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 48)
         }
-        .navigationDestination(isPresented: $showSplitExpenses) {
-            SplitExpensesView()
+        .navigationDestination(isPresented: $showDescription) {
+            DescriptionView()
         }
         .navigationBarBackButtonHidden(true)
     }

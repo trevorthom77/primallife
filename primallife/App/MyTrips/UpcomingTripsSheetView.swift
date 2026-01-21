@@ -106,7 +106,7 @@ private struct UpcomingTripPlaceCard: View {
         "greece",
         "puerto rico",
         "costa rica",
-        "australiaa",
+        "australia",
         "jamaica",
         "switzerland"
     ]

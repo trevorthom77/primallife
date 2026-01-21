@@ -723,7 +723,7 @@ struct MyTripsView: View {
                                 }
                             } else {
                                 VStack(spacing: 12) {
-                                    Image("australia")
+                                    Image("australiaa")
                                         .resizable()
                                         .scaledToFit()
                                         .frame(width: 220, height: 220)

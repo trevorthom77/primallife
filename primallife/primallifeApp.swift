@@ -1,6 +1,8 @@
 import SwiftUI
 import Supabase
 import Combine
+import UserNotifications
+import UIKit
 
 private struct SupabaseClientKey: EnvironmentKey {
     static let defaultValue: SupabaseClient? = nil
@@ -67,8 +69,44 @@ final class ProfileStore: ObservableObject {
     }
 }
 
+final class PushNotificationDelegate: NSObject, UIApplicationDelegate {
+    var supabase: SupabaseClient?
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+        Task {
+            await saveDeviceToken(token)
+        }
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("APNs registration failed: \(error)")
+    }
+
+    private func saveDeviceToken(_ token: String) async {
+        guard let supabase,
+              let userID = supabase.auth.currentUser?.id
+        else { return }
+
+        struct DeviceTokenInsert: Encodable {
+            let id: UUID
+            let token: String
+        }
+
+        do {
+            try await supabase
+                .from("device_tokens")
+                .insert(DeviceTokenInsert(id: userID, token: token))
+                .execute()
+        } catch {
+            print("Device token save failed: \(error)")
+        }
+    }
+}
+
 @main
 struct primallifeApp: App {
+    @UIApplicationDelegateAdaptor(PushNotificationDelegate.self) private var pushDelegate
     private let supabase = SupabaseClient(
         supabaseURL: URL(string: "https://fefucqrztvepcbfjikrq.supabase.co")!,
         supabaseKey: "sb_publishable_2AWQG4a-U37T-pgp5FYnJA_28ymb116"
@@ -77,6 +115,10 @@ struct primallifeApp: App {
     @StateObject private var profileStore = ProfileStore()
     @State private var isAuthenticated = false
     @State private var isCheckingSession = true
+
+    init() {
+        pushDelegate.supabase = supabase
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -153,6 +195,7 @@ struct primallifeApp: App {
                 .value
             
             await profileStore.loadProfile(for: userID, supabase: supabase)
+            registerForRemoteNotificationsIfAuthorized()
             
             let completedAt = response.first?.completedAt
             await MainActor.run {
@@ -186,6 +229,18 @@ struct primallifeApp: App {
             
             if let userID, hasSession {
                 await profileStore.loadProfile(for: userID, supabase: supabase)
+                registerForRemoteNotificationsIfAuthorized()
+            }
+        }
+    }
+
+    private func registerForRemoteNotificationsIfAuthorized() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                return
+            }
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
             }
         }
     }

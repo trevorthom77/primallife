@@ -691,10 +691,7 @@ struct OthersProfileView: View {
     }
 
     private var aboutText: String {
-        if let profile {
-            return profile.bio
-        }
-        return ""
+        profile?.bio.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private var likesText: String? {

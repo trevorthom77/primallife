@@ -181,7 +181,9 @@ private struct ProfilePreviewCard: View {
         "greece",
         "puerto rico",
         "costa rica",
-        "australiaa"
+        "australiaa",
+        "jamaica",
+        "switzerland"
     ]
     
     var body: some View {

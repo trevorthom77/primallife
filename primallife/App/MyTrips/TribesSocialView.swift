@@ -40,7 +40,9 @@ struct TribesSocialView: View {
         "greece",
         "puerto rico",
         "costa rica",
-        "australiaa"
+        "australiaa",
+        "jamaica",
+        "switzerland"
     ]
 
     init(

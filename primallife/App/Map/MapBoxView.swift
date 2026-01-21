@@ -88,7 +88,9 @@ struct MapBoxView: View {
         "greece",
         "puerto rico",
         "costa rica",
-        "australiaa"
+        "australiaa",
+        "jamaica",
+        "switzerland"
     ]
 
     private var userAvatarURL: URL? {

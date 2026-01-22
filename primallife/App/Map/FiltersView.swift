@@ -234,6 +234,27 @@ struct FiltersView: View {
                 Spacer()
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    commitAgeFields()
+                    dismiss()
+                } label: {
+                    Text("Update")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
+            }
+            .background(Colors.background)
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showCountryPicker) {
             CountryPickerView(selectedCountryID: $selectedCountryID)

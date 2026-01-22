@@ -111,7 +111,7 @@ struct UpcomingTripsFilterView: View {
 
                         Text(
                             showsTribeFilters
-                                ? "Shows tribes based on tribe type."
+                                ? "Use filters to refine the tribes you see."
                                 : "Shows travelers whose dates overlap your selected range."
                         )
                             .font(.travelBody)

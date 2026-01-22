@@ -274,8 +274,9 @@ struct UpcomingTripsFilterView: View {
                     dismissKeyboard()
                     filterCheckInDate = checkInDate
                     filterReturnDate = returnDate
-                    filterMinAge = ageValue(from: minAgeText)
-                    filterMaxAge = ageValue(from: maxAgeText)
+                    let normalizedAges = normalizedAgeRange()
+                    filterMinAge = normalizedAges.minAge
+                    filterMaxAge = normalizedAges.maxAge
                     dismiss()
                 } label: {
                     Text("Update")
@@ -407,6 +408,13 @@ struct UpcomingTripsFilterView: View {
         let clamped = clampedAgeText(text)
         guard !clamped.isEmpty else { return nil }
         return Int(clamped)
+    }
+
+    private func normalizedAgeRange() -> (minAge: Int?, maxAge: Int?) {
+        let minAge = ageValue(from: minAgeText)
+        let maxAge = ageValue(from: maxAgeText)
+        guard let minAge, let maxAge else { return (minAge, maxAge) }
+        return (min(minAge, maxAge), max(minAge, maxAge))
     }
 
     private func resetFilters() {

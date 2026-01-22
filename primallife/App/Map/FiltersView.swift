@@ -332,8 +332,8 @@ struct FiltersView: View {
         maxAge = 100
         selectedGender = "All"
         selectedCountryID = nil
-        minAgeText = String(minAge)
-        maxAgeText = String(maxAge)
+        minAgeText = ""
+        maxAgeText = ""
         draftSelectedGender = "All"
         draftSelectedCountryID = nil
     }

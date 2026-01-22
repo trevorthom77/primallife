@@ -1049,7 +1049,8 @@ private struct MapTribeReviewView: View {
                             .font(.travelTitle)
                             .foregroundStyle(Colors.primaryText)
 
-                        Text(aboutText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "No description added yet." : aboutText)
+                        let trimmedAbout = aboutText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        Text(trimmedAbout.isEmpty ? "No description added yet." : trimmedAbout)
                             .font(.travelBody)
                             .foregroundStyle(Colors.secondaryText)
                     }

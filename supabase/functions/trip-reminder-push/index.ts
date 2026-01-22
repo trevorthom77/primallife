@@ -83,6 +83,7 @@ function startOfUtcDay(date: Date): Date {
 }
 
 function messageFor(days: number, destination: string): string | null {
+  if (days === 30) return `You’re a month away from ${destination}.`
   if (days === 14) return `Two weeks until you’re in ${destination}.`
   if (days === 7) return `One week until you’re in ${destination}.`
   if (days === 3) return `Three days until you’re in ${destination}.`
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
 
   const todayUtc = startOfUtcDay(new Date())
   const rangeEnd = new Date(todayUtc)
-  rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 15)
+  rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 31)
 
   const { data: trips, error: tripsError } = await supabase
     .from('mytrips')

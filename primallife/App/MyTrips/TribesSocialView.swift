@@ -167,35 +167,29 @@ struct TribesSocialView: View {
                                 isShowingMembersSheet = true
                             }) {
                                 HStack(spacing: -8) {
-                                    Image("profile1")
-                                        .resizable()
-                                        .scaledToFill()
+                                    ForEach(members.prefix(3)) { member in
+                                        ZStack {
+                                            if let avatarURL = member.avatarURL {
+                                                AsyncImage(url: avatarURL) { phase in
+                                                    if let image = phase.image {
+                                                        image
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                    } else {
+                                                        Color.clear
+                                                    }
+                                                }
+                                            } else {
+                                                Color.clear
+                                            }
+                                        }
                                         .frame(width: 36, height: 36)
                                         .clipShape(Circle())
                                         .overlay {
                                             Circle()
                                                 .stroke(Colors.card, lineWidth: 3)
                                         }
-
-                                    Image("profile2")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-
-                                    Image("profile3")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
+                                    }
 
                                     ZStack {
                                         Circle()
@@ -463,6 +457,7 @@ struct TribesSocialView: View {
             await loadJoinStatus()
             await loadCurrentUserGender()
             await loadMemberCount()
+            await loadMembers()
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $shouldNavigateToChat) {
@@ -662,10 +657,7 @@ private extension TribesSocialView {
                 .execute()
                 .value
 
-            var memberIDs = Array(Set(joinRows.map { $0.id }))
-            if let currentUserID = supabase.auth.currentUser?.id {
-                memberIDs.removeAll { $0 == currentUserID }
-            }
+            let memberIDs = Array(Set(joinRows.map { $0.id }))
             guard !memberIDs.isEmpty else {
                 members = []
                 return

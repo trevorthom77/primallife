@@ -70,9 +70,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     return `${signingInput}.${signaturePart}`
   }
 
+  type ApnsAlert = string | { title: string; body: string }
+
   async function sendPush(
     token: string,
-    message: string,
+    alert: ApnsAlert,
     host: string,
     topic: string,
     jwt: string,
@@ -85,7 +87,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         'apns-push-type': 'alert',
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ aps: { alert: message } }),
+      body: JSON.stringify({ aps: { alert } }),
     })
 
     if (!res.ok) {
@@ -133,19 +135,46 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       return new Response('No record', { status: 400 })
     }
 
+    const table = payload?.table as string | undefined
     const status = record.status as string | undefined
     const requesterId = record.requester_id as string | undefined
     const receiverId = record.receiver_id as string | undefined
 
     let targetUserId: string | null = null
-    let message: string | null = null
+    let alert: ApnsAlert | null = null
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    if (type === 'INSERT' && status === 'pending' && requesterId && receiverId)
-  {
+    const senderId = record.sender_id as string | undefined
+    const friendId = record.friend_id as string | undefined
+    const messageText = record.text as string | undefined
+    const isFriendMessageInsert =
+      type === 'INSERT' &&
+      (table === 'friend_messages' || (!!senderId && !!friendId))
+
+    if (isFriendMessageInsert && senderId && friendId) {
+      const { data } = await supabase
+        .from('onboarding')
+        .select('full_name, origin')
+        .eq('id', senderId)
+        .maybeSingle()
+
+      const senderName = data?.full_name ?? ''
+      const senderFlag = isoToFlag(data?.origin)
+      const senderPrefix = senderFlag ? `${senderFlag} ` : ''
+      targetUserId = friendId
+      alert = {
+        title: `${senderPrefix}${senderName}`,
+        body: messageText ?? '',
+      }
+    } else if (
+      type === 'INSERT' &&
+      status === 'pending' &&
+      requesterId &&
+      receiverId
+    ) {
       const { data } = await supabase
         .from('onboarding')
         .select('full_name, origin')
@@ -156,7 +185,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const requesterFlag = isoToFlag(data?.origin)
       const requesterPrefix = requesterFlag ? `${requesterFlag} ` : ''
       targetUserId = receiverId
-      message = `${requesterPrefix}${requesterName} added you`
+      alert = `${requesterPrefix}${requesterName} added you`
     } else if (
       type === 'UPDATE' &&
       status === 'accepted' &&
@@ -174,7 +203,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const receiverFlag = isoToFlag(data?.origin)
       const receiverPrefix = receiverFlag ? `${receiverFlag} ` : ''
       targetUserId = requesterId
-      message = `${receiverPrefix}${receiverName} accepted your request`
+      alert = `${receiverPrefix}${receiverName} accepted your request`
     } else {
       return new Response(JSON.stringify({ ignored: true }), {
         status: 200,
@@ -201,7 +230,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         .map((row: { token: string | null }) => row.token)
         .filter((token: string | null): token is string => !!token)
         .map((token: string) =>
-          sendPush(token, message ?? '', apnsHost, apnsBundleId, apnsJwt),
+          sendPush(token, alert ?? '', apnsHost, apnsBundleId, apnsJwt),
         ),
     )
 

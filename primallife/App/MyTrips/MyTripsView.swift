@@ -686,6 +686,8 @@ struct MyTripsView: View {
     @State private var tribeImageURLCache: [UUID: URL] = [:]
     @State private var recommendationImageCache: [UUID: Image] = [:]
     @State private var recommendationImageURLCache: [UUID: URL] = [:]
+    @State private var tribeMemberImageCache: [UUID: Image] = [:]
+    @State private var tribeMemberImageURLCache: [UUID: URL] = [:]
     
     var body: some View {
         NavigationStack {
@@ -1338,13 +1340,22 @@ struct MyTripsView: View {
         let avatarURL = viewModel.creatorAvatarURL(for: memberID, supabase: supabase)
 
         Group {
-            if let avatarURL {
+            if let cachedImage = cachedTribeMemberImage(for: memberID, url: avatarURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else if let avatarURL {
                 AsyncImage(url: avatarURL) { phase in
-                    if let image = phase.image {
+                    switch phase {
+                    case .success(let image):
                         image
                             .resizable()
                             .scaledToFill()
-                    } else {
+                            .onAppear {
+                                tribeMemberImageCache[memberID] = image
+                                tribeMemberImageURLCache[memberID] = avatarURL
+                            }
+                    default:
                         Color.clear
                     }
                 }
@@ -1445,6 +1456,15 @@ struct MyTripsView: View {
         guard let url,
               let cachedImage = recommendationImageCache[recommendation.id],
               recommendationImageURLCache[recommendation.id] == url else {
+            return nil
+        }
+        return cachedImage
+    }
+
+    private func cachedTribeMemberImage(for memberID: UUID, url: URL?) -> Image? {
+        guard let url,
+              let cachedImage = tribeMemberImageCache[memberID],
+              tribeMemberImageURLCache[memberID] == url else {
             return nil
         }
         return cachedImage

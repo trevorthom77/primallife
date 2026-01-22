@@ -137,7 +137,7 @@ struct UpcomingTripsFilterView: View {
                                     .font(.travelDetail)
                                     .foregroundStyle(Colors.primaryText)
 
-                                HStack(spacing: 8) {
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                                     ForEach(TribeFilterOption.allCases, id: \.self) { option in
                                         Button {
                                             dismissKeyboard()

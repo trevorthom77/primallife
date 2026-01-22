@@ -735,6 +735,11 @@ private struct MapTribeGenderView: View {
         Int(maxAgeText)
     }
 
+    private var isAgeRangeInvalid: Bool {
+        guard let minAge = minAgeValue, let maxAge = maxAgeValue else { return false }
+        return maxAge < minAge
+    }
+
     private enum AgeField {
         case min
         case max
@@ -867,6 +872,13 @@ private struct MapTribeGenderView: View {
                         .onTapGesture {
                             focusedAgeField = .max
                         }
+                    }
+
+                    if isAgeRangeInvalid {
+                        Text("Maximum age must be at least the minimum age.")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
 
@@ -1023,7 +1035,7 @@ private struct MapTribeGenderView: View {
     }
 
     private var isContinueEnabled: Bool {
-        hasSelectedReturn && returnDate >= tribeStartDate
+        hasSelectedReturn && returnDate >= tribeStartDate && !isAgeRangeInvalid
     }
 }
 

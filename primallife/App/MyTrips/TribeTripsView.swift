@@ -559,6 +559,11 @@ private struct TribeGenderView: View {
         Int(maxAgeText)
     }
 
+    private var isAgeRangeInvalid: Bool {
+        guard let minAge = minAgeValue, let maxAge = maxAgeValue else { return false }
+        return maxAge < minAge
+    }
+
     private enum AgeField {
         case min
         case max
@@ -717,6 +722,13 @@ private struct TribeGenderView: View {
                             focusedAgeField = .max
                         }
                     }
+
+                    if isAgeRangeInvalid {
+                        Text("Maximum age must be at least the minimum age.")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -874,7 +886,7 @@ private struct TribeGenderView: View {
     }
 
     private var isContinueEnabled: Bool {
-        hasSelectedReturn && returnDate >= tribeStartDate
+        hasSelectedReturn && returnDate >= tribeStartDate && !isAgeRangeInvalid
     }
 }
 

@@ -177,7 +177,7 @@ struct FiltersView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Origin")
-                                .font(.travelTitle)
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
 
                             if hasSelectedCountry {

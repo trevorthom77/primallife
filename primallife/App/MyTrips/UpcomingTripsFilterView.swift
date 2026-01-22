@@ -69,10 +69,6 @@ struct UpcomingTripsFilterView: View {
         case all = "All"
     }
 
-    private var isUpdateEnabled: Bool {
-        true
-    }
-
     var body: some View {
         ZStack {
             Colors.background
@@ -304,28 +300,30 @@ struct UpcomingTripsFilterView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                dismissKeyboard()
-                filterCheckInDate = checkInDate
-                filterReturnDate = returnDate
-                let normalizedAges = normalizedAgeRange()
-                filterMinAge = normalizedAges.minAge
-                filterMaxAge = normalizedAges.maxAge
-                filterGender = selectedGender == .all ? nil : selectedGender.rawValue
-                dismiss()
-            } label: {
-                Text("Update")
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.tertiaryText)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(isUpdateEnabled ? Colors.accent : Colors.accent.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .contentShape(RoundedRectangle(cornerRadius: 16))
+            VStack {
+                Button {
+                    dismissKeyboard()
+                    filterCheckInDate = checkInDate
+                    filterReturnDate = returnDate
+                    let normalizedAges = normalizedAgeRange()
+                    filterMinAge = normalizedAges.minAge
+                    filterMaxAge = normalizedAges.maxAge
+                    filterGender = selectedGender == .all ? nil : selectedGender.rawValue
+                    dismiss()
+                } label: {
+                    Text("Update")
+                        .font(.travelDetail)
+                        .foregroundColor(Colors.tertiaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Colors.accent)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
-            .buttonStyle(.plain)
-            .disabled(!isUpdateEnabled)
-            .padding(.horizontal, 24)
+            .background(Colors.background)
         }
         .navigationBarBackButtonHidden(true)
         .onChange(of: focusedAgeField) { _, field in

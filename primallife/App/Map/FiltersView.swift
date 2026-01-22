@@ -47,8 +47,12 @@ struct FiltersView: View {
         _maxAge = maxAge
         _selectedGender = selectedGender
         _selectedCountryID = selectedCountryID
-        _minAgeText = State(initialValue: String(minAge.wrappedValue))
-        _maxAgeText = State(initialValue: String(maxAge.wrappedValue))
+        let initialMinAge = minAge.wrappedValue
+        let initialMaxAge = maxAge.wrappedValue
+        let initialMinAgeText = initialMinAge == 18 ? "" : String(initialMinAge)
+        let initialMaxAgeText = initialMaxAge == 100 ? "" : String(initialMaxAge)
+        _minAgeText = State(initialValue: initialMinAgeText)
+        _maxAgeText = State(initialValue: initialMaxAgeText)
         _draftSelectedGender = State(initialValue: selectedGender.wrappedValue)
         _draftSelectedCountryID = State(initialValue: selectedCountryID.wrappedValue)
     }

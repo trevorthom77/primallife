@@ -12,6 +12,7 @@ struct UpcomingTripsFilterView: View {
     @State private var minAgeText: String = ""
     @State private var maxAgeText: String = ""
     @FocusState private var focusedAgeField: AgeField?
+    @State private var selectedGender: GenderOption = .all
 
     init(filterCheckInDate: Binding<Date?>, filterReturnDate: Binding<Date?>) {
         _filterCheckInDate = filterCheckInDate
@@ -34,6 +35,12 @@ struct UpcomingTripsFilterView: View {
         case max
     }
 
+    private enum GenderOption: String, CaseIterable {
+        case male = "Male"
+        case female = "Female"
+        case all = "All"
+    }
+
     private var isReturnDateInvalid: Bool {
         hasCheckInDate && hasReturnDate && returnDate < checkInDate
     }
@@ -50,12 +57,14 @@ struct UpcomingTripsFilterView: View {
             VStack(spacing: 24) {
                 HStack {
                     BackButton {
+                        dismissKeyboard()
                         dismiss()
                     }
 
                     Spacer()
 
                     Button("Reset") {
+                        dismissKeyboard()
                         resetFilters()
                     }
                     .font(.travelDetail)
@@ -76,6 +85,7 @@ struct UpcomingTripsFilterView: View {
 
                 VStack(spacing: 12) {
                     Button {
+                        dismissKeyboard()
                         activeDatePicker = .checkIn
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
@@ -100,6 +110,7 @@ struct UpcomingTripsFilterView: View {
                     .buttonStyle(.plain)
 
                     Button {
+                        dismissKeyboard()
                         activeDatePicker = .returnDate
                     } label: {
                         VStack(alignment: .leading, spacing: 8) {
@@ -194,7 +205,44 @@ struct UpcomingTripsFilterView: View {
                     .cornerRadius(12)
                 }
 
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Gender")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
+
+                    HStack(spacing: 8) {
+                        ForEach(GenderOption.allCases, id: \.self) { option in
+                            Button {
+                                dismissKeyboard()
+                                selectedGender = option
+                            } label: {
+                                Text(option.rawValue)
+                                    .font(.travelBodySemibold)
+                                    .foregroundStyle(
+                                        selectedGender == option
+                                            ? Colors.tertiaryText
+                                            : Colors.primaryText
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        selectedGender == option
+                                            ? Colors.accent
+                                            : Color.clear
+                                    )
+                                    .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Colors.card)
+                .cornerRadius(12)
+
                 Button {
+                    dismissKeyboard()
                     filterCheckInDate = checkInDate
                     filterReturnDate = returnDate
                     dismiss()
@@ -212,6 +260,10 @@ struct UpcomingTripsFilterView: View {
                 .disabled(!isUpdateEnabled)
 
                 Spacer()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                dismissKeyboard()
             }
             .padding(.horizontal, 24)
             .padding(.top, 24)
@@ -303,6 +355,10 @@ struct UpcomingTripsFilterView: View {
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func dismissKeyboard() {
+        focusedAgeField = nil
     }
 
     private func digitsOnly(_ text: String) -> String {

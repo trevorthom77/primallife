@@ -83,126 +83,138 @@ struct UpcomingTripsFilterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                VStack(spacing: 12) {
-                    Button {
-                        dismissKeyboard()
-                        activeDatePicker = .checkIn
-                    } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Check-in date")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Dates")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
 
-                            HStack {
-                                Text(hasCheckInDate ? formattedDate(checkInDate) : "Select check-in date")
-                                    .font(.travelBody)
-                                    .foregroundStyle(hasCheckInDate ? Colors.primaryText : Colors.secondaryText)
+                    VStack(spacing: 12) {
+                        Button {
+                            dismissKeyboard()
+                            activeDatePicker = .checkIn
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Check-in date")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
 
-                                Spacer()
+                                HStack {
+                                    Text(hasCheckInDate ? formattedDate(checkInDate) : "Select check-in date")
+                                        .font(.travelBody)
+                                        .foregroundStyle(hasCheckInDate ? Colors.primaryText : Colors.secondaryText)
+
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                    }
-                    .buttonStyle(.plain)
+                        .buttonStyle(.plain)
 
-                    Button {
-                        dismissKeyboard()
-                        activeDatePicker = .returnDate
-                    } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Return date")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                        Button {
+                            dismissKeyboard()
+                            activeDatePicker = .returnDate
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Return date")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
 
-                            HStack {
-                                Text(hasReturnDate ? formattedDate(returnDate) : "Select return date")
-                                    .font(.travelBody)
-                                    .foregroundStyle(hasReturnDate ? Colors.primaryText : Colors.secondaryText)
+                                HStack {
+                                    Text(hasReturnDate ? formattedDate(returnDate) : "Select return date")
+                                        .font(.travelBody)
+                                        .foregroundStyle(hasReturnDate ? Colors.primaryText : Colors.secondaryText)
 
-                                Spacer()
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .cornerRadius(12)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
 
-                VStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Minimum age")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Age range")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.primaryText)
 
-                        HStack {
-                            TextField(
-                                "",
-                                text: $minAgeText,
-                                prompt: Text("Enter minimum age")
-                                    .foregroundStyle(Colors.secondaryText)
-                            )
-                                .font(.travelBody)
+                    VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Minimum age")
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
-                                .keyboardType(.numberPad)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused($focusedAgeField, equals: .min)
-                                .onChange(of: minAgeText) { _, newValue in
-                                    let digits = digitsOnly(newValue)
-                                    if digits != newValue {
-                                        minAgeText = digits
+
+                            HStack {
+                                TextField(
+                                    "",
+                                    text: $minAgeText,
+                                    prompt: Text("Enter minimum age")
+                                        .foregroundStyle(Colors.secondaryText)
+                                )
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .keyboardType(.numberPad)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .focused($focusedAgeField, equals: .min)
+                                    .onChange(of: minAgeText) { _, newValue in
+                                        let digits = digitsOnly(newValue)
+                                        if digits != newValue {
+                                            minAgeText = digits
+                                        }
                                     }
-                                }
 
-                            Spacer()
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .cornerRadius(12)
+                        .background(Colors.card)
+                        .cornerRadius(12)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Maximum age")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.primaryText)
-
-                        HStack {
-                            TextField(
-                                "",
-                                text: $maxAgeText,
-                                prompt: Text("Enter maximum age")
-                                    .foregroundStyle(Colors.secondaryText)
-                            )
-                                .font(.travelBody)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Maximum age")
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
-                                .keyboardType(.numberPad)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused($focusedAgeField, equals: .max)
-                                .onChange(of: maxAgeText) { _, newValue in
-                                    let digits = digitsOnly(newValue)
-                                    if digits != newValue {
-                                        maxAgeText = digits
-                                    }
-                                }
 
-                            Spacer()
+                            HStack {
+                                TextField(
+                                    "",
+                                    text: $maxAgeText,
+                                    prompt: Text("Enter maximum age")
+                                        .foregroundStyle(Colors.secondaryText)
+                                )
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .keyboardType(.numberPad)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .focused($focusedAgeField, equals: .max)
+                                    .onChange(of: maxAgeText) { _, newValue in
+                                        let digits = digitsOnly(newValue)
+                                        if digits != newValue {
+                                            maxAgeText = digits
+                                        }
+                                    }
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Colors.card)
-                    .cornerRadius(12)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {

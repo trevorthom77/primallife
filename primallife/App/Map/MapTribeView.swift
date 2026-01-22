@@ -1035,7 +1035,9 @@ private struct MapTribeGenderView: View {
     }
 
     private var isContinueEnabled: Bool {
-        hasSelectedReturn && returnDate >= tribeStartDate && !isAgeRangeInvalid
+        guard hasSelectedReturn, returnDate >= tribeStartDate else { return false }
+        guard minAgeValue != nil, maxAgeValue != nil else { return false }
+        return !isAgeRangeInvalid
     }
 }
 

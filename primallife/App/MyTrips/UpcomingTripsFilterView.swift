@@ -54,12 +54,8 @@ struct UpcomingTripsFilterView: View {
         case all = "All"
     }
 
-    private var isReturnDateInvalid: Bool {
-        hasCheckInDate && hasReturnDate && returnDate < checkInDate
-    }
-
     private var isUpdateEnabled: Bool {
-        hasCheckInDate && hasReturnDate && !isReturnDateInvalid
+        true
     }
 
     var body: some View {

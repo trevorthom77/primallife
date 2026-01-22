@@ -364,9 +364,8 @@ struct UpcomingTripsFilterView: View {
                     dismissKeyboard()
                     filterCheckInDate = hasCheckInDate ? checkInDate : nil
                     filterReturnDate = hasReturnDate ? returnDate : nil
-                    let normalizedAges = normalizedAgeRange()
-                    filterMinAge = normalizedAges.minAge
-                    filterMaxAge = normalizedAges.maxAge
+                    filterMinAge = ageValue(from: minAgeText)
+                    filterMaxAge = ageValue(from: maxAgeText)
                     filterGender = selectedGender == .all ? nil : selectedGender.rawValue
                     dismiss()
                 } label: {

@@ -318,13 +318,10 @@ struct FiltersView: View {
     }
 
     private func applyFilters() {
-        let normalized = normalizedAgeRange()
-        minAge = normalized.minAge
-        maxAge = normalized.maxAge
+        minAge = ageValue(from: minAgeText)
+        maxAge = ageValue(from: maxAgeText)
         selectedGender = draftSelectedGender
         selectedCountryID = draftSelectedCountryID
-        minAgeText = normalized.minAge.map(String.init) ?? ""
-        maxAgeText = normalized.maxAge.map(String.init) ?? ""
     }
     
     private func genderButton(title: String) -> some View {

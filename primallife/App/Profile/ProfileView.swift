@@ -343,6 +343,7 @@ struct ProfileView: View {
                                 Text("No countries yet.")
                                     .font(.travelBody)
                                     .foregroundStyle(Colors.secondaryText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             } else {
                                 ForEach(displayedCountries) { country in
                                     TravelCard(

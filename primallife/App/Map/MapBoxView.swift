@@ -274,15 +274,15 @@ struct MapBoxView: View {
                                     }
                                 }
 
-                                if communityTab == .travelers {
+                                if communityTab == .travelers || communityTab == .tribes {
                                     Button(action: {
                                         isShowingFilters = true
                                     }) {
                                         Text("Filter")
                                             .font(.travelDetail)
                                             .foregroundStyle(Colors.tertiaryText)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 10)
+                                            .padding(.horizontal, 18)
+                                            .padding(.vertical, 12)
                                             .background(Colors.accent)
                                             .clipShape(Capsule())
                                     }

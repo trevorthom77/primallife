@@ -218,7 +218,7 @@ struct FiltersView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Gender")
-                                .font(.travelTitle)
+                                .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
 
                             HStack(spacing: 8) {
@@ -230,7 +230,7 @@ struct FiltersView: View {
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 24)
@@ -317,12 +317,12 @@ struct FiltersView: View {
             draftSelectedGender = title
         } label: {
             Text(title)
-                .font(.travelDetail)
+                .font(.travelBodySemibold)
                 .foregroundStyle(draftSelectedGender == title ? Colors.tertiaryText : Colors.primaryText)
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .padding(.horizontal, 14)
-                .background(draftSelectedGender == title ? Colors.accent : Colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(draftSelectedGender == title ? Colors.accent : Color.clear)
+                .cornerRadius(10)
         }
         .buttonStyle(.plain)
     }

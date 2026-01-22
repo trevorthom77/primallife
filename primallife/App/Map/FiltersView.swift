@@ -83,6 +83,10 @@ struct FiltersView: View {
                         .foregroundStyle(Colors.primaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismissKeyboard()
+                }
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
                 .padding(.bottom, 24)

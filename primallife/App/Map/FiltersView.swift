@@ -9,8 +9,8 @@ import SwiftUI
 
 struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var minAge: Int
-    @Binding var maxAge: Int
+    @Binding var minAge: Int?
+    @Binding var maxAge: Int?
     @Binding var selectedGender: String
     @Binding var selectedCountryID: String?
     @State private var showCountryPicker = false
@@ -38,8 +38,8 @@ struct FiltersView: View {
     }
 
     init(
-        minAge: Binding<Int>,
-        maxAge: Binding<Int>,
+        minAge: Binding<Int?>,
+        maxAge: Binding<Int?>,
         selectedGender: Binding<String>,
         selectedCountryID: Binding<String?>
     ) {
@@ -47,10 +47,8 @@ struct FiltersView: View {
         _maxAge = maxAge
         _selectedGender = selectedGender
         _selectedCountryID = selectedCountryID
-        let initialMinAge = minAge.wrappedValue
-        let initialMaxAge = maxAge.wrappedValue
-        let initialMinAgeText = initialMinAge == 18 ? "" : String(initialMinAge)
-        let initialMaxAgeText = initialMaxAge == 100 ? "" : String(initialMaxAge)
+        let initialMinAgeText = minAge.wrappedValue.map(String.init) ?? ""
+        let initialMaxAgeText = maxAge.wrappedValue.map(String.init) ?? ""
         _minAgeText = State(initialValue: initialMinAgeText)
         _maxAgeText = State(initialValue: initialMaxAgeText)
         _draftSelectedGender = State(initialValue: selectedGender.wrappedValue)
@@ -306,15 +304,16 @@ struct FiltersView: View {
         focusedAgeField = nil
     }
 
-    private func ageValue(from text: String, fallback: Int) -> Int {
+    private func ageValue(from text: String) -> Int? {
         let clamped = clampedAgeText(text)
-        guard !clamped.isEmpty else { return fallback }
-        return Int(clamped) ?? fallback
+        guard !clamped.isEmpty else { return nil }
+        return Int(clamped)
     }
 
-    private func normalizedAgeRange() -> (minAge: Int, maxAge: Int) {
-        let minValue = ageValue(from: minAgeText, fallback: minAge)
-        let maxValue = ageValue(from: maxAgeText, fallback: maxAge)
+    private func normalizedAgeRange() -> (minAge: Int?, maxAge: Int?) {
+        let minValue = ageValue(from: minAgeText)
+        let maxValue = ageValue(from: maxAgeText)
+        guard let minValue, let maxValue else { return (minValue, maxValue) }
         return (min(minValue, maxValue), max(minValue, maxValue))
     }
 
@@ -324,8 +323,8 @@ struct FiltersView: View {
         maxAge = normalized.maxAge
         selectedGender = draftSelectedGender
         selectedCountryID = draftSelectedCountryID
-        minAgeText = String(normalized.minAge)
-        maxAgeText = String(normalized.maxAge)
+        minAgeText = normalized.minAge.map(String.init) ?? ""
+        maxAgeText = normalized.maxAge.map(String.init) ?? ""
     }
     
     private func genderButton(title: String) -> some View {
@@ -344,8 +343,8 @@ struct FiltersView: View {
     }
     
     private func resetFilters() {
-        minAge = 18
-        maxAge = 100
+        minAge = nil
+        maxAge = nil
         selectedGender = "All"
         selectedCountryID = nil
         minAgeText = ""

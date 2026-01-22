@@ -65,8 +65,8 @@ struct MapBoxView: View {
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
     @State private var communityTab: CommunityTab = .tribes
-    @State private var minAgeFilter = 18
-    @State private var maxAgeFilter = 100
+    @State private var minAgeFilter: Int?
+    @State private var maxAgeFilter: Int?
     @State private var selectedCountryID: String?
     @State private var selectedGender = "All"
     @State private var locationQueryRadius: CLLocationDistance = 0
@@ -98,7 +98,7 @@ struct MapBoxView: View {
     }
 
     private var isAgeFilterActive: Bool {
-        minAgeFilter != 18 || maxAgeFilter != 100
+        minAgeFilter != nil || maxAgeFilter != nil
     }
 
     private var isOriginFilterActive: Bool {
@@ -113,7 +113,8 @@ struct MapBoxView: View {
         return nearbyTravelers.filter { traveler in
             if isAgeFilterActive {
                 guard let age = traveler.age else { return false }
-                guard age >= minAgeFilter && age <= maxAgeFilter else { return false }
+                if let minAgeFilter, age < minAgeFilter { return false }
+                if let maxAgeFilter, age > maxAgeFilter { return false }
             }
             if let selectedCountryID {
                 guard traveler.origin == selectedCountryID else { return false }

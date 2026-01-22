@@ -200,6 +200,7 @@ final class MyTripsViewModel: ObservableObject {
         let avatarPath: String?
         let origin: String?
         let birthday: String?
+        let gender: String?
 
         enum CodingKeys: String, CodingKey {
             case id
@@ -207,6 +208,7 @@ final class MyTripsViewModel: ObservableObject {
             case avatarPath = "avatar_url"
             case origin
             case birthday
+            case gender
         }
     }
 
@@ -511,6 +513,10 @@ final class MyTripsViewModel: ObservableObject {
         return CountryDatabase.all.first(where: { $0.id == origin })?.name
     }
 
+    func creatorGender(for userID: UUID) -> String? {
+        tribeCreatorsByID[userID.uuidString.lowercased()]?.gender
+    }
+
     func memberCount(for tribeID: UUID) -> Int {
         tribeMemberCounts[tribeID] ?? 0
     }
@@ -568,7 +574,7 @@ final class MyTripsViewModel: ObservableObject {
         do {
             let creators: [TribeCreator] = try await supabase
                 .from("onboarding")
-                .select("id, full_name, avatar_url, origin, birthday")
+                .select("id, full_name, avatar_url, origin, birthday, gender")
                 .in("id", values: Array(missingIDs))
                 .execute()
                 .value

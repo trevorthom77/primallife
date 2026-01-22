@@ -15,6 +15,7 @@ struct UpcomingTripsFullView: View {
     @State private var filterReturnDate: Date?
     @State private var filterMinAge: Int?
     @State private var filterMaxAge: Int?
+    @State private var filterGender: String?
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -55,7 +56,8 @@ struct UpcomingTripsFullView: View {
                                 filterCheckInDate: $filterCheckInDate,
                                 filterReturnDate: $filterReturnDate,
                                 filterMinAge: $filterMinAge,
-                                filterMaxAge: $filterMaxAge
+                                filterMaxAge: $filterMaxAge,
+                                filterGender: $filterGender
                             )
                         } label: {
                             Text("Filter")
@@ -414,7 +416,13 @@ struct UpcomingTripsFullView: View {
             return (filterMinAge, filterMaxAge)
         }()
 
-        guard dateFilterRange != nil || ageFilterRange != nil else {
+        let genderFilter: String? = {
+            guard let filterGender else { return nil }
+            let trimmed = filterGender.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }()
+
+        guard dateFilterRange != nil || ageFilterRange != nil || genderFilter != nil else {
             return visibleTravelers
         }
 
@@ -437,7 +445,17 @@ struct UpcomingTripsFullView: View {
                 return age >= ageFilterRange.min && age <= ageFilterRange.max
             }()
 
-            return matchesDate && matchesAge
+            let matchesGender: Bool = {
+                guard let genderFilter else { return true }
+                guard let gender = viewModel.creatorGender(for: travelerID)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !gender.isEmpty else {
+                    return false
+                }
+                return gender.localizedCaseInsensitiveCompare(genderFilter) == .orderedSame
+            }()
+
+            return matchesDate && matchesAge && matchesGender
         }
     }
 

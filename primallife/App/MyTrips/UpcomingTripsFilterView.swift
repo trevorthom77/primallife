@@ -6,6 +6,7 @@ struct UpcomingTripsFilterView: View {
     @Binding var filterReturnDate: Date?
     @Binding var filterMinAge: Int?
     @Binding var filterMaxAge: Int?
+    @Binding var filterGender: String?
     @State private var checkInDate: Date
     @State private var returnDate: Date
     @State private var hasCheckInDate: Bool
@@ -14,28 +15,42 @@ struct UpcomingTripsFilterView: View {
     @State private var minAgeText: String = ""
     @State private var maxAgeText: String = ""
     @FocusState private var focusedAgeField: AgeField?
-    @State private var selectedGender: GenderOption = .all
+    @State private var selectedGender: GenderOption
 
     init(
         filterCheckInDate: Binding<Date?>,
         filterReturnDate: Binding<Date?>,
         filterMinAge: Binding<Int?>,
-        filterMaxAge: Binding<Int?>
+        filterMaxAge: Binding<Int?>,
+        filterGender: Binding<String?>
     ) {
         _filterCheckInDate = filterCheckInDate
         _filterReturnDate = filterReturnDate
         _filterMinAge = filterMinAge
         _filterMaxAge = filterMaxAge
+        _filterGender = filterGender
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
         let initialReturn = filterReturnDate.wrappedValue ?? Date()
         let initialMinAgeText = filterMinAge.wrappedValue.map(String.init) ?? ""
         let initialMaxAgeText = filterMaxAge.wrappedValue.map(String.init) ?? ""
+        let initialGender: GenderOption = {
+            let rawGender = filterGender.wrappedValue?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if rawGender.localizedCaseInsensitiveCompare(GenderOption.male.rawValue) == .orderedSame {
+                return .male
+            }
+            if rawGender.localizedCaseInsensitiveCompare(GenderOption.female.rawValue) == .orderedSame {
+                return .female
+            }
+            return .all
+        }()
         _checkInDate = State(initialValue: initialCheckIn)
         _returnDate = State(initialValue: initialReturn)
         _hasCheckInDate = State(initialValue: filterCheckInDate.wrappedValue != nil)
         _hasReturnDate = State(initialValue: filterReturnDate.wrappedValue != nil)
         _minAgeText = State(initialValue: initialMinAgeText)
         _maxAgeText = State(initialValue: initialMaxAgeText)
+        _selectedGender = State(initialValue: initialGender)
     }
 
     private enum DatePickerType {
@@ -277,6 +292,7 @@ struct UpcomingTripsFilterView: View {
                     let normalizedAges = normalizedAgeRange()
                     filterMinAge = normalizedAges.minAge
                     filterMaxAge = normalizedAges.maxAge
+                    filterGender = selectedGender == .all ? nil : selectedGender.rawValue
                     dismiss()
                 } label: {
                     Text("Update")
@@ -422,11 +438,13 @@ struct UpcomingTripsFilterView: View {
         filterReturnDate = nil
         filterMinAge = nil
         filterMaxAge = nil
+        filterGender = nil
         hasCheckInDate = false
         hasReturnDate = false
         checkInDate = Date()
         returnDate = Date()
         minAgeText = ""
         maxAgeText = ""
+        selectedGender = .all
     }
 }

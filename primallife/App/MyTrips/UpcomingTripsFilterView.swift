@@ -7,6 +7,7 @@ struct UpcomingTripsFilterView: View {
     @Binding var filterMinAge: Int?
     @Binding var filterMaxAge: Int?
     @Binding var filterGender: String?
+    let showsTribeFilters: Bool
     @State private var checkInDate: Date
     @State private var returnDate: Date
     @State private var hasCheckInDate: Bool
@@ -16,19 +17,22 @@ struct UpcomingTripsFilterView: View {
     @State private var maxAgeText: String = ""
     @FocusState private var focusedAgeField: AgeField?
     @State private var selectedGender: GenderOption
+    @State private var selectedTribeFilter: TribeFilterOption
 
     init(
         filterCheckInDate: Binding<Date?>,
         filterReturnDate: Binding<Date?>,
         filterMinAge: Binding<Int?>,
         filterMaxAge: Binding<Int?>,
-        filterGender: Binding<String?>
+        filterGender: Binding<String?>,
+        showsTribeFilters: Bool
     ) {
         _filterCheckInDate = filterCheckInDate
         _filterReturnDate = filterReturnDate
         _filterMinAge = filterMinAge
         _filterMaxAge = filterMaxAge
         _filterGender = filterGender
+        self.showsTribeFilters = showsTribeFilters
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
         let initialReturn = filterReturnDate.wrappedValue ?? Date()
         let initialMinAgeText = filterMinAge.wrappedValue.map(String.init) ?? ""
@@ -51,6 +55,7 @@ struct UpcomingTripsFilterView: View {
         _minAgeText = State(initialValue: initialMinAgeText)
         _maxAgeText = State(initialValue: initialMaxAgeText)
         _selectedGender = State(initialValue: initialGender)
+        _selectedTribeFilter = State(initialValue: .everyone)
     }
 
     private enum DatePickerType {
@@ -67,6 +72,12 @@ struct UpcomingTripsFilterView: View {
         case male = "Male"
         case female = "Female"
         case all = "All"
+    }
+
+    private enum TribeFilterOption: String, CaseIterable {
+        case girlsOnly = "Girls only"
+        case boysOnly = "Boys only"
+        case everyone = "Everyone"
     }
 
     var body: some View {
@@ -116,6 +127,44 @@ struct UpcomingTripsFilterView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
+                        if showsTribeFilters {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Tribe type")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                HStack(spacing: 8) {
+                                    ForEach(TribeFilterOption.allCases, id: \.self) { option in
+                                        Button {
+                                            dismissKeyboard()
+                                            selectedTribeFilter = option
+                                        } label: {
+                                            Text(option.rawValue)
+                                                .font(.travelBodySemibold)
+                                                .foregroundStyle(
+                                                    selectedTribeFilter == option
+                                                        ? Colors.tertiaryText
+                                                        : Colors.primaryText
+                                                )
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 10)
+                                                .background(
+                                                    selectedTribeFilter == option
+                                                        ? Colors.accent
+                                                        : Color.clear
+                                                )
+                                                .cornerRadius(10)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
+                        }
+
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Dates")
                                 .font(.travelDetail)

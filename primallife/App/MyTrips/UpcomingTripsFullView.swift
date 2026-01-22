@@ -56,7 +56,8 @@ struct UpcomingTripsFullView: View {
                             filterReturnDate: $filterReturnDate,
                             filterMinAge: $filterMinAge,
                             filterMaxAge: $filterMaxAge,
-                            filterGender: $filterGender
+                            filterGender: $filterGender,
+                            showsTribeFilters: selectedTab == .tribes
                         )
                     } label: {
                         Text("Filter")

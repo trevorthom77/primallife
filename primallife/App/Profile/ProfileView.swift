@@ -400,6 +400,8 @@ struct ProfileView: View {
                                             location: tribe.status,
                                             flag: "",
                                             endDate: tribe.endDate,
+                                            minAge: tribe.minAge,
+                                            maxAge: tribe.maxAge,
                                             createdAt: tribe.createdAt,
                                             gender: tribe.gender,
                                             aboutText: tribe.aboutText,
@@ -529,6 +531,8 @@ struct ProfileView: View {
                                             location: tribe.status,
                                             flag: "",
                                             endDate: tribe.endDate,
+                                            minAge: tribe.minAge,
+                                            maxAge: tribe.maxAge,
                                             createdAt: tribe.createdAt,
                                             gender: tribe.gender,
                                             aboutText: tribe.aboutText,
@@ -673,7 +677,7 @@ struct ProfileView: View {
             let tribeIDStrings = tribeIDs.map { $0.uuidString }
             let tribes: [ProfileTribeRow] = try await supabase
                 .from("tribes")
-                .select("id, owner_id, name, destination, photo_url, end_date, created_at, gender, description, interests")
+                .select("id, owner_id, name, destination, photo_url, end_date, min_age, max_age, created_at, gender, description, interests")
                 .in("id", values: tribeIDStrings)
                 .execute()
                 .value
@@ -687,6 +691,8 @@ struct ProfileView: View {
                     status: tribe.destination,
                     photoURL: tribe.photoURL,
                     endDate: tribe.endDate,
+                    minAge: tribe.minAge,
+                    maxAge: tribe.maxAge,
                     createdAt: tribe.createdAt,
                     gender: tribe.gender,
                     aboutText: tribe.aboutText,
@@ -1156,6 +1162,8 @@ struct ProfileTribe: Identifiable {
     let status: String
     let photoURL: URL?
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String
     let aboutText: String?
@@ -1169,6 +1177,8 @@ struct ProfileTribe: Identifiable {
         status: String,
         photoURL: URL? = nil,
         endDate: Date = Date(),
+        minAge: Int? = nil,
+        maxAge: Int? = nil,
         createdAt: Date = Date(),
         gender: String = "",
         aboutText: String? = nil,
@@ -1181,6 +1191,8 @@ struct ProfileTribe: Identifiable {
         self.status = status
         self.photoURL = photoURL
         self.endDate = endDate
+        self.minAge = minAge
+        self.maxAge = maxAge
         self.createdAt = createdAt
         self.gender = gender
         self.aboutText = aboutText
@@ -1257,6 +1269,8 @@ private struct ProfileTribeRow: Decodable {
     let destination: String
     let photoURL: URL?
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String
     let aboutText: String?
@@ -1269,6 +1283,8 @@ private struct ProfileTribeRow: Decodable {
         case destination
         case photoURL = "photo_url"
         case endDate = "end_date"
+        case minAge = "min_age"
+        case maxAge = "max_age"
         case createdAt = "created_at"
         case gender
         case aboutText = "description"
@@ -1298,6 +1314,9 @@ private struct ProfileTribeRow: Decodable {
             )
         }
         endDate = decodedEndDate
+
+        minAge = try container.decodeIfPresent(Int.self, forKey: .minAge)
+        maxAge = try container.decodeIfPresent(Int.self, forKey: .maxAge)
 
         let createdAtString = try container.decode(String.self, forKey: .createdAt)
         guard let decodedCreatedAt = profileTribeTimestampFormatterWithFractional.date(from: createdAtString)

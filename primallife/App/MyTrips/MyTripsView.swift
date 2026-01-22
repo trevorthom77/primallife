@@ -137,6 +137,8 @@ struct Tribe: Decodable, Identifiable {
     let name: String
     let description: String?
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String
     let privacy: String
@@ -149,6 +151,8 @@ struct Tribe: Decodable, Identifiable {
         case name
         case description
         case endDate = "end_date"
+        case minAge = "min_age"
+        case maxAge = "max_age"
         case createdAt = "created_at"
         case gender
         case privacy
@@ -170,6 +174,9 @@ struct Tribe: Decodable, Identifiable {
             )
         }
         endDate = decodedEndDate
+
+        minAge = try container.decodeIfPresent(Int.self, forKey: .minAge)
+        maxAge = try container.decodeIfPresent(Int.self, forKey: .maxAge)
 
         let createdAtString = try container.decode(String.self, forKey: .createdAt)
         guard let decodedCreatedAt = myTripsTimestampFormatterWithFractional.date(from: createdAtString)
@@ -797,6 +804,8 @@ struct MyTripsView: View {
                                                     location: selectedTripDestination,
                                                     flag: "",
                                                     endDate: tribe.endDate,
+                                                    minAge: tribe.minAge,
+                                                    maxAge: tribe.maxAge,
                                                     createdAt: tribe.createdAt,
                                                     gender: tribe.gender,
                                                     aboutText: tribe.description,

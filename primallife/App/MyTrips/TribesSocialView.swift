@@ -7,6 +7,8 @@ struct TribesSocialView: View {
     let location: String
     let flag: String
     @State private var endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String?
     @State private var aboutText: String?
@@ -51,6 +53,8 @@ struct TribesSocialView: View {
         location: String,
         flag: String,
         endDate: Date,
+        minAge: Int?,
+        maxAge: Int?,
         createdAt: Date,
         gender: String? = nil,
         aboutText: String? = nil,
@@ -69,6 +73,8 @@ struct TribesSocialView: View {
         self.location = location
         self.flag = flag
         _endDate = State(initialValue: endDate)
+        self.minAge = minAge
+        self.maxAge = maxAge
         self.createdAt = createdAt
         self.gender = gender
         _aboutText = State(initialValue: aboutText)
@@ -306,7 +312,7 @@ struct TribesSocialView: View {
                                 .background(genderAccentColor)
                                 .clipShape(Capsule())
 
-                            Text("18-24")
+                            Text(resolvedAgeRange)
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.tertiaryText)
                                 .padding(.vertical, 8)
@@ -946,6 +952,11 @@ private extension TribesSocialView {
 
     var resolvedGender: String {
         gender?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    var resolvedAgeRange: String {
+        guard let minAge, let maxAge else { return "" }
+        return "\(minAge)-\(maxAge)"
     }
 
     var genderAccentColor: Color {

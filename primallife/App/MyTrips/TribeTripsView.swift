@@ -959,6 +959,8 @@ private struct CreatedTribeDisplay {
     let location: String
     let flag: String
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String
     let about: String?
@@ -1161,6 +1163,8 @@ private struct TribeReviewView: View {
                         location: createdTribe.location,
                         flag: createdTribe.flag,
                         endDate: createdTribe.endDate,
+                        minAge: createdTribe.minAge,
+                        maxAge: createdTribe.maxAge,
                         createdAt: createdTribe.createdAt,
                         gender: createdTribe.gender,
                         aboutText: createdTribe.about,
@@ -1259,6 +1263,8 @@ private struct TribeReviewView: View {
                 location: trip.destination,
                 flag: "",
                 endDate: returnDate,
+                minAge: createdRecord.minAge,
+                maxAge: createdRecord.maxAge,
                 createdAt: createdRecord.createdAt,
                 gender: selectedGender.rawValue,
                 about: trimmedAbout.isEmpty ? nil : trimmedAbout,

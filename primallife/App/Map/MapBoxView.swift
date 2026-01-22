@@ -174,6 +174,8 @@ struct MapBoxView: View {
                                         location: tribe.destination,
                                         flag: flag,
                                         endDate: tribe.endDate,
+                                        minAge: tribe.minAge,
+                                        maxAge: tribe.maxAge,
                                         createdAt: tribe.createdAt,
                                         gender: tribe.gender,
                                         aboutText: tribe.description,
@@ -986,7 +988,7 @@ struct MapBoxView: View {
         do {
             let tribes: [MapTribeLocation] = try await supabase
                 .from("tribes")
-                .select("id, owner_id, name, destination, description, end_date, created_at, gender, interests, photo_url, latitude, longitude")
+                .select("id, owner_id, name, destination, description, end_date, min_age, max_age, created_at, gender, interests, photo_url, latitude, longitude")
                 .eq("is_map_tribe", value: true)
                 .gte("latitude", value: bounds.minLatitude)
                 .lte("latitude", value: bounds.maxLatitude)
@@ -1440,6 +1442,8 @@ private struct MapTribeLocation: Identifiable, Decodable {
     let destination: String
     let description: String?
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let createdAt: Date
     let gender: String?
     let interests: [String]
@@ -1454,6 +1458,8 @@ private struct MapTribeLocation: Identifiable, Decodable {
         case destination
         case description
         case endDate = "end_date"
+        case minAge = "min_age"
+        case maxAge = "max_age"
         case createdAt = "created_at"
         case gender
         case interests
@@ -1477,6 +1483,9 @@ private struct MapTribeLocation: Identifiable, Decodable {
             )
         }
         endDate = decodedEndDate
+
+        minAge = try container.decodeIfPresent(Int.self, forKey: .minAge)
+        maxAge = try container.decodeIfPresent(Int.self, forKey: .maxAge)
 
         let createdAtString = try container.decode(String.self, forKey: .createdAt)
         guard let decodedCreatedAt = mapTripsTimestampFormatterWithFractional.date(from: createdAtString)
@@ -1641,6 +1650,8 @@ private struct MapCommunityPanel: View {
                                         location: tribe.destination,
                                         flag: flag,
                                         endDate: tribe.endDate,
+                                        minAge: tribe.minAge,
+                                        maxAge: tribe.maxAge,
                                         createdAt: tribe.createdAt,
                                         gender: tribe.gender,
                                         aboutText: tribe.description,

@@ -134,6 +134,8 @@ struct UpcomingTripsFullView: View {
                                                 location: trip.destination,
                                                 flag: "",
                                                 endDate: tribe.endDate,
+                                                minAge: tribe.minAge,
+                                                maxAge: tribe.maxAge,
                                                 createdAt: tribe.createdAt,
                                                 gender: tribe.gender,
                                                 aboutText: tribe.description,

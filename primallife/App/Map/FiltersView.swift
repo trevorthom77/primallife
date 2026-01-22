@@ -56,11 +56,8 @@ struct FiltersView: View {
     }
     
     var body: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         BackButton {
@@ -82,170 +79,162 @@ struct FiltersView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    dismissKeyboard()
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 24)
 
-                ScrollView {
-                    VStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Age range")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                VStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Age range")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
 
-                            VStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Minimum age")
-                                        .font(.travelDetail)
+                        VStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Minimum age")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                HStack {
+                                    TextField(
+                                        "",
+                                        text: $minAgeText,
+                                        prompt: Text("Enter minimum age")
+                                            .foregroundStyle(Colors.secondaryText)
+                                    )
+                                        .font(.travelBody)
                                         .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $minAgeText,
-                                            prompt: Text("Enter minimum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
-                                            .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .min)
-                                            .onChange(of: minAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    minAgeText = digits
-                                                }
+                                        .keyboardType(.numberPad)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .focused($focusedAgeField, equals: .min)
+                                        .onChange(of: minAgeText) { _, newValue in
+                                            let digits = digitsOnly(newValue)
+                                            if digits != newValue {
+                                                minAgeText = digits
                                             }
+                                        }
 
-                                        Spacer()
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Spacer()
                                 }
-                                .padding(16)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .min
-                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                            .onTapGesture {
+                                focusedAgeField = .min
+                            }
 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Maximum age")
-                                        .font(.travelDetail)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Maximum age")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
+
+                                HStack {
+                                    TextField(
+                                        "",
+                                        text: $maxAgeText,
+                                        prompt: Text("Enter maximum age")
+                                            .foregroundStyle(Colors.secondaryText)
+                                    )
+                                        .font(.travelBody)
                                         .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $maxAgeText,
-                                            prompt: Text("Enter maximum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
-                                            .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .max)
-                                            .onChange(of: maxAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    maxAgeText = digits
-                                                }
+                                        .keyboardType(.numberPad)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .focused($focusedAgeField, equals: .max)
+                                        .onChange(of: maxAgeText) { _, newValue in
+                                            let digits = digitsOnly(newValue)
+                                            if digits != newValue {
+                                                maxAgeText = digits
                                             }
+                                        }
 
-                                        Spacer()
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Spacer()
                                 }
-                                .padding(16)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .max
-                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                            .onTapGesture {
+                                focusedAgeField = .max
                             }
                         }
+                    }
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Origin")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Origin")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
 
-                            if hasSelectedCountry {
-                                HStack(spacing: 12) {
-                                    Button {
-                                        showCountryPicker = true
-                                    } label: {
-                                        Text(selectedCountryLabel)
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.primaryText)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    Button("Remove") {
-                                        draftSelectedCountryID = nil
-                                    }
-                                    .font(.travelDetail)
-                                    .foregroundStyle(Colors.accent)
-                                    .buttonStyle(.plain)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 12)
-                                .frame(maxWidth: .infinity)
-                            } else {
+                        if hasSelectedCountry {
+                            HStack(spacing: 12) {
                                 Button {
                                     showCountryPicker = true
                                 } label: {
                                     Text(selectedCountryLabel)
                                         .font(.travelDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Colors.accent)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        .foregroundStyle(Colors.primaryText)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Gender")
+                                Button("Remove") {
+                                    draftSelectedCountryID = nil
+                                }
                                 .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
-
-                            HStack(spacing: 8) {
-                                genderButton(title: "Male")
-                                genderButton(title: "Female")
-                                genderButton(title: "All")
+                                .foregroundStyle(Colors.accent)
+                                .buttonStyle(.plain)
                             }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Button {
+                                showCountryPicker = true
+                            } label: {
+                                Text(selectedCountryLabel)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Colors.accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .cornerRadius(12)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        dismissKeyboard()
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Gender")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        HStack(spacing: 8) {
+                            genderButton(title: "Male")
+                            genderButton(title: "Female")
+                            genderButton(title: "All")
+                        }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 24)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .cornerRadius(12)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismissKeyboard()
                 }
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -268,6 +257,10 @@ struct FiltersView: View {
             }
             .background(Colors.background)
         }
+        .background(
+            Colors.background
+                .ignoresSafeArea()
+        )
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showCountryPicker) {

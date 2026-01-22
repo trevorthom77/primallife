@@ -2,6 +2,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
   const textEncoder = new TextEncoder()
 
+  function isoToFlag(iso: string | null | undefined): string {
+    if (!iso) return ''
+    const code = iso.trim().toUpperCase()
+    if (!/^[A-Z]{2}$/.test(code)) return ''
+    const first = code.codePointAt(0)
+    const second = code.codePointAt(1)
+    if (first == null || second == null) return ''
+    return String.fromCodePoint(
+      0x1f1e6 + first - 65,
+      0x1f1e6 + second - 65,
+    )
+  }
+
   function base64UrlEncode(data: Uint8Array): string {
     let binary = ''
     for (let i = 0; i < data.length; i++) {
@@ -135,13 +148,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
   {
       const { data } = await supabase
         .from('onboarding')
-        .select('full_name')
+        .select('full_name, origin')
         .eq('id', requesterId)
         .maybeSingle()
 
       const requesterName = data?.full_name ?? ''
+      const requesterFlag = isoToFlag(data?.origin)
+      const requesterPrefix = requesterFlag ? `${requesterFlag} ` : ''
       targetUserId = receiverId
-      message = `${requesterName} added you`
+      message = `${requesterPrefix}${requesterName} added you`
     } else if (
       type === 'UPDATE' &&
       status === 'accepted' &&
@@ -151,13 +166,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     ) {
       const { data } = await supabase
         .from('onboarding')
-        .select('full_name')
+        .select('full_name, origin')
         .eq('id', receiverId)
         .maybeSingle()
 
       const receiverName = data?.full_name ?? ''
+      const receiverFlag = isoToFlag(data?.origin)
+      const receiverPrefix = receiverFlag ? `${receiverFlag} ` : ''
       targetUserId = requesterId
-      message = `${receiverName} accepted your request`
+      message = `${receiverPrefix}${receiverName} accepted your request`
     } else {
       return new Response(JSON.stringify({ ignored: true }), {
         status: 200,

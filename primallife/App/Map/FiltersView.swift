@@ -32,6 +32,14 @@ struct FiltersView: View {
         return "\(country.flag) \(country.name)"
     }
 
+    private var isAgeRangeInvalid: Bool {
+        guard let minValue = ageValue(from: minAgeText),
+              let maxValue = ageValue(from: maxAgeText) else {
+            return false
+        }
+        return maxValue < minValue
+    }
+
     private enum AgeField {
         case min
         case max
@@ -163,6 +171,13 @@ struct FiltersView: View {
                                 focusedAgeField = .max
                             }
                         }
+
+                        if isAgeRangeInvalid {
+                            Text("Maximum age must be at least the minimum age.")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -252,6 +267,8 @@ struct FiltersView: View {
                         .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
+                .disabled(isAgeRangeInvalid)
+                .opacity(isAgeRangeInvalid ? 0.6 : 1)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }

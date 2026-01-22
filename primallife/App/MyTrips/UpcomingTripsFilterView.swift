@@ -80,6 +80,14 @@ struct UpcomingTripsFilterView: View {
         case everyone = "Everyone"
     }
 
+    private var isAgeRangeInvalid: Bool {
+        guard let minAge = ageValue(from: minAgeText),
+              let maxAge = ageValue(from: maxAgeText) else {
+            return false
+        }
+        return maxAge < minAge
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -300,6 +308,13 @@ struct UpcomingTripsFilterView: View {
                                     focusedAgeField = .max
                                 }
                             }
+
+                            if isAgeRangeInvalid {
+                                Text("Maximum age must be at least the minimum age.")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -368,6 +383,8 @@ struct UpcomingTripsFilterView: View {
                         .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
+                .disabled(isAgeRangeInvalid)
+                .opacity(isAgeRangeInvalid ? 0.6 : 1)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }

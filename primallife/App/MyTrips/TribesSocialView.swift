@@ -956,6 +956,9 @@ private extension TribesSocialView {
 
     var resolvedAgeRange: String {
         guard let minAge, let maxAge else { return "" }
+        if minAge == maxAge {
+            return "\(minAge)"
+        }
         return "\(minAge)-\(maxAge)"
     }
 

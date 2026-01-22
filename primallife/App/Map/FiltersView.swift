@@ -222,9 +222,9 @@ struct FiltersView: View {
                                 .foregroundStyle(Colors.primaryText)
 
                             HStack(spacing: 8) {
-                                genderButton(title: "All")
-                                genderButton(title: "Female")
                                 genderButton(title: "Male")
+                                genderButton(title: "Female")
+                                genderButton(title: "All")
                             }
                         }
                         .padding(16)

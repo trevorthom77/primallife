@@ -139,8 +139,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     const status = record.status as string | undefined
     const requesterId = record.requester_id as string | undefined
     const receiverId = record.receiver_id as string | undefined
+    const tribeId = record.tribe_id as string | undefined
 
-    let targetUserId: string | null = null
+    let targetUserIds: string[] = []
     let alert: ApnsAlert | null = null
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -153,6 +154,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     const isFriendMessageInsert =
       type === 'INSERT' &&
       (table === 'friend_messages' || (!!senderId && !!friendId))
+    const isTribeMessageInsert = type === 'INSERT' && table === 'tribe_messages'
 
     if (isFriendMessageInsert && senderId && friendId) {
       const { data } = await supabase
@@ -164,11 +166,48 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const senderName = data?.full_name ?? ''
       const senderFlag = isoToFlag(data?.origin)
       const senderPrefix = senderFlag ? `${senderFlag} ` : ''
-      targetUserId = friendId
+      targetUserIds = [friendId]
       alert = {
         title: `${senderPrefix}${senderName}`,
         body: messageText ?? '',
       }
+    } else if (isTribeMessageInsert && tribeId && senderId) {
+      const { data: sender } = await supabase
+        .from('onboarding')
+        .select('full_name, origin')
+        .eq('id', senderId)
+        .maybeSingle()
+
+      const { data: tribe } = await supabase
+        .from('tribes')
+        .select('name')
+        .eq('id', tribeId)
+        .maybeSingle()
+
+      const { data: members } = await supabase
+        .from('tribes_join')
+        .select('id')
+        .eq('tribe_id', tribeId)
+
+      const senderName = sender?.full_name ?? ''
+      const senderFlag = isoToFlag(sender?.origin)
+      const senderDisplay = senderName
+        ? `${senderFlag ? `${senderFlag} ` : ''}${senderName}`
+        : senderFlag
+      const tribeName = tribe?.name ?? ''
+      const title =
+        tribeName && senderDisplay
+          ? `${tribeName} - ${senderDisplay}`
+          : tribeName || senderDisplay
+      alert = {
+        title,
+        body: messageText ?? '',
+      }
+
+      const memberIds = (members ?? [])
+        .map((row: { id: string | null }) => row.id)
+        .filter((id: string | null): id is string => !!id && id !== senderId)
+      targetUserIds = Array.from(new Set(memberIds))
     } else if (
       type === 'INSERT' &&
       status === 'pending' &&
@@ -184,7 +223,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const requesterName = data?.full_name ?? ''
       const requesterFlag = isoToFlag(data?.origin)
       const requesterPrefix = requesterFlag ? `${requesterFlag} ` : ''
-      targetUserId = receiverId
+      targetUserIds = [receiverId]
       alert = `${requesterPrefix}${requesterName} added you`
     } else if (
       type === 'UPDATE' &&
@@ -202,7 +241,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const receiverName = data?.full_name ?? ''
       const receiverFlag = isoToFlag(data?.origin)
       const receiverPrefix = receiverFlag ? `${receiverFlag} ` : ''
-      targetUserId = requesterId
+      targetUserIds = [requesterId]
       alert = `${receiverPrefix}${receiverName} accepted your request`
     } else {
       return new Response(JSON.stringify({ ignored: true }), {
@@ -211,10 +250,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       })
     }
 
+    if (targetUserIds.length === 0) {
+      return new Response(JSON.stringify({ ok: true, sent: 0 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const { data: tokens } = await supabase
       .from('device_tokens')
       .select('token')
-      .eq('id', targetUserId)
+      .in('id', targetUserIds)
 
     if (!tokens || tokens.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), {

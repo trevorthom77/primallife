@@ -551,6 +551,14 @@ private struct TribeGenderView: View {
         Calendar.current.startOfDay(for: Date())
     }
 
+    private var minAgeValue: Int? {
+        Int(minAgeText)
+    }
+
+    private var maxAgeValue: Int? {
+        Int(maxAgeText)
+    }
+
     private enum AgeField {
         case min
         case max
@@ -835,6 +843,8 @@ private struct TribeGenderView: View {
                 selectedInterests: selectedInterests,
                 selectedGender: selectedGender,
                 returnDate: returnDate,
+                minAge: minAgeValue,
+                maxAge: maxAgeValue,
                 onFinish: onFinish
             )
         }
@@ -874,6 +884,8 @@ private struct NewTribe: Encodable {
     let name: String
     let description: String?
     let endDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let gender: String
     let privacy: String
     let interests: [String]
@@ -885,6 +897,8 @@ private struct NewTribe: Encodable {
         case name
         case description
         case endDate = "end_date"
+        case minAge = "min_age"
+        case maxAge = "max_age"
         case gender
         case privacy
         case interests
@@ -898,6 +912,8 @@ private struct NewTribe: Encodable {
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
         try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)
+        try container.encodeIfPresent(minAge, forKey: .minAge)
+        try container.encodeIfPresent(maxAge, forKey: .maxAge)
         try container.encode(gender, forKey: .gender)
         try container.encode(privacy, forKey: .privacy)
         try container.encode(interests, forKey: .interests)
@@ -948,6 +964,8 @@ private struct TribeReviewView: View {
     let selectedInterests: [String]
     let selectedGender: TribeGender
     let returnDate: Date
+    let minAge: Int?
+    let maxAge: Int?
     let onFinish: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -1199,6 +1217,8 @@ private struct TribeReviewView: View {
                 name: resolvedName,
                 description: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 endDate: returnDate,
+                minAge: minAge,
+                maxAge: maxAge,
                 gender: selectedGender.rawValue,
                 privacy: privacy.rawValue,
                 interests: selectedInterests,

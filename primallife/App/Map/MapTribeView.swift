@@ -18,6 +18,14 @@ struct MapTribeView: View {
         ("Sailing the Bahamas", 139, "bahamas"),
         ("Snorkel Week in Belize", 86, "belize")
     ]
+    private let profileImageGroups: [[String]] = [
+        ["profile7", "profile14", "profile2", "profile21"],
+        ["profile9", "profile3", "profile18", "profile12"],
+        ["profile1", "profile22", "profile5", "profile16"],
+        ["profile11", "profile4", "profile24", "profile6"],
+        ["profile13", "profile8", "profile20", "profile10"],
+        ["profile17", "profile23", "profile15", "profile19"]
+    ]
 
     var body: some View {
         ScrollView {
@@ -39,7 +47,8 @@ struct MapTribeView: View {
                     .foregroundStyle(Colors.secondaryText)
 
                 LazyVStack(alignment: .leading, spacing: 16) {
-                    ForEach(exampleTrips, id: \.title) { example in
+                    ForEach(Array(exampleTrips.enumerated()), id: \.element.title) { index, example in
+                        let profiles = profileImageGroups[index]
                         VStack(alignment: .leading, spacing: 14) {
                             AssetAsyncImage(name: example.imageName)
                                 .frame(height: 140)
@@ -52,7 +61,7 @@ struct MapTribeView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             HStack(spacing: -8) {
-                                Image("profile4")
+                                Image(profiles[0])
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 36, height: 36)
@@ -62,7 +71,7 @@ struct MapTribeView: View {
                                             .stroke(Colors.card, lineWidth: 3)
                                     }
 
-                                Image("profile5")
+                                Image(profiles[1])
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 36, height: 36)
@@ -72,7 +81,7 @@ struct MapTribeView: View {
                                             .stroke(Colors.card, lineWidth: 3)
                                     }
 
-                                Image("profile6")
+                                Image(profiles[2])
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 36, height: 36)
@@ -82,7 +91,7 @@ struct MapTribeView: View {
                                             .stroke(Colors.card, lineWidth: 3)
                                     }
 
-                                Image("profile9")
+                                Image(profiles[3])
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 36, height: 36)

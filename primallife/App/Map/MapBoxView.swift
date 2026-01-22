@@ -281,8 +281,8 @@ struct MapBoxView: View {
                                         Text("Filter")
                                             .font(.travelDetail)
                                             .foregroundStyle(Colors.tertiaryText)
-                                            .padding(.horizontal, 18)
-                                            .padding(.vertical, 12)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 11)
                                             .background(Colors.accent)
                                             .clipShape(Capsule())
                                     }

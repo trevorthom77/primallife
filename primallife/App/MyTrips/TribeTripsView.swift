@@ -539,6 +539,9 @@ private struct TribeGenderView: View {
     @State private var returnDate: Date
     @State private var hasSelectedReturn: Bool
     @State private var isShowingReview = false
+    @State private var minAgeText: String = ""
+    @State private var maxAgeText: String = ""
+    @FocusState private var focusedAgeField: AgeField?
     
     private var accentColor: Color {
         selectedGender == .girlsOnly ? Colors.girlsPink : Colors.accent
@@ -546,6 +549,11 @@ private struct TribeGenderView: View {
 
     private var tribeStartDate: Date {
         Calendar.current.startOfDay(for: Date())
+    }
+
+    private enum AgeField {
+        case min
+        case max
     }
 
     init(
@@ -617,6 +625,90 @@ private struct TribeGenderView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Age range")
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Minimum age")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                TextField(
+                                    "",
+                                    text: $minAgeText,
+                                    prompt: Text("Enter minimum age")
+                                        .foregroundStyle(Colors.secondaryText)
+                                )
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .keyboardType(.numberPad)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .focused($focusedAgeField, equals: .min)
+                                    .onChange(of: minAgeText) { _, newValue in
+                                        let digits = digitsOnly(newValue)
+                                        if digits != newValue {
+                                            minAgeText = digits
+                                        }
+                                    }
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                        .contentShape(RoundedRectangle(cornerRadius: 12))
+                        .onTapGesture {
+                            focusedAgeField = .min
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Maximum age")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            HStack {
+                                TextField(
+                                    "",
+                                    text: $maxAgeText,
+                                    prompt: Text("Enter maximum age")
+                                        .foregroundStyle(Colors.secondaryText)
+                                )
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .keyboardType(.numberPad)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .focused($focusedAgeField, equals: .max)
+                                    .onChange(of: maxAgeText) { _, newValue in
+                                        let digits = digitsOnly(newValue)
+                                        if digits != newValue {
+                                            maxAgeText = digits
+                                        }
+                                    }
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .cornerRadius(12)
+                        .contentShape(RoundedRectangle(cornerRadius: 12))
+                        .onTapGesture {
+                            focusedAgeField = .max
+                        }
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -717,6 +809,21 @@ private struct TribeGenderView: View {
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
+        .onChange(of: focusedAgeField) { _, field in
+            if field != .min {
+                let clamped = clampedAgeText(minAgeText)
+                if clamped != minAgeText {
+                    minAgeText = clamped
+                }
+            }
+
+            if field != .max {
+                let clamped = clampedAgeText(maxAgeText)
+                if clamped != maxAgeText {
+                    maxAgeText = clamped
+                }
+            }
+        }
         .navigationDestination(isPresented: $isShowingReview) {
             TribeReviewView(
                 trip: trip,
@@ -743,6 +850,17 @@ private struct TribeGenderView: View {
 
     private var returnDateText: String {
         returnDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func digitsOnly(_ text: String) -> String {
+        text.filter { $0.isNumber }
+    }
+
+    private func clampedAgeText(_ text: String) -> String {
+        let digits = digitsOnly(text)
+        guard !digits.isEmpty else { return "" }
+        let value = Int(digits) ?? 0
+        return String(max(18, value))
     }
 
     private var isContinueEnabled: Bool {

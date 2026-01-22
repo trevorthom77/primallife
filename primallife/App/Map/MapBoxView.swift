@@ -69,6 +69,11 @@ struct MapBoxView: View {
     @State private var maxAgeFilter: Int?
     @State private var selectedCountryID: String?
     @State private var selectedGender = "All"
+    @State private var tribeFilterCheckInDate: Date?
+    @State private var tribeFilterReturnDate: Date?
+    @State private var tribeFilterMinAge: Int?
+    @State private var tribeFilterMaxAge: Int?
+    @State private var tribeFilterGender: String?
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -574,12 +579,23 @@ struct MapBoxView: View {
                 profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
-                FiltersView(
-                    minAge: $minAgeFilter,
-                    maxAge: $maxAgeFilter,
-                    selectedGender: $selectedGender,
-                    selectedCountryID: $selectedCountryID
-                )
+                if communityTab == .tribes {
+                    UpcomingTripsFilterView(
+                        filterCheckInDate: $tribeFilterCheckInDate,
+                        filterReturnDate: $tribeFilterReturnDate,
+                        filterMinAge: $tribeFilterMinAge,
+                        filterMaxAge: $tribeFilterMaxAge,
+                        filterGender: $tribeFilterGender,
+                        showsTribeFilters: true
+                    )
+                } else {
+                    FiltersView(
+                        minAge: $minAgeFilter,
+                        maxAge: $maxAgeFilter,
+                        selectedGender: $selectedGender,
+                        selectedCountryID: $selectedCountryID
+                    )
+                }
             }
             .navigationDestination(isPresented: $isShowingTribes) {
                 MapTribeView(isShowingTribes: $isShowingTribes)

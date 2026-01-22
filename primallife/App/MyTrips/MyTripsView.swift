@@ -227,6 +227,16 @@ final class MyTripsViewModel: ObservableObject {
         }
     }
 
+    private struct TribeMemberRow: Decodable {
+        let tribeID: UUID
+        let memberID: UUID
+
+        enum CodingKeys: String, CodingKey {
+            case tribeID = "tribe_id"
+            case memberID = "id"
+        }
+    }
+
     @Published var trips: [Trip] = []
     @Published var error: String?
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
@@ -237,6 +247,7 @@ final class MyTripsViewModel: ObservableObject {
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
     @Published private(set) var loadingRecommendationDestinations: Set<String> = []
     @Published private(set) var tribeMemberCounts: [UUID: Int] = [:]
+    @Published private var tribeMembersByTribeID: [UUID: [UUID]] = [:]
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
     private var pendingTripKeys: Set<String> = []
 
@@ -323,6 +334,7 @@ final class MyTripsViewModel: ObservableObject {
             tribesByTrip[trip.id] = fetchedTribes
             await loadCreators(for: fetchedTribes, supabase: supabase)
             await loadMemberCounts(for: fetchedTribes, supabase: supabase)
+            await loadTribeMembers(for: fetchedTribes, supabase: supabase)
         } catch {
             tribesByTrip[trip.id] = []
         }
@@ -528,6 +540,10 @@ final class MyTripsViewModel: ObservableObject {
         tribeMemberCounts[tribeID] ?? 0
     }
 
+    func tribeMemberIDs(for tribeID: UUID) -> [UUID] {
+        tribeMembersByTribeID[tribeID] ?? []
+    }
+
     func creatorAge(for userID: UUID) -> Int? {
         guard let birthdayString = tribeCreatorsByID[userID.uuidString.lowercased()]?.birthday,
               !birthdayString.isEmpty else {
@@ -569,6 +585,38 @@ final class MyTripsViewModel: ObservableObject {
         } catch {
             for tribeID in tribeIDs where tribeMemberCounts[tribeID] == nil {
                 tribeMemberCounts[tribeID] = 0
+            }
+        }
+    }
+
+    private func loadTribeMembers(for tribes: [Tribe], supabase: SupabaseClient) async {
+        let tribeIDs = Array(Set(tribes.map { $0.id }))
+        guard !tribeIDs.isEmpty else { return }
+
+        do {
+            let rows: [TribeMemberRow] = try await supabase
+                .from("tribes_join")
+                .select("tribe_id, id")
+                .in("tribe_id", values: tribeIDs.map { $0.uuidString })
+                .execute()
+                .value
+
+            var lookup: [UUID: [UUID]] = [:]
+            for row in rows {
+                lookup[row.tribeID, default: []].append(row.memberID)
+            }
+            for tribeID in tribeIDs where lookup[tribeID] == nil {
+                lookup[tribeID] = []
+            }
+            tribeMembersByTribeID.merge(lookup) { _, new in new }
+
+            let memberIDs = Array(Set(rows.map { $0.memberID }))
+            if !memberIDs.isEmpty {
+                await loadCreators(for: memberIDs, supabase: supabase)
+            }
+        } catch {
+            for tribeID in tribeIDs where tribeMembersByTribeID[tribeID] == nil {
+                tribeMembersByTribeID[tribeID] = []
             }
         }
     }
@@ -846,35 +894,12 @@ struct MyTripsView: View {
                                                         Spacer()
                                                         
                                                         HStack(spacing: -8) {
-                                                            Image("profile1")
-                                                                .resizable()
-                                                                .scaledToFill()
-                                                                .frame(width: 32, height: 32)
-                                                                .clipShape(Circle())
-                                                                .overlay {
-                                                                    Circle()
-                                                                        .stroke(Colors.card, lineWidth: 3)
-                                                                }
-                                                            
-                                                            Image("profile2")
-                                                                .resizable()
-                                                                .scaledToFill()
-                                                                .frame(width: 32, height: 32)
-                                                                .clipShape(Circle())
-                                                                .overlay {
-                                                                    Circle()
-                                                                        .stroke(Colors.card, lineWidth: 3)
-                                                                }
-                                                            
-                                                            Image("profile3")
-                                                                .resizable()
-                                                                .scaledToFill()
-                                                                .frame(width: 32, height: 32)
-                                                                .clipShape(Circle())
-                                                                .overlay {
-                                                                    Circle()
-                                                                        .stroke(Colors.card, lineWidth: 3)
-                                                                }
+                                                            ForEach(
+                                                                viewModel.tribeMemberIDs(for: tribe.id).prefix(3),
+                                                                id: \.self
+                                                            ) { memberID in
+                                                                tribeMemberAvatar(for: memberID)
+                                                            }
                                                             
                                                             ZStack {
                                                                 Circle()
@@ -1301,6 +1326,33 @@ struct MyTripsView: View {
             }
         }
         .frame(width: 48, height: 48)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: 3)
+        }
+    }
+
+    @ViewBuilder
+    private func tribeMemberAvatar(for memberID: UUID) -> some View {
+        let avatarURL = viewModel.creatorAvatarURL(for: memberID, supabase: supabase)
+
+        Group {
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Color.clear
+                    }
+                }
+            } else {
+                Color.clear
+            }
+        }
+        .frame(width: 32, height: 32)
         .clipShape(Circle())
         .overlay {
             Circle()

@@ -165,6 +165,97 @@ struct UpcomingTripsFilterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
                         .cornerRadius(12)
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Age range")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            VStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Minimum age")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    HStack {
+                                        TextField(
+                                            "",
+                                            text: $minAgeText,
+                                            prompt: Text("Enter minimum age")
+                                                .foregroundStyle(Colors.secondaryText)
+                                        )
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .keyboardType(.numberPad)
+                                            .textInputAutocapitalization(.never)
+                                            .autocorrectionDisabled()
+                                            .focused($focusedAgeField, equals: .min)
+                                            .onChange(of: minAgeText) { _, newValue in
+                                                let digits = digitsOnly(newValue)
+                                                if digits != newValue {
+                                                    minAgeText = digits
+                                                }
+                                            }
+
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Colors.card)
+                                .cornerRadius(12)
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
+                                .onTapGesture {
+                                    focusedAgeField = .min
+                                }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Maximum age")
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+
+                                    HStack {
+                                        TextField(
+                                            "",
+                                            text: $maxAgeText,
+                                            prompt: Text("Enter maximum age")
+                                                .foregroundStyle(Colors.secondaryText)
+                                        )
+                                            .font(.travelBody)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .keyboardType(.numberPad)
+                                            .textInputAutocapitalization(.never)
+                                            .autocorrectionDisabled()
+                                            .focused($focusedAgeField, equals: .max)
+                                            .onChange(of: maxAgeText) { _, newValue in
+                                                let digits = digitsOnly(newValue)
+                                                if digits != newValue {
+                                                    maxAgeText = digits
+                                                }
+                                            }
+
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Colors.card)
+                                .cornerRadius(12)
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
+                                .onTapGesture {
+                                    focusedAgeField = .max
+                                }
+                            }
+
+                            if isAgeRangeInvalid {
+                                Text("Maximum age must be at least the minimum age.")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
                     }
 
                     if !showsTribeFilters {

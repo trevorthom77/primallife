@@ -13,6 +13,8 @@ struct UpcomingTripsFullView: View {
     @State private var selectedTab: UpcomingTripsTab = .travelers
     @State private var filterCheckInDate: Date?
     @State private var filterReturnDate: Date?
+    @State private var filterMinAge: Int?
+    @State private var filterMaxAge: Int?
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -51,7 +53,9 @@ struct UpcomingTripsFullView: View {
                         NavigationLink {
                             UpcomingTripsFilterView(
                                 filterCheckInDate: $filterCheckInDate,
-                                filterReturnDate: $filterReturnDate
+                                filterReturnDate: $filterReturnDate,
+                                filterMinAge: $filterMinAge,
+                                filterMaxAge: $filterMaxAge
                             )
                         } label: {
                             Text("Filter")
@@ -395,21 +399,45 @@ struct UpcomingTripsFullView: View {
         guard let travelers = travelersForTrip else { return nil }
         let currentUserID = supabase?.auth.currentUser?.id
         let visibleTravelers = travelers.filter { $0 != currentUserID }
-        guard let filterCheckInDate, let filterReturnDate else {
+
+        let dateFilterRange: (start: Date, end: Date)? = {
+            guard let filterCheckInDate, let filterReturnDate else { return nil }
+            let filterStart = Calendar.current.startOfDay(for: filterCheckInDate)
+            let filterEnd = Calendar.current.startOfDay(for: filterReturnDate)
+            guard filterEnd >= filterStart else { return nil }
+            return (filterStart, filterEnd)
+        }()
+
+        let ageFilterRange: (min: Int, max: Int)? = {
+            guard let filterMinAge, let filterMaxAge else { return nil }
+            guard filterMaxAge >= filterMinAge else { return nil }
+            return (filterMinAge, filterMaxAge)
+        }()
+
+        guard dateFilterRange != nil || ageFilterRange != nil else {
             return visibleTravelers
         }
-        let filterStart = Calendar.current.startOfDay(for: filterCheckInDate)
-        let filterEnd = Calendar.current.startOfDay(for: filterReturnDate)
-        if filterEnd < filterStart {
-            return visibleTravelers
-        }
+
         return visibleTravelers.filter { travelerID in
-            guard let dateRange = viewModel.travelerDatesByTrip[trip.id]?[travelerID] else {
-                return true
-            }
-            let travelerStart = Calendar.current.startOfDay(for: dateRange.checkIn)
-            let travelerEnd = Calendar.current.startOfDay(for: dateRange.returnDate)
-            return travelerStart <= filterEnd && travelerEnd >= filterStart
+            let matchesDate: Bool = {
+                guard let dateFilterRange else { return true }
+                guard let dateRange = viewModel.travelerDatesByTrip[trip.id]?[travelerID] else {
+                    return true
+                }
+                let travelerStart = Calendar.current.startOfDay(for: dateRange.checkIn)
+                let travelerEnd = Calendar.current.startOfDay(for: dateRange.returnDate)
+                return travelerStart <= dateFilterRange.end && travelerEnd >= dateFilterRange.start
+            }()
+
+            let matchesAge: Bool = {
+                guard let ageFilterRange else { return true }
+                guard let age = viewModel.creatorAge(for: travelerID) else {
+                    return true
+                }
+                return age >= ageFilterRange.min && age <= ageFilterRange.max
+            }()
+
+            return matchesDate && matchesAge
         }
     }
 

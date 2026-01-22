@@ -4,6 +4,8 @@ struct UpcomingTripsFilterView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var filterCheckInDate: Date?
     @Binding var filterReturnDate: Date?
+    @Binding var filterMinAge: Int?
+    @Binding var filterMaxAge: Int?
     @State private var checkInDate: Date
     @State private var returnDate: Date
     @State private var hasCheckInDate: Bool
@@ -14,15 +16,26 @@ struct UpcomingTripsFilterView: View {
     @FocusState private var focusedAgeField: AgeField?
     @State private var selectedGender: GenderOption = .all
 
-    init(filterCheckInDate: Binding<Date?>, filterReturnDate: Binding<Date?>) {
+    init(
+        filterCheckInDate: Binding<Date?>,
+        filterReturnDate: Binding<Date?>,
+        filterMinAge: Binding<Int?>,
+        filterMaxAge: Binding<Int?>
+    ) {
         _filterCheckInDate = filterCheckInDate
         _filterReturnDate = filterReturnDate
+        _filterMinAge = filterMinAge
+        _filterMaxAge = filterMaxAge
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
         let initialReturn = filterReturnDate.wrappedValue ?? Date()
+        let initialMinAgeText = filterMinAge.wrappedValue.map(String.init) ?? ""
+        let initialMaxAgeText = filterMaxAge.wrappedValue.map(String.init) ?? ""
         _checkInDate = State(initialValue: initialCheckIn)
         _returnDate = State(initialValue: initialReturn)
         _hasCheckInDate = State(initialValue: filterCheckInDate.wrappedValue != nil)
         _hasReturnDate = State(initialValue: filterReturnDate.wrappedValue != nil)
+        _minAgeText = State(initialValue: initialMinAgeText)
+        _maxAgeText = State(initialValue: initialMaxAgeText)
     }
 
     private enum DatePickerType {
@@ -257,6 +270,8 @@ struct UpcomingTripsFilterView: View {
                     dismissKeyboard()
                     filterCheckInDate = checkInDate
                     filterReturnDate = returnDate
+                    filterMinAge = ageValue(from: minAgeText)
+                    filterMaxAge = ageValue(from: maxAgeText)
                     dismiss()
                 } label: {
                     Text("Update")
@@ -384,9 +399,17 @@ struct UpcomingTripsFilterView: View {
         return String(max(18, value))
     }
 
+    private func ageValue(from text: String) -> Int? {
+        let clamped = clampedAgeText(text)
+        guard !clamped.isEmpty else { return nil }
+        return Int(clamped)
+    }
+
     private func resetFilters() {
         filterCheckInDate = nil
         filterReturnDate = nil
+        filterMinAge = nil
+        filterMaxAge = nil
         hasCheckInDate = false
         hasReturnDate = false
         checkInDate = Date()

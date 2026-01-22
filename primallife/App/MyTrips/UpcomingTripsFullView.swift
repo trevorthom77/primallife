@@ -10,6 +10,8 @@ struct UpcomingTripsFullView: View {
     @Binding var tribeImageURLCache: [UUID: URL]
     @State private var travelerImageCache: [UUID: Image] = [:]
     @State private var travelerImageURLCache: [UUID: URL] = [:]
+    @State private var tribeMemberImageCache: [UUID: Image] = [:]
+    @State private var tribeMemberImageURLCache: [UUID: URL] = [:]
     @State private var selectedTab: UpcomingTripsTab = .travelers
     @State private var filterCheckInDate: Date?
     @State private var filterReturnDate: Date?
@@ -186,35 +188,12 @@ struct UpcomingTripsFullView: View {
                                                     Spacer()
 
                                                     HStack(spacing: -8) {
-                                                        Image("profile1")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 36, height: 36)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
-
-                                                        Image("profile2")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 36, height: 36)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
-
-                                                        Image("profile3")
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                            .frame(width: 36, height: 36)
-                                                            .clipShape(Circle())
-                                                            .overlay {
-                                                                Circle()
-                                                                    .stroke(Colors.card, lineWidth: 3)
-                                                            }
+                                                        ForEach(
+                                                            viewModel.tribeMemberIDs(for: tribe.id).prefix(3),
+                                                            id: \.self
+                                                        ) { memberID in
+                                                            tribeMemberAvatar(for: memberID)
+                                                        }
 
                                                         ZStack {
                                                             Circle()
@@ -527,6 +506,51 @@ struct UpcomingTripsFullView: View {
         guard let avatarURL,
               let cachedImage = travelerImageCache[travelerID],
               travelerImageURLCache[travelerID] == avatarURL else {
+            return nil
+        }
+        return cachedImage
+    }
+
+    @ViewBuilder
+    private func tribeMemberAvatar(for memberID: UUID) -> some View {
+        let avatarURL = viewModel.creatorAvatarURL(for: memberID, supabase: supabase)
+
+        Group {
+            if let cachedImage = cachedTribeMemberImage(for: memberID, avatarURL: avatarURL) {
+                cachedImage
+                    .resizable()
+                    .scaledToFill()
+            } else if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .onAppear {
+                                tribeMemberImageCache[memberID] = image
+                                tribeMemberImageURLCache[memberID] = avatarURL
+                            }
+                    default:
+                        Color.clear
+                    }
+                }
+            } else {
+                Color.clear
+            }
+        }
+        .frame(width: 36, height: 36)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: 3)
+        }
+    }
+
+    private func cachedTribeMemberImage(for memberID: UUID, avatarURL: URL?) -> Image? {
+        guard let avatarURL,
+              let cachedImage = tribeMemberImageCache[memberID],
+              tribeMemberImageURLCache[memberID] == avatarURL else {
             return nil
         }
         return cachedImage

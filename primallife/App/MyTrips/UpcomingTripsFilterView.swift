@@ -313,11 +313,12 @@ struct UpcomingTripsFilterView: View {
                 } label: {
                     Text("Update")
                         .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
+                        .foregroundStyle(Colors.tertiaryText)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                        .padding(.vertical, 12)
                         .background(Colors.accent)
-                        .cornerRadius(16)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)

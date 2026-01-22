@@ -193,6 +193,10 @@ struct UpcomingTripsFilterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
                         .cornerRadius(12)
+                        .contentShape(RoundedRectangle(cornerRadius: 12))
+                        .onTapGesture {
+                            focusedAgeField = .min
+                        }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Maximum age")
@@ -227,6 +231,10 @@ struct UpcomingTripsFilterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Colors.card)
                         .cornerRadius(12)
+                        .contentShape(RoundedRectangle(cornerRadius: 12))
+                        .onTapGesture {
+                            focusedAgeField = .max
+                        }
                     }
                 }
 

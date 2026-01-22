@@ -50,26 +50,24 @@ struct UpcomingTripsFullView: View {
 
                     Spacer()
 
-                    if selectedTab == .travelers {
-                        NavigationLink {
-                            UpcomingTripsFilterView(
-                                filterCheckInDate: $filterCheckInDate,
-                                filterReturnDate: $filterReturnDate,
-                                filterMinAge: $filterMinAge,
-                                filterMaxAge: $filterMaxAge,
-                                filterGender: $filterGender
-                            )
-                        } label: {
-                            Text("Filter")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.tertiaryText)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(Colors.accent)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
+                    NavigationLink {
+                        UpcomingTripsFilterView(
+                            filterCheckInDate: $filterCheckInDate,
+                            filterReturnDate: $filterReturnDate,
+                            filterMinAge: $filterMinAge,
+                            filterMaxAge: $filterMaxAge,
+                            filterGender: $filterGender
+                        )
+                    } label: {
+                        Text("Filter")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Colors.accent)
+                            .clipShape(Capsule())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 HStack {

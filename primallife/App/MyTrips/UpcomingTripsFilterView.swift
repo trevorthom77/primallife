@@ -325,6 +325,7 @@ struct UpcomingTripsFilterView: View {
             }
             .background(Colors.background)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .onChange(of: focusedAgeField) { _, field in
             if field != .min {

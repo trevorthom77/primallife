@@ -243,13 +243,14 @@ struct FiltersView: View {
                     .background(Colors.card)
                     .cornerRadius(12)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    dismissKeyboard()
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissKeyboard()
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -455,6 +456,7 @@ private struct CountryPickerView: View {
                     }
                     .padding(.horizontal, 24)
                 }
+                .scrollDismissesKeyboard(.immediately)
                 .scrollIndicators(.hidden)
             }
             .padding(.top, 8)

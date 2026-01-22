@@ -354,13 +354,14 @@ struct UpcomingTripsFilterView: View {
                         .cornerRadius(12)
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    dismissKeyboard()
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissKeyboard()
         }
         .safeAreaInset(edge: .bottom) {
             VStack {

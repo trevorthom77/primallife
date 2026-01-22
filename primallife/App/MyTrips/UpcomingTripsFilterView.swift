@@ -9,6 +9,9 @@ struct UpcomingTripsFilterView: View {
     @State private var hasCheckInDate: Bool
     @State private var hasReturnDate: Bool
     @State private var activeDatePicker: DatePickerType?
+    @State private var minAgeText: String = ""
+    @State private var maxAgeText: String = ""
+    @FocusState private var focusedAgeField: AgeField?
 
     init(filterCheckInDate: Binding<Date?>, filterReturnDate: Binding<Date?>) {
         _filterCheckInDate = filterCheckInDate
@@ -24,6 +27,11 @@ struct UpcomingTripsFilterView: View {
     private enum DatePickerType {
         case checkIn
         case returnDate
+    }
+
+    private enum AgeField {
+        case min
+        case max
     }
 
     private var isReturnDateInvalid: Bool {
@@ -116,6 +124,76 @@ struct UpcomingTripsFilterView: View {
                     .buttonStyle(.plain)
                 }
 
+                VStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Minimum age")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        HStack {
+                            TextField(
+                                "",
+                                text: $minAgeText,
+                                prompt: Text("Enter minimum age")
+                                    .foregroundStyle(Colors.secondaryText)
+                            )
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .keyboardType(.numberPad)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .focused($focusedAgeField, equals: .min)
+                                .onChange(of: minAgeText) { _, newValue in
+                                    let digits = digitsOnly(newValue)
+                                    if digits != newValue {
+                                        minAgeText = digits
+                                    }
+                                }
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .cornerRadius(12)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Maximum age")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        HStack {
+                            TextField(
+                                "",
+                                text: $maxAgeText,
+                                prompt: Text("Enter maximum age")
+                                    .foregroundStyle(Colors.secondaryText)
+                            )
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .keyboardType(.numberPad)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .focused($focusedAgeField, equals: .max)
+                                .onChange(of: maxAgeText) { _, newValue in
+                                    let digits = digitsOnly(newValue)
+                                    if digits != newValue {
+                                        maxAgeText = digits
+                                    }
+                                }
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .cornerRadius(12)
+                }
+
                 Button {
                     filterCheckInDate = checkInDate
                     filterReturnDate = returnDate
@@ -139,6 +217,21 @@ struct UpcomingTripsFilterView: View {
             .padding(.top, 24)
         }
         .navigationBarBackButtonHidden(true)
+        .onChange(of: focusedAgeField) { _, field in
+            if field != .min {
+                let clamped = clampedAgeText(minAgeText)
+                if clamped != minAgeText {
+                    minAgeText = clamped
+                }
+            }
+
+            if field != .max {
+                let clamped = clampedAgeText(maxAgeText)
+                if clamped != maxAgeText {
+                    maxAgeText = clamped
+                }
+            }
+        }
         .sheet(
             isPresented: Binding(
                 get: { activeDatePicker != nil },
@@ -212,6 +305,17 @@ struct UpcomingTripsFilterView: View {
         date.formatted(date: .abbreviated, time: .omitted)
     }
 
+    private func digitsOnly(_ text: String) -> String {
+        text.filter { $0.isNumber }
+    }
+
+    private func clampedAgeText(_ text: String) -> String {
+        let digits = digitsOnly(text)
+        guard !digits.isEmpty else { return "" }
+        let value = Int(digits) ?? 0
+        return String(max(18, value))
+    }
+
     private func resetFilters() {
         filterCheckInDate = nil
         filterReturnDate = nil
@@ -219,5 +323,7 @@ struct UpcomingTripsFilterView: View {
         hasReturnDate = false
         checkInDate = Date()
         returnDate = Date()
+        minAgeText = ""
+        maxAgeText = ""
     }
 }

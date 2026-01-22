@@ -81,7 +81,7 @@ struct FiltersView: View {
                         .foregroundStyle(Colors.accent)
                     }
 
-                    Text("Filters")
+                    Text("Traveler Filters")
                         .font(.customTitle)
                         .foregroundStyle(Colors.primaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)

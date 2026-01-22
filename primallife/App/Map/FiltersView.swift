@@ -85,6 +85,13 @@ struct FiltersView: View {
                         .font(.customTitle)
                         .foregroundStyle(Colors.primaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("Use filters to refine the travelers you see.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .contentShape(Rectangle())
 

@@ -307,8 +307,8 @@ struct UpcomingTripsFilterView: View {
             VStack {
                 Button {
                     dismissKeyboard()
-                    filterCheckInDate = checkInDate
-                    filterReturnDate = returnDate
+                    filterCheckInDate = hasCheckInDate ? checkInDate : nil
+                    filterReturnDate = hasReturnDate ? returnDate : nil
                     let normalizedAges = normalizedAgeRange()
                     filterMinAge = normalizedAges.minAge
                     filterMaxAge = normalizedAges.maxAge

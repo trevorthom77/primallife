@@ -154,7 +154,7 @@ struct UpcomingTripsFilterView: View {
                                                 .padding(.vertical, 10)
                                                 .background(
                                                     selectedTribeFilter == option
-                                                        ? Colors.accent
+                                                        ? (option == .girlsOnly ? Colors.girlsPink : Colors.accent)
                                                         : Color.clear
                                                 )
                                                 .cornerRadius(10)

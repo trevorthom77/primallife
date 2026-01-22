@@ -29,6 +29,7 @@ enum InterestOptions {
         "🏞️ National Parks",
         "🧗 Rock Climbing",
         "🥾 Hiking",
+        "🎒 Backpacking",
         "🚲 Biking",
         "⛺️ Camping",
         "🌲 Off Grid",

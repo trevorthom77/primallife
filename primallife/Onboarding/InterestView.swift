@@ -30,6 +30,7 @@ struct InterestView: View {
         "🏞️ National Parks",
         "🧗 Rock Climbing",
         "🥾 Hiking",
+        "🎒 Backpacking",
         "🚲 Biking",
         "⛺️ Camping",
         "🌲 Off Grid",

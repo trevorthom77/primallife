@@ -767,6 +767,11 @@ private struct TribeGenderView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedAgeField = nil
+        }
         .background(
             Colors.background
                 .ignoresSafeArea()
@@ -793,6 +798,7 @@ private struct TribeGenderView: View {
             }
             .background(Colors.background)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .sheet(isPresented: $showReturnPicker) {
             ZStack {
                 Colors.background

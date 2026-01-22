@@ -918,6 +918,11 @@ private struct MapTribeGenderView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedAgeField = nil
+        }
         .background(
             Colors.background
                 .ignoresSafeArea()
@@ -944,6 +949,7 @@ private struct MapTribeGenderView: View {
             }
             .background(Colors.background)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationDestination(isPresented: $isShowingReview) {
             MapTribeReviewView(
                 groupName: groupName,

@@ -297,13 +297,23 @@ struct TribesSocialView: View {
                             .font(.travelTitle)
                             .foregroundStyle(Colors.primaryText)
 
-                        Text(resolvedGender)
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(genderAccentColor)
-                            .clipShape(Capsule())
+                        HStack(spacing: 8) {
+                            Text(resolvedGender)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .background(genderAccentColor)
+                                .clipShape(Capsule())
+
+                            Text("18-24")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .background(genderAccentColor)
+                                .clipShape(Capsule())
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()

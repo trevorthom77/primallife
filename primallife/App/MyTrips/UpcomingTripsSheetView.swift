@@ -155,6 +155,7 @@ private struct UpcomingTripPlaceCard: View {
             .padding(.horizontal, 16)
         }
         .clipped()
+        .contentShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

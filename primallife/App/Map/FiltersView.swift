@@ -236,6 +236,10 @@ struct FiltersView: View {
                         .background(Colors.card)
                         .cornerRadius(12)
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissKeyboard()
+                    }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 24)
                 }
@@ -292,6 +296,10 @@ struct FiltersView: View {
         guard !digits.isEmpty else { return "" }
         let value = Int(digits) ?? 0
         return String(max(18, value))
+    }
+
+    private func dismissKeyboard() {
+        focusedAgeField = nil
     }
 
     private func ageValue(from text: String, fallback: Int) -> Int {

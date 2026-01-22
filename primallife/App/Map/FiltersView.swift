@@ -16,15 +16,17 @@ struct FiltersView: View {
     @State private var showCountryPicker = false
     @State private var minAgeText: String
     @State private var maxAgeText: String
+    @State private var draftSelectedGender: String
+    @State private var draftSelectedCountryID: String?
     @FocusState private var focusedAgeField: AgeField?
 
     private var hasSelectedCountry: Bool {
-        selectedCountryID != nil
+        draftSelectedCountryID != nil
     }
 
     private var selectedCountryLabel: String {
-        guard let selectedCountryID,
-              let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
+        guard let draftSelectedCountryID,
+              let country = CountryDatabase.all.first(where: { $0.id == draftSelectedCountryID }) else {
             return "Add Country"
         }
         return "\(country.flag) \(country.name)"
@@ -47,6 +49,8 @@ struct FiltersView: View {
         _selectedCountryID = selectedCountryID
         _minAgeText = State(initialValue: String(minAge.wrappedValue))
         _maxAgeText = State(initialValue: String(maxAge.wrappedValue))
+        _draftSelectedGender = State(initialValue: selectedGender.wrappedValue)
+        _draftSelectedCountryID = State(initialValue: selectedCountryID.wrappedValue)
     }
     
     var body: some View {
@@ -183,7 +187,7 @@ struct FiltersView: View {
                                     .buttonStyle(.plain)
 
                                     Button("Remove") {
-                                        selectedCountryID = nil
+                                        draftSelectedCountryID = nil
                                     }
                                     .font(.travelDetail)
                                     .foregroundStyle(Colors.accent)
@@ -236,7 +240,7 @@ struct FiltersView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button {
-                    commitAgeFields()
+                    applyFilters()
                     dismiss()
                 } label: {
                     Text("Update")
@@ -257,21 +261,21 @@ struct FiltersView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showCountryPicker) {
-            CountryPickerView(selectedCountryID: $selectedCountryID)
+            CountryPickerView(selectedCountryID: $draftSelectedCountryID)
         }
         .onChange(of: focusedAgeField) { _, field in
             if field != .min {
-                commitMinAge()
+                let clamped = clampedAgeText(minAgeText)
+                if clamped != minAgeText {
+                    minAgeText = clamped
+                }
             }
             if field != .max {
-                commitMaxAge()
+                let clamped = clampedAgeText(maxAgeText)
+                if clamped != maxAgeText {
+                    maxAgeText = clamped
+                }
             }
-            if field == nil {
-                normalizeAgeRange()
-            }
-        }
-        .onDisappear {
-            commitAgeFields()
         }
     }
     
@@ -286,58 +290,38 @@ struct FiltersView: View {
         return String(max(18, value))
     }
 
-    private func commitMinAge() {
-        let clamped = clampedAgeText(minAgeText)
-        guard !clamped.isEmpty else {
-            minAgeText = String(minAge)
-            return
-        }
-        if clamped != minAgeText {
-            minAgeText = clamped
-        }
-        if let value = Int(clamped) {
-            minAge = value
-        }
+    private func ageValue(from text: String, fallback: Int) -> Int {
+        let clamped = clampedAgeText(text)
+        guard !clamped.isEmpty else { return fallback }
+        return Int(clamped) ?? fallback
     }
 
-    private func commitMaxAge() {
-        let clamped = clampedAgeText(maxAgeText)
-        guard !clamped.isEmpty else {
-            maxAgeText = String(maxAge)
-            return
-        }
-        if clamped != maxAgeText {
-            maxAgeText = clamped
-        }
-        if let value = Int(clamped) {
-            maxAge = value
-        }
+    private func normalizedAgeRange() -> (minAge: Int, maxAge: Int) {
+        let minValue = ageValue(from: minAgeText, fallback: minAge)
+        let maxValue = ageValue(from: maxAgeText, fallback: maxAge)
+        return (min(minValue, maxValue), max(minValue, maxValue))
     }
 
-    private func normalizeAgeRange() {
-        if minAge > maxAge {
-            swap(&minAge, &maxAge)
-        }
-        minAgeText = String(minAge)
-        maxAgeText = String(maxAge)
-    }
-
-    private func commitAgeFields() {
-        commitMinAge()
-        commitMaxAge()
-        normalizeAgeRange()
+    private func applyFilters() {
+        let normalized = normalizedAgeRange()
+        minAge = normalized.minAge
+        maxAge = normalized.maxAge
+        selectedGender = draftSelectedGender
+        selectedCountryID = draftSelectedCountryID
+        minAgeText = String(normalized.minAge)
+        maxAgeText = String(normalized.maxAge)
     }
     
     private func genderButton(title: String) -> some View {
         Button {
-            selectedGender = title
+            draftSelectedGender = title
         } label: {
             Text(title)
                 .font(.travelDetail)
-                .foregroundStyle(selectedGender == title ? Colors.tertiaryText : Colors.primaryText)
+                .foregroundStyle(draftSelectedGender == title ? Colors.tertiaryText : Colors.primaryText)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
-                .background(selectedGender == title ? Colors.accent : Colors.card)
+                .background(draftSelectedGender == title ? Colors.accent : Colors.card)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -350,6 +334,8 @@ struct FiltersView: View {
         selectedCountryID = nil
         minAgeText = String(minAge)
         maxAgeText = String(maxAge)
+        draftSelectedGender = "All"
+        draftSelectedCountryID = nil
     }
 }
 

@@ -14,11 +14,13 @@ struct UpcomingTripsFilterView: View {
     @State private var hasCheckInDate: Bool
     @State private var hasReturnDate: Bool
     @State private var activeDatePicker: DatePickerType?
+    @State private var showOriginPicker = false
     @State private var minAgeText: String = ""
     @State private var maxAgeText: String = ""
     @FocusState private var focusedAgeField: AgeField?
     @State private var selectedGender: GenderOption
     @State private var selectedTribeFilter: TribeFilterOption
+    @State private var selectedOriginID: String? = nil
 
     init(
         filterCheckInDate: Binding<Date?>,
@@ -105,6 +107,18 @@ struct UpcomingTripsFilterView: View {
 
     private var isReturnDateInvalid: Bool {
         !showsTribeFilters && hasCheckInDate && hasReturnDate && returnDate < checkInDate
+    }
+
+    private var hasSelectedOrigin: Bool {
+        selectedOriginID != nil
+    }
+
+    private var selectedOriginLabel: String {
+        guard let selectedOriginID,
+              let country = CountryDatabase.all.first(where: { $0.id == selectedOriginID }) else {
+            return "Add Country"
+        }
+        return "\(country.flag) \(country.name)"
     }
 
     var body: some View {
@@ -435,6 +449,53 @@ struct UpcomingTripsFilterView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
+                            Text("Origin")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            if hasSelectedOrigin {
+                                HStack(spacing: 12) {
+                                    Button {
+                                        showOriginPicker = true
+                                    } label: {
+                                        Text(selectedOriginLabel)
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button("Remove") {
+                                        selectedOriginID = nil
+                                    }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                            } else {
+                                Button {
+                                    showOriginPicker = true
+                                } label: {
+                                    Text(selectedOriginLabel)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Gender")
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)
@@ -531,6 +592,9 @@ struct UpcomingTripsFilterView: View {
                     maxAgeText = clamped
                 }
             }
+        }
+        .sheet(isPresented: $showOriginPicker) {
+            CountryPickerView(selectedCountryID: $selectedOriginID)
         }
         .sheet(
             isPresented: Binding(
@@ -650,5 +714,108 @@ struct UpcomingTripsFilterView: View {
         maxAgeText = ""
         selectedGender = .all
         selectedTribeFilter = .everyone
+        selectedOriginID = nil
+    }
+}
+
+private struct CountryPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedCountryID: String?
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+
+    private var selectedCountryText: String {
+        guard let selectedCountryID,
+              let country = CountryDatabase.all.first(where: { $0.id == selectedCountryID }) else {
+            return ""
+        }
+        return "\(country.flag) \(country.name)"
+    }
+
+    private var filteredCountries: [Country] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+
+        if query.isEmpty || query == selectedCountryText {
+            return CountryDatabase.all
+        }
+        return CountryDatabase.all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text("Origin")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField("Search city or country", text: $searchText)
+                        .font(.travelBody)
+                        .foregroundColor(Colors.primaryText)
+                        .focused($isSearchFocused)
+                        .submitLabel(.search)
+                        .onSubmit {
+                            isSearchFocused = false
+                        }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredCountries) { country in
+                            let isSelected = selectedCountryID == country.id
+
+                            Button {
+                                if isSelected {
+                                    selectedCountryID = nil
+                                    searchText = ""
+                                } else {
+                                    selectedCountryID = country.id
+                                    searchText = "\(country.flag) \(country.name)"
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(country.flag)
+                                        .font(.travelTitle)
+                                    Text(country.name)
+                                        .font(.travelBody)
+                                        .foregroundColor(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .scrollDismissesKeyboard(.immediately)
+                .scrollIndicators(.hidden)
+            }
+            .padding(.top, 8)
+        }
     }
 }

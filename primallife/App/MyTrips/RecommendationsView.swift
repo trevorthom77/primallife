@@ -42,6 +42,8 @@ struct RecommendationsView: View {
                                     supabase: supabase
                                 )
                                 let photoURL = recommendationPhotoURL(for: recommendation)
+                                let currentUserID = supabase?.auth.currentUser?.id
+                                let isCreator = currentUserID == recommendation.creatorID
                                 let ratingColor = recommendationRatingColor(ratingText)
 
                                 RecommendationCard(
@@ -51,6 +53,7 @@ struct RecommendationsView: View {
                                     ratingText: ratingText,
                                     ratingColor: ratingColor,
                                     photoURL: photoURL,
+                                    showsMoreButton: isCreator,
                                     onMoreTapped: {
                                         selectedRecommendation = recommendation
                                     }
@@ -127,6 +130,7 @@ struct RecommendationCard: View {
     let ratingText: String
     let ratingColor: Color
     let photoURL: URL?
+    let showsMoreButton: Bool
     let onMoreTapped: () -> Void
 
     var body: some View {
@@ -157,15 +161,17 @@ struct RecommendationCard: View {
                         .background(ratingColor)
                         .clipShape(Capsule())
 
-                    Button(action: onMoreTapped) {
-                        Image(systemName: "ellipsis")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
-                            .frame(width: 36, height: 36)
-                            .background(Colors.card.opacity(0.9))
-                            .clipShape(Circle())
+                    if showsMoreButton {
+                        Button(action: onMoreTapped) {
+                            Image(systemName: "ellipsis")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                                .frame(width: 36, height: 36)
+                                .background(Colors.card.opacity(0.9))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(12)
             }

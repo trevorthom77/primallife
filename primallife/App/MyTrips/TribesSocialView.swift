@@ -44,8 +44,10 @@ struct TribesSocialView: View {
     @State private var placeImageURL: URL?
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
+    @State private var isShowingLeaveConfirm = false
     @State private var isShowingMembersSheet = false
     @State private var isShowingMoreSheet = false
+    @State private var shouldShowLeaveConfirm = false
     @State private var isShowingReport = false
     @State private var reportUserID: UUID?
     @State private var totalTravelers = 0
@@ -473,6 +475,20 @@ struct TribesSocialView: View {
                     }
                 )
             }
+
+            if isShowingLeaveConfirm {
+                confirmationOverlay(
+                    title: "Leave Tribe",
+                    message: "This removes you from \(title).",
+                    confirmTitle: "Leave",
+                    confirmAction: {
+                        isShowingLeaveConfirm = false
+                    },
+                    cancelAction: {
+                        isShowingLeaveConfirm = false
+                    }
+                )
+            }
         }
         .task {
             await loadJoinStatus()
@@ -501,14 +517,26 @@ struct TribesSocialView: View {
         .sheet(isPresented: $isShowingMembersSheet) {
             membersSheet
         }
-        .sheet(isPresented: $isShowingMoreSheet) {
-            TribesSocialMoreSheetView(reportAction: {
-                isShowingMoreSheet = false
-                Task { @MainActor in
-                    guard await resolveReportUserID() != nil else { return }
-                    isShowingReport = true
+        .sheet(isPresented: $isShowingMoreSheet, onDismiss: {
+            if shouldShowLeaveConfirm {
+                shouldShowLeaveConfirm = false
+                isShowingLeaveConfirm = true
+            }
+        }) {
+            TribesSocialMoreSheetView(
+                isCreator: isCreator,
+                leaveAction: {
+                    shouldShowLeaveConfirm = true
+                    isShowingMoreSheet = false
+                },
+                reportAction: {
+                    isShowingMoreSheet = false
+                    Task { @MainActor in
+                        guard await resolveReportUserID() != nil else { return }
+                        isShowingReport = true
+                    }
                 }
-            })
+            )
         }
     }
 }
@@ -1234,6 +1262,8 @@ private struct PlaceCard: View {
 
 private struct TribesSocialMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    let isCreator: Bool
+    let leaveAction: () -> Void
     let reportAction: () -> Void
 
     var body: some View {
@@ -1253,6 +1283,25 @@ private struct TribesSocialMoreSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
+                    if !isCreator {
+                        Button(action: leaveAction) {
+                            HStack {
+                                Text("Leave Tribe")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Color.red)
+
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+
                     Button(action: reportAction) {
                         HStack {
                             Text("Report")

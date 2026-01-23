@@ -69,6 +69,7 @@ struct MapBoxView: View {
     @State private var maxAgeFilter: Int?
     @State private var selectedCountryID: String?
     @State private var selectedGender = "All"
+    @State private var selectedTravelDescription: String?
     @State private var tribeFilterCheckInDate: Date?
     @State private var tribeFilterReturnDate: Date?
     @State private var tribeFilterMinAge: Int?
@@ -116,7 +117,19 @@ struct MapBoxView: View {
         selectedGender != "All"
     }
 
+    private var normalizedTravelDescriptionFilter: String? {
+        guard let selectedTravelDescription else { return nil }
+        let trimmed = selectedTravelDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private var isTravelDescriptionFilterActive: Bool {
+        normalizedTravelDescriptionFilter != nil
+    }
+
     private var filteredTravelers: [MapTraveler] {
+        let travelDescriptionFilter = normalizedTravelDescriptionFilter
+
         return nearbyTravelers.filter { traveler in
             if isAgeFilterActive {
                 guard let age = traveler.age else { return false }
@@ -131,12 +144,24 @@ struct MapBoxView: View {
                       !gender.isEmpty else { return false }
                 guard gender.localizedCaseInsensitiveCompare(selectedGender) == .orderedSame else { return false }
             }
+            if let travelDescriptionFilter {
+                guard let travelDescription = traveler.travelDescription?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !travelDescription.isEmpty else {
+                    return false
+                }
+                guard travelDescription.localizedCaseInsensitiveCompare(travelDescriptionFilter) == .orderedSame else {
+                    return false
+                }
+            }
             return true
         }
     }
 
     private var filteredOtherUserLocations: [OtherUserLocation] {
-        guard isAgeFilterActive || isOriginFilterActive || isGenderFilterActive else { return otherUserLocations }
+        guard isAgeFilterActive || isOriginFilterActive || isGenderFilterActive || isTravelDescriptionFilterActive else {
+            return otherUserLocations
+        }
         let allowedIDs = Set(filteredTravelers.map(\.id))
         return otherUserLocations.filter { allowedIDs.contains($0.id) }
     }
@@ -637,7 +662,8 @@ struct MapBoxView: View {
                         minAge: $minAgeFilter,
                         maxAge: $maxAgeFilter,
                         selectedGender: $selectedGender,
-                        selectedCountryID: $selectedCountryID
+                        selectedCountryID: $selectedCountryID,
+                        selectedTravelDescription: $selectedTravelDescription
                     )
                 }
             }
@@ -1001,7 +1027,7 @@ struct MapBoxView: View {
             
             let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url, full_name, origin, birthday, gender")
+                .select("id, avatar_url, full_name, origin, birthday, gender, travel_description")
                 .in("id", values: ids)
                 .execute()
                 .value
@@ -1037,7 +1063,9 @@ struct MapBoxView: View {
                         avatarPath: traveler.avatarPath,
                         distanceMiles: distanceByID[row.id],
                         age: travelerAge(from: traveler.birthday),
-                        gender: traveler.gender?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        gender: traveler.gender?.trimmingCharacters(in: .whitespacesAndNewlines),
+                        travelDescription: traveler.travelDescription?
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
                     )
                 }
             }
@@ -1427,6 +1455,7 @@ private struct TravelerRow: Decodable {
     let origin: String?
     let birthday: String?
     let gender: String?
+    let travelDescription: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -1435,6 +1464,7 @@ private struct TravelerRow: Decodable {
         case origin
         case birthday
         case gender
+        case travelDescription = "travel_description"
     }
 }
 
@@ -1458,6 +1488,7 @@ private struct MapTraveler: Identifiable {
     let distanceMiles: Double?
     let age: Int?
     let gender: String?
+    let travelDescription: String?
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,

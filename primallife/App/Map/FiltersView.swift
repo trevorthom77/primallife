@@ -13,13 +13,14 @@ struct FiltersView: View {
     @Binding var maxAge: Int?
     @Binding var selectedGender: String
     @Binding var selectedCountryID: String?
+    @Binding var selectedTravelDescription: String?
     @State private var showCountryPicker = false
     @State private var showTravelDescriptionPicker = false
     @State private var minAgeText: String
     @State private var maxAgeText: String
     @State private var draftSelectedGender: String
     @State private var draftSelectedCountryID: String?
-    @State private var selectedTravelDescription: String? = nil
+    @State private var draftSelectedTravelDescription: String?
     @FocusState private var focusedAgeField: AgeField?
 
     private var hasSelectedCountry: Bool {
@@ -35,7 +36,7 @@ struct FiltersView: View {
     }
 
     private var selectedTravelDescriptionLabel: String {
-        selectedTravelDescription ?? "Add Travel Description"
+        draftSelectedTravelDescription ?? "Add Travel Description"
     }
 
     private var isAgeRangeInvalid: Bool {
@@ -64,18 +65,26 @@ struct FiltersView: View {
         minAge: Binding<Int?>,
         maxAge: Binding<Int?>,
         selectedGender: Binding<String>,
-        selectedCountryID: Binding<String?>
+        selectedCountryID: Binding<String?>,
+        selectedTravelDescription: Binding<String?>
     ) {
         _minAge = minAge
         _maxAge = maxAge
         _selectedGender = selectedGender
         _selectedCountryID = selectedCountryID
+        _selectedTravelDescription = selectedTravelDescription
         let initialMinAgeText = minAge.wrappedValue.map(String.init) ?? ""
         let initialMaxAgeText = maxAge.wrappedValue.map(String.init) ?? ""
+        let initialTravelDescription: String? = {
+            let trimmed = selectedTravelDescription.wrappedValue?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed?.isEmpty == true ? nil : trimmed
+        }()
         _minAgeText = State(initialValue: initialMinAgeText)
         _maxAgeText = State(initialValue: initialMaxAgeText)
         _draftSelectedGender = State(initialValue: selectedGender.wrappedValue)
         _draftSelectedCountryID = State(initialValue: selectedCountryID.wrappedValue)
+        _draftSelectedTravelDescription = State(initialValue: initialTravelDescription)
     }
     
     var body: some View {
@@ -254,7 +263,7 @@ struct FiltersView: View {
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
 
-                        if selectedTravelDescription != nil {
+                        if draftSelectedTravelDescription != nil {
                             HStack(spacing: 12) {
                                 Button {
                                     showTravelDescriptionPicker = true
@@ -267,7 +276,7 @@ struct FiltersView: View {
                                 .buttonStyle(.plain)
 
                                 Button("Remove") {
-                                    selectedTravelDescription = nil
+                                    draftSelectedTravelDescription = nil
                                 }
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.accent)
@@ -356,7 +365,7 @@ struct FiltersView: View {
         .sheet(isPresented: $showTravelDescriptionPicker) {
             TravelDescriptionPickerView(
                 options: travelDescriptionOptions,
-                selectedDescription: $selectedTravelDescription
+                selectedDescription: $draftSelectedTravelDescription
             )
         }
         .onChange(of: focusedAgeField) { _, field in
@@ -408,6 +417,7 @@ struct FiltersView: View {
         maxAge = ageValue(from: maxAgeText)
         selectedGender = draftSelectedGender
         selectedCountryID = draftSelectedCountryID
+        selectedTravelDescription = draftSelectedTravelDescription
     }
     
     private func genderButton(title: String) -> some View {
@@ -430,11 +440,12 @@ struct FiltersView: View {
         maxAge = nil
         selectedGender = "All"
         selectedCountryID = nil
+        selectedTravelDescription = nil
         minAgeText = ""
         maxAgeText = ""
         draftSelectedGender = "All"
         draftSelectedCountryID = nil
-        selectedTravelDescription = nil
+        draftSelectedTravelDescription = nil
     }
 }
 

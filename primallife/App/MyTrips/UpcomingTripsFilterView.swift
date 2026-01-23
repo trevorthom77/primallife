@@ -25,6 +25,8 @@ struct UpcomingTripsFilterView: View {
     @State private var selectedOriginID: String? = nil
     @State private var selectedTravelDescription: String? = nil
     @State private var showTravelDescriptionPicker = false
+    @State private var showInterestsPicker = false
+    @State private var selectedInterests: Set<String> = []
 
     init(
         filterCheckInDate: Binding<Date?>,
@@ -147,6 +149,19 @@ struct UpcomingTripsFilterView: View {
 
     private var selectedTravelDescriptionLabel: String {
         selectedTravelDescription ?? "Add Travel Description"
+    }
+
+    private var hasSelectedInterests: Bool {
+        !selectedInterests.isEmpty
+    }
+
+    private var selectedInterestsLabel: String {
+        guard !selectedInterests.isEmpty else { return "Add Interests" }
+        let labels = InterestOptions.all.filter { selectedInterests.contains($0) }
+        if !labels.isEmpty {
+            return labels.joined(separator: ", ")
+        }
+        return selectedInterests.sorted().joined(separator: ", ")
     }
 
     var body: some View {
@@ -317,6 +332,53 @@ struct UpcomingTripsFilterView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Interests")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            if hasSelectedInterests {
+                                HStack(spacing: 12) {
+                                    Button {
+                                        showInterestsPicker = true
+                                    } label: {
+                                        Text(selectedInterestsLabel)
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button("Remove") {
+                                        selectedInterests.removeAll()
+                                    }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                            } else {
+                                Button {
+                                    showInterestsPicker = true
+                                } label: {
+                                    Text(selectedInterestsLabel)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
 
                     if !showsTribeFilters {
@@ -679,6 +741,9 @@ struct UpcomingTripsFilterView: View {
                 selectedDescription: $selectedTravelDescription
             )
         }
+        .sheet(isPresented: $showInterestsPicker) {
+            InterestsPickerView(selectedInterests: $selectedInterests)
+        }
         .sheet(
             isPresented: Binding(
                 get: { activeDatePicker != nil },
@@ -801,6 +866,7 @@ struct UpcomingTripsFilterView: View {
         selectedTribeFilter = .everyone
         selectedOriginID = nil
         selectedTravelDescription = nil
+        selectedInterests = []
     }
 }
 
@@ -998,6 +1064,71 @@ private struct TravelDescriptionPickerView: View {
                 .scrollIndicators(.hidden)
             }
             .padding(.top, 8)
+        }
+    }
+}
+
+private struct InterestsPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedInterests: Set<String>
+
+    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text("Interests")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(InterestOptions.all, id: \.self) { interest in
+                            let isSelected = selectedInterests.contains(interest)
+
+                            Button {
+                                toggleInterest(interest)
+                            } label: {
+                                Text(interest)
+                                    .font(.travelBody)
+                                    .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(isSelected ? Colors.accent : Colors.card)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+    }
+
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else {
+            selectedInterests = [interest]
         }
     }
 }

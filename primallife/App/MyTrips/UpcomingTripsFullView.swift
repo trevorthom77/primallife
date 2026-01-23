@@ -20,6 +20,7 @@ struct UpcomingTripsFullView: View {
     @State private var filterGender: String?
     @State private var filterOriginID: String?
     @State private var filterTribeType: String?
+    @State private var filterTravelDescription: String?
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -63,6 +64,7 @@ struct UpcomingTripsFullView: View {
                             filterGender: $filterGender,
                             filterOriginID: $filterOriginID,
                             filterTribeType: $filterTribeType,
+                            filterTravelDescription: $filterTravelDescription,
                             showsTribeFilters: selectedTab == .tribes
                         )
                     } label: {
@@ -451,7 +453,18 @@ struct UpcomingTripsFullView: View {
             return trimmed.isEmpty ? nil : trimmed
         }()
 
-        guard dateFilterRange != nil || isAgeFilterActive || genderFilter != nil || originFilter != nil else {
+        let travelDescriptionFilter: String? = {
+            guard let filterTravelDescription else { return nil }
+            let trimmed = filterTravelDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }()
+
+        guard dateFilterRange != nil
+                || isAgeFilterActive
+                || genderFilter != nil
+                || originFilter != nil
+                || travelDescriptionFilter != nil
+        else {
             return visibleTravelers
         }
 
@@ -492,7 +505,17 @@ struct UpcomingTripsFullView: View {
                 return origin == originFilter
             }()
 
-            return matchesDate && matchesAge && matchesGender && matchesOrigin
+            let matchesTravelDescription: Bool = {
+                guard let travelDescriptionFilter else { return true }
+                guard let travelDescription = viewModel.creatorTravelDescription(for: travelerID)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !travelDescription.isEmpty else {
+                    return false
+                }
+                return travelDescription.localizedCaseInsensitiveCompare(travelDescriptionFilter) == .orderedSame
+            }()
+
+            return matchesDate && matchesAge && matchesGender && matchesOrigin && matchesTravelDescription
         }
     }
 

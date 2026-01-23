@@ -656,6 +656,7 @@ struct MapBoxView: View {
                         filterOriginID: .constant(nil),
                         filterTribeType: $tribeFilterType,
                         filterTravelDescription: .constant(nil),
+                        filterInterests: .constant([]),
                         showsTribeFilters: true
                     )
                 } else {

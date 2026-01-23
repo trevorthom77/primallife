@@ -10,6 +10,7 @@ struct UpcomingTripsFilterView: View {
     @Binding var filterOriginID: String?
     @Binding var filterTribeType: String?
     @Binding var filterTravelDescription: String?
+    @Binding var filterInterests: Set<String>
     let showsTribeFilters: Bool
     @State private var checkInDate: Date
     @State private var returnDate: Date
@@ -37,6 +38,7 @@ struct UpcomingTripsFilterView: View {
         filterOriginID: Binding<String?>,
         filterTribeType: Binding<String?>,
         filterTravelDescription: Binding<String?>,
+        filterInterests: Binding<Set<String>>,
         showsTribeFilters: Bool
     ) {
         _filterCheckInDate = filterCheckInDate
@@ -47,6 +49,7 @@ struct UpcomingTripsFilterView: View {
         _filterOriginID = filterOriginID
         _filterTribeType = filterTribeType
         _filterTravelDescription = filterTravelDescription
+        _filterInterests = filterInterests
         self.showsTribeFilters = showsTribeFilters
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
         let initialReturn = filterReturnDate.wrappedValue ?? Date()
@@ -80,6 +83,7 @@ struct UpcomingTripsFilterView: View {
             }
             return .everyone
         }()
+        let initialInterests = filterInterests.wrappedValue
         _checkInDate = State(initialValue: initialCheckIn)
         _returnDate = State(initialValue: initialReturn)
         _hasCheckInDate = State(initialValue: filterCheckInDate.wrappedValue != nil)
@@ -90,6 +94,7 @@ struct UpcomingTripsFilterView: View {
         _selectedTribeFilter = State(initialValue: initialTribeFilter)
         _selectedOriginID = State(initialValue: filterOriginID.wrappedValue)
         _selectedTravelDescription = State(initialValue: initialTravelDescription)
+        _selectedInterests = State(initialValue: initialInterests)
     }
 
     private enum DatePickerType {
@@ -736,6 +741,7 @@ struct UpcomingTripsFilterView: View {
                     filterGender = selectedGender == .all ? nil : selectedGender.rawValue
                     filterOriginID = selectedOriginID
                     filterTravelDescription = selectedTravelDescription
+                    filterInterests = selectedInterests
                     if showsTribeFilters {
                         filterTribeType = selectedTribeFilter == .everyone ? nil : selectedTribeFilter.rawValue
                     }
@@ -900,6 +906,7 @@ struct UpcomingTripsFilterView: View {
         filterGender = nil
         filterOriginID = nil
         filterTravelDescription = nil
+        filterInterests = []
         if showsTribeFilters {
             filterTribeType = nil
         }

@@ -21,6 +21,7 @@ struct UpcomingTripsFullView: View {
     @State private var filterOriginID: String?
     @State private var filterTribeType: String?
     @State private var filterTravelDescription: String?
+    @State private var filterInterests: Set<String> = []
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -65,6 +66,7 @@ struct UpcomingTripsFullView: View {
                             filterOriginID: $filterOriginID,
                             filterTribeType: $filterTribeType,
                             filterTravelDescription: $filterTravelDescription,
+                            filterInterests: $filterInterests,
                             showsTribeFilters: selectedTab == .tribes
                         )
                     } label: {
@@ -459,11 +461,14 @@ struct UpcomingTripsFullView: View {
             return trimmed.isEmpty ? nil : trimmed
         }()
 
+        let interestsFilter = filterInterests
+
         guard dateFilterRange != nil
                 || isAgeFilterActive
                 || genderFilter != nil
                 || originFilter != nil
                 || travelDescriptionFilter != nil
+                || !interestsFilter.isEmpty
         else {
             return visibleTravelers
         }
@@ -515,7 +520,18 @@ struct UpcomingTripsFullView: View {
                 return travelDescription.localizedCaseInsensitiveCompare(travelDescriptionFilter) == .orderedSame
             }()
 
-            return matchesDate && matchesAge && matchesGender && matchesOrigin && matchesTravelDescription
+            let matchesInterests: Bool = {
+                guard !interestsFilter.isEmpty else { return true }
+                let travelerInterests = viewModel.creatorInterests(for: travelerID)
+                return travelerInterests.contains { interestsFilter.contains($0) }
+            }()
+
+            return matchesDate
+                && matchesAge
+                && matchesGender
+                && matchesOrigin
+                && matchesTravelDescription
+                && matchesInterests
         }
     }
 

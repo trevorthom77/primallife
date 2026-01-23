@@ -627,6 +627,7 @@ struct MapBoxView: View {
                         filterMinAge: $tribeFilterMinAge,
                         filterMaxAge: $tribeFilterMaxAge,
                         filterGender: $tribeFilterGender,
+                        filterOriginID: .constant(nil),
                         filterTribeType: $tribeFilterType,
                         showsTribeFilters: true
                     )

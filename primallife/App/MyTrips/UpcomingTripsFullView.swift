@@ -18,6 +18,7 @@ struct UpcomingTripsFullView: View {
     @State private var filterMinAge: Int?
     @State private var filterMaxAge: Int?
     @State private var filterGender: String?
+    @State private var filterOriginID: String?
     @State private var filterTribeType: String?
     @StateObject private var viewModel = MyTripsViewModel()
 
@@ -60,6 +61,7 @@ struct UpcomingTripsFullView: View {
                             filterMinAge: $filterMinAge,
                             filterMaxAge: $filterMaxAge,
                             filterGender: $filterGender,
+                            filterOriginID: $filterOriginID,
                             filterTribeType: $filterTribeType,
                             showsTribeFilters: selectedTab == .tribes
                         )
@@ -443,7 +445,13 @@ struct UpcomingTripsFullView: View {
             return trimmed.isEmpty ? nil : trimmed
         }()
 
-        guard dateFilterRange != nil || isAgeFilterActive || genderFilter != nil else {
+        let originFilter: String? = {
+            guard let filterOriginID else { return nil }
+            let trimmed = filterOriginID.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }()
+
+        guard dateFilterRange != nil || isAgeFilterActive || genderFilter != nil || originFilter != nil else {
             return visibleTravelers
         }
 
@@ -478,7 +486,13 @@ struct UpcomingTripsFullView: View {
                 return gender.localizedCaseInsensitiveCompare(genderFilter) == .orderedSame
             }()
 
-            return matchesDate && matchesAge && matchesGender
+            let matchesOrigin: Bool = {
+                guard let originFilter else { return true }
+                guard let origin = viewModel.creatorOriginID(for: travelerID) else { return false }
+                return origin == originFilter
+            }()
+
+            return matchesDate && matchesAge && matchesGender && matchesOrigin
         }
     }
 

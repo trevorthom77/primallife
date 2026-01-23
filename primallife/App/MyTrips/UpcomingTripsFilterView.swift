@@ -7,6 +7,7 @@ struct UpcomingTripsFilterView: View {
     @Binding var filterMinAge: Int?
     @Binding var filterMaxAge: Int?
     @Binding var filterGender: String?
+    @Binding var filterOriginID: String?
     @Binding var filterTribeType: String?
     let showsTribeFilters: Bool
     @State private var checkInDate: Date
@@ -28,6 +29,7 @@ struct UpcomingTripsFilterView: View {
         filterMinAge: Binding<Int?>,
         filterMaxAge: Binding<Int?>,
         filterGender: Binding<String?>,
+        filterOriginID: Binding<String?>,
         filterTribeType: Binding<String?>,
         showsTribeFilters: Bool
     ) {
@@ -36,6 +38,7 @@ struct UpcomingTripsFilterView: View {
         _filterMinAge = filterMinAge
         _filterMaxAge = filterMaxAge
         _filterGender = filterGender
+        _filterOriginID = filterOriginID
         _filterTribeType = filterTribeType
         self.showsTribeFilters = showsTribeFilters
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
@@ -73,6 +76,7 @@ struct UpcomingTripsFilterView: View {
         _maxAgeText = State(initialValue: initialMaxAgeText)
         _selectedGender = State(initialValue: initialGender)
         _selectedTribeFilter = State(initialValue: initialTribeFilter)
+        _selectedOriginID = State(initialValue: filterOriginID.wrappedValue)
     }
 
     private enum DatePickerType {
@@ -550,6 +554,7 @@ struct UpcomingTripsFilterView: View {
                     filterMinAge = ageValue(from: minAgeText)
                     filterMaxAge = ageValue(from: maxAgeText)
                     filterGender = selectedGender == .all ? nil : selectedGender.rawValue
+                    filterOriginID = selectedOriginID
                     if showsTribeFilters {
                         filterTribeType = selectedTribeFilter == .everyone ? nil : selectedTribeFilter.rawValue
                     }
@@ -703,6 +708,7 @@ struct UpcomingTripsFilterView: View {
         filterMinAge = nil
         filterMaxAge = nil
         filterGender = nil
+        filterOriginID = nil
         if showsTribeFilters {
             filterTribeType = nil
         }

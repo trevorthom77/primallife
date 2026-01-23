@@ -549,6 +549,15 @@ final class MyTripsViewModel: ObservableObject {
         return CountryDatabase.all.first(where: { $0.id == origin })?.name
     }
 
+    func creatorOriginID(for userID: UUID) -> String? {
+        guard let origin = tribeCreatorsByID[userID.uuidString.lowercased()]?.origin?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !origin.isEmpty else {
+            return nil
+        }
+        return origin
+    }
+
     func creatorGender(for userID: UUID) -> String? {
         tribeCreatorsByID[userID.uuidString.lowercased()]?.gender
     }

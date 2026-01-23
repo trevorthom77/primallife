@@ -369,26 +369,35 @@ struct TribesChatView: View {
     }
 
     private func memberRow(_ member: TribeMember) -> some View {
-        NavigationLink {
-            OthersProfileView(userID: member.id)
-        } label: {
-            HStack(spacing: 12) {
-                if let avatarURL = member.avatarURL {
-                    messageAvatar(avatarURL, size: 36)
-                } else {
-                    Color.clear
-                        .frame(width: 36, height: 36)
+        HStack(spacing: 12) {
+            NavigationLink {
+                OthersProfileView(userID: member.id)
+            } label: {
+                HStack(spacing: 12) {
+                    if let avatarURL = member.avatarURL {
+                        messageAvatar(avatarURL, size: 36)
+                    } else {
+                        Color.clear
+                            .frame(width: 36, height: 36)
+                    }
+
+                    Text(member.fullName)
+                        .font(.travelBodySemibold)
+                        .foregroundStyle(Colors.primaryText)
                 }
-
-                Text(member.fullName)
-                    .font(.travelBodySemibold)
-                    .foregroundStyle(Colors.primaryText)
-
-                Spacer()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button(action: {}) {
+                Text("Kick")
+                    .font(.travelDetail)
+                    .foregroundStyle(Color.red)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var plansRow: some View {

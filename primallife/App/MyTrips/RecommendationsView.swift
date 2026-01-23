@@ -67,7 +67,14 @@ struct RecommendationsView: View {
         }
         .navigationBarBackButtonHidden(true)
         .sheet(item: $selectedRecommendation) { recommendation in
-            RecommendationMoreSheetView(recommendation: recommendation)
+            RecommendationMoreSheetView(
+                recommendation: recommendation,
+                onDeleteRecommendation: {
+                    Task {
+                        await viewModel.deleteRecommendation(recommendation: recommendation, supabase: supabase)
+                    }
+                }
+            )
         }
         .task {
             let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -221,7 +228,9 @@ struct RecommendationCard: View {
 
 private struct RecommendationMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingDeleteConfirm = false
     let recommendation: Recommendation
+    let onDeleteRecommendation: () -> Void
 
     var body: some View {
         ZStack {
@@ -248,7 +257,9 @@ private struct RecommendationMoreSheetView: View {
                         .font(.travelBody)
                         .foregroundStyle(Colors.secondaryText)
 
-                    Button(action: {}) {
+                    Button(action: {
+                        isShowingDeleteConfirm = true
+                    }) {
                         HStack {
                             Text("Delete Recommendation")
                                 .font(.travelDetail)
@@ -270,8 +281,82 @@ private struct RecommendationMoreSheetView: View {
             }
             .padding(20)
         }
+        .overlay {
+            if isShowingDeleteConfirm {
+                confirmationOverlay(
+                    title: "Delete Recommendation",
+                    message: "This removes \(recommendation.name) from your recommendations.",
+                    confirmTitle: "Delete",
+                    isDestructive: true,
+                    confirmAction: {
+                        isShowingDeleteConfirm = false
+                        onDeleteRecommendation()
+                        dismiss()
+                    },
+                    cancelAction: {
+                        isShowingDeleteConfirm = false
+                    }
+                )
+            }
+        }
         .presentationDetents([.height(320)])
         .presentationBackground(Colors.background)
         .presentationDragIndicator(.hidden)
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 }

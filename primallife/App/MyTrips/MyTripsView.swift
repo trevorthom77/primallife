@@ -496,6 +496,23 @@ final class MyTripsViewModel: ObservableObject {
         }
     }
 
+    func deleteRecommendation(recommendation: Recommendation, supabase: SupabaseClient?) async {
+        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            try await supabase
+                .from("recommendations")
+                .delete()
+                .eq("id", value: "\(recommendation.id)")
+                .eq("creator_id", value: "\(userID)")
+                .execute()
+
+            await loadRecommendations(for: recommendation.destination, supabase: supabase)
+        } catch {
+            self.error = "Unable to delete recommendation."
+        }
+    }
+
     func creatorName(for ownerID: UUID) -> String? {
         tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
     }

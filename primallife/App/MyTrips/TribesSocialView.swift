@@ -522,6 +522,7 @@ struct TribesSocialView: View {
             TribeMembersSheetView(
                 members: members,
                 isOwner: isCreator,
+                currentUserID: supabase?.auth.currentUser?.id,
                 onLoad: {
                     await loadMembers()
                 },
@@ -1265,6 +1266,7 @@ private struct PlaceCard: View {
 struct TribeMembersSheetView: View {
     let members: [TribeMember]
     let isOwner: Bool
+    let currentUserID: UUID?
     let onLoad: () async -> Void
     let onKick: (TribeMember) async -> Void
     @State private var isShowingKickConfirm = false
@@ -1354,7 +1356,7 @@ struct TribeMembersSheetView: View {
 
             Spacer()
 
-            if isOwner {
+            if isOwner && currentUserID != member.id {
                 Button(action: {
                     kickMember = member
                     isShowingKickConfirm = true

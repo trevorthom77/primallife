@@ -339,6 +339,7 @@ struct TribesChatView: View {
             TribeMembersSheetView(
                 members: members,
                 isOwner: isOwner,
+                currentUserID: supabase?.auth.currentUser?.id,
                 onLoad: {
                     await loadMembers()
                 },

@@ -238,7 +238,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     } else if (isTribesJoinInsert && joinerId && tribeId) {
       const { data: joiner } = await supabase
         .from('onboarding')
-        .select('full_name')
+        .select('full_name, origin')
         .eq('id', joinerId)
         .maybeSingle()
 
@@ -255,10 +255,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
       const joinerNameRaw = joiner?.full_name?.trim() ?? ''
       const joinerName = joinerNameRaw || 'Someone'
+      const joinerFlag = isoToFlag(joiner?.origin)
+      const joinerPrefix = joinerFlag ? `${joinerFlag} ` : ''
       const tribeName = tribe?.name?.trim() ?? ''
-      const title = tribeName
-        ? `${joinerName} joined ${tribeName}`
-        : `${joinerName} joined your tribe`
+      const title = `${joinerPrefix}${joinerName} just joined your tribe${
+        tribeName ? ` (${tribeName})` : ''
+      }`
 
       alert = { title, body: '' }
 

@@ -56,8 +56,6 @@ struct TribesSocialView: View {
     @State private var isJoiningTribe = false
     @State private var currentUserGender: String?
     @State private var members: [TribeMember] = []
-    @State private var kickMember: TribeMember?
-    @State private var isShowingKickConfirm = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -521,7 +519,12 @@ struct TribesSocialView: View {
             ReportView(reportedUserID: reportUserID, showsBlockPrompt: false)
         }
         .sheet(isPresented: $isShowingMembersSheet) {
-            membersSheet
+            TribeMembersSheetView(
+                members: members,
+                onLoad: {
+                    await loadMembers()
+                }
+            )
         }
         .sheet(isPresented: $isShowingMoreSheet, onDismiss: {
             if shouldShowLeaveConfirm {
@@ -578,7 +581,7 @@ private struct TribeMemberProfileRow: Decodable {
     }
 }
 
-private struct TribeMember: Identifiable {
+struct TribeMember: Identifiable {
     let id: UUID
     let fullName: String
     let avatarURL: URL?
@@ -649,100 +652,6 @@ private extension TribesSocialView {
         let start = createdAt.formatted(.dateTime.month(.abbreviated).day())
         let end = endDate.formatted(.dateTime.month(.abbreviated).day().year())
         return "\(start) - \(end)"
-    }
-
-    var membersSheet: some View {
-        NavigationStack {
-            ZStack {
-                Colors.background
-                    .ignoresSafeArea()
-
-                if members.isEmpty {
-                    Text("No travelers yet")
-                        .font(.travelBody)
-                        .foregroundStyle(Colors.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 14) {
-                            ForEach(members) { member in
-                                memberRow(member)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                    }
-                }
-            }
-            .overlay {
-                if isShowingKickConfirm, let kickMember {
-                    confirmationOverlay(
-                        title: "Kick Traveler",
-                        message: "This removes \(kickMember.fullName) from the tribe.",
-                        confirmTitle: "Kick",
-                        confirmAction: {
-                            isShowingKickConfirm = false
-                            self.kickMember = nil
-                        },
-                        cancelAction: {
-                            isShowingKickConfirm = false
-                            self.kickMember = nil
-                        }
-                    )
-                }
-            }
-            .task {
-                await loadMembers()
-            }
-        }
-    }
-
-    func memberRow(_ member: TribeMember) -> some View {
-        HStack(spacing: 12) {
-            NavigationLink {
-                OthersProfileView(userID: member.id)
-            } label: {
-                HStack(spacing: 12) {
-                    if let avatarURL = member.avatarURL {
-                        AsyncImage(url: avatarURL) { phase in
-                            if let image = phase.image {
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                Color.clear
-                            }
-                        }
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                    } else {
-                        Color.clear
-                            .frame(width: 36, height: 36)
-                    }
-
-                    Text(member.fullName)
-                        .font(.travelBodySemibold)
-                        .foregroundStyle(Colors.primaryText)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button(action: {
-                kickMember = member
-                isShowingKickConfirm = true
-            }) {
-                Text("Kick")
-                    .font(.travelDetail)
-                    .foregroundStyle(Color.red)
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @MainActor
@@ -1322,6 +1231,162 @@ private struct PlaceCard: View {
                 .padding(.horizontal, 16)
         }
         .clipped()
+    }
+}
+
+struct TribeMembersSheetView: View {
+    let members: [TribeMember]
+    let onLoad: () async -> Void
+    @State private var isShowingKickConfirm = false
+    @State private var kickMember: TribeMember?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                if members.isEmpty {
+                    Text("No travelers yet")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            ForEach(members) { member in
+                                memberRow(member)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                    }
+                }
+            }
+            .overlay {
+                if isShowingKickConfirm, let kickMember {
+                    confirmationOverlay(
+                        title: "Kick Traveler",
+                        message: "This removes \(kickMember.fullName) from the tribe.",
+                        confirmTitle: "Kick",
+                        confirmAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        },
+                        cancelAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        }
+                    )
+                }
+            }
+            .task {
+                await onLoad()
+            }
+        }
+    }
+
+    private func memberRow(_ member: TribeMember) -> some View {
+        HStack(spacing: 12) {
+            NavigationLink {
+                OthersProfileView(userID: member.id)
+            } label: {
+                HStack(spacing: 12) {
+                    if let avatarURL = member.avatarURL {
+                        AsyncImage(url: avatarURL) { phase in
+                            if let image = phase.image {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                Color.clear
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                    } else {
+                        Color.clear
+                            .frame(width: 36, height: 36)
+                    }
+
+                    Text(member.fullName)
+                        .font(.travelBodySemibold)
+                        .foregroundStyle(Colors.primaryText)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button(action: {
+                kickMember = member
+                isShowingKickConfirm = true
+            }) {
+                Text("Kick")
+                    .font(.travelDetail)
+                    .foregroundStyle(Color.red)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.red)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 }
 

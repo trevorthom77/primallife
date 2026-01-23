@@ -573,6 +573,14 @@ private struct TribeJoinRecord: Decodable {
     let id: UUID
 }
 
+private struct TribeBlockRow: Decodable {
+    let blockedID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case blockedID = "blocked_id"
+    }
+}
+
 private struct TribeMemberRow: Decodable {
     let id: UUID
 }
@@ -717,6 +725,20 @@ private extension TribesSocialView {
         guard let supabase,
               let tribeID,
               let userID = supabase.auth.currentUser?.id else { return false }
+
+        do {
+            let blockedRows: [TribeBlockRow] = try await supabase
+                .from("tribe_blocks")
+                .select("blocked_id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .eq("blocked_id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            guard blockedRows.isEmpty else { return false }
+        } catch {
+            return false
+        }
 
         guard await isAllowedToJoin(tribeGender: resolvedGender, userID: userID, supabase: supabase) else {
             return false

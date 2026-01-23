@@ -1271,6 +1271,8 @@ struct TribeMembersSheetView: View {
     let onKick: (TribeMember) async -> Void
     @State private var isShowingKickConfirm = false
     @State private var kickMember: TribeMember?
+    @State private var isShowingBlockConfirm = false
+    @State private var blockMember: TribeMember?
 
     var body: some View {
         NavigationStack {
@@ -1304,16 +1306,38 @@ struct TribeMembersSheetView: View {
                         title: "Kick Traveler",
                         message: "This removes \(kickMember.fullName) from the tribe.",
                         confirmTitle: "Kick",
+                        confirmColor: Color.red,
                         confirmAction: {
+                            guard let kickedMember = self.kickMember else {
+                                isShowingKickConfirm = false
+                                return
+                            }
                             isShowingKickConfirm = false
                             self.kickMember = nil
+                            blockMember = kickedMember
+                            isShowingBlockConfirm = true
                             Task {
-                                await onKick(kickMember)
+                                await onKick(kickedMember)
                             }
                         },
                         cancelAction: {
                             isShowingKickConfirm = false
                             self.kickMember = nil
+                        }
+                    )
+                } else if isShowingBlockConfirm, let blockMember {
+                    confirmationOverlay(
+                        title: "Block Traveler",
+                        message: "Also block \(blockMember.fullName) from the tribe?",
+                        confirmTitle: "Block",
+                        confirmColor: Colors.accent,
+                        confirmAction: {
+                            isShowingBlockConfirm = false
+                            self.blockMember = nil
+                        },
+                        cancelAction: {
+                            isShowingBlockConfirm = false
+                            self.blockMember = nil
                         }
                     )
                 }
@@ -1375,6 +1399,7 @@ struct TribeMembersSheetView: View {
         title: String,
         message: String,
         confirmTitle: String,
+        confirmColor: Color,
         confirmAction: @escaping () -> Void,
         cancelAction: @escaping () -> Void
     ) -> some View {
@@ -1413,7 +1438,7 @@ struct TribeMembersSheetView: View {
                             .foregroundStyle(Colors.tertiaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.red)
+                            .background(confirmColor)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }

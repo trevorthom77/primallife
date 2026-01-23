@@ -104,12 +104,12 @@ struct UpcomingTripsFilterView: View {
     }
 
     private let travelDescriptionOptions = [
-        "Backpacking",
-        "Gap year",
-        "Studying abroad",
-        "Living abroad",
-        "Just love to travel",
-        "Digital nomad"
+        "🎒 Backpacking",
+        "🧭 Gap year",
+        "🎓 Studying abroad",
+        "🏡 Living abroad",
+        "✈️ Just love to travel",
+        "💻 Digital nomad"
     ]
 
     private var isAgeRangeInvalid: Bool {

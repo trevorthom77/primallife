@@ -70,6 +70,7 @@ struct MapBoxView: View {
     @State private var selectedCountryID: String?
     @State private var selectedGender = "All"
     @State private var selectedTravelDescription: String?
+    @State private var selectedInterests: Set<String> = []
     @State private var tribeFilterCheckInDate: Date?
     @State private var tribeFilterReturnDate: Date?
     @State private var tribeFilterMinAge: Int?
@@ -663,7 +664,8 @@ struct MapBoxView: View {
                         maxAge: $maxAgeFilter,
                         selectedGender: $selectedGender,
                         selectedCountryID: $selectedCountryID,
-                        selectedTravelDescription: $selectedTravelDescription
+                        selectedTravelDescription: $selectedTravelDescription,
+                        selectedInterests: $selectedInterests
                     )
                 }
             }

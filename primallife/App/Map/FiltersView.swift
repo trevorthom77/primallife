@@ -14,17 +14,24 @@ struct FiltersView: View {
     @Binding var selectedGender: String
     @Binding var selectedCountryID: String?
     @Binding var selectedTravelDescription: String?
+    @Binding var selectedInterests: Set<String>
     @State private var showCountryPicker = false
     @State private var showTravelDescriptionPicker = false
+    @State private var showInterestsPicker = false
     @State private var minAgeText: String
     @State private var maxAgeText: String
     @State private var draftSelectedGender: String
     @State private var draftSelectedCountryID: String?
     @State private var draftSelectedTravelDescription: String?
+    @State private var draftSelectedInterests: Set<String>
     @FocusState private var focusedAgeField: AgeField?
 
     private var hasSelectedCountry: Bool {
         draftSelectedCountryID != nil
+    }
+
+    private var hasSelectedInterests: Bool {
+        !draftSelectedInterests.isEmpty
     }
 
     private var selectedCountryLabel: String {
@@ -37,6 +44,15 @@ struct FiltersView: View {
 
     private var selectedTravelDescriptionLabel: String {
         draftSelectedTravelDescription ?? "Add Travel Description"
+    }
+
+    private var selectedInterestsLabel: String {
+        guard !draftSelectedInterests.isEmpty else { return "Add Interests" }
+        let labels = InterestOptions.all.filter { draftSelectedInterests.contains($0) }
+        if !labels.isEmpty {
+            return labels.joined(separator: ", ")
+        }
+        return draftSelectedInterests.sorted().joined(separator: ", ")
     }
 
     private var isAgeRangeInvalid: Bool {
@@ -66,13 +82,15 @@ struct FiltersView: View {
         maxAge: Binding<Int?>,
         selectedGender: Binding<String>,
         selectedCountryID: Binding<String?>,
-        selectedTravelDescription: Binding<String?>
+        selectedTravelDescription: Binding<String?>,
+        selectedInterests: Binding<Set<String>>
     ) {
         _minAge = minAge
         _maxAge = maxAge
         _selectedGender = selectedGender
         _selectedCountryID = selectedCountryID
         _selectedTravelDescription = selectedTravelDescription
+        _selectedInterests = selectedInterests
         let initialMinAgeText = minAge.wrappedValue.map(String.init) ?? ""
         let initialMaxAgeText = maxAge.wrappedValue.map(String.init) ?? ""
         let initialTravelDescription: String? = {
@@ -85,6 +103,7 @@ struct FiltersView: View {
         _draftSelectedGender = State(initialValue: selectedGender.wrappedValue)
         _draftSelectedCountryID = State(initialValue: selectedCountryID.wrappedValue)
         _draftSelectedTravelDescription = State(initialValue: initialTravelDescription)
+        _draftSelectedInterests = State(initialValue: selectedInterests.wrappedValue)
     }
     
     var body: some View {
@@ -306,6 +325,53 @@ struct FiltersView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 12) {
+                        Text("Interests")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        if hasSelectedInterests {
+                            HStack(spacing: 12) {
+                                Button {
+                                    showInterestsPicker = true
+                                } label: {
+                                    Text(selectedInterestsLabel)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .buttonStyle(.plain)
+
+                                Button("Remove") {
+                                    draftSelectedInterests.removeAll()
+                                }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Button {
+                                showInterestsPicker = true
+                            } label: {
+                                Text(selectedInterestsLabel)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Colors.accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Gender")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
@@ -368,6 +434,9 @@ struct FiltersView: View {
                 selectedDescription: $draftSelectedTravelDescription
             )
         }
+        .sheet(isPresented: $showInterestsPicker) {
+            InterestsPickerView(selectedInterests: $draftSelectedInterests)
+        }
         .onChange(of: focusedAgeField) { _, field in
             if field != .min {
                 let clamped = clampedAgeText(minAgeText)
@@ -418,6 +487,7 @@ struct FiltersView: View {
         selectedGender = draftSelectedGender
         selectedCountryID = draftSelectedCountryID
         selectedTravelDescription = draftSelectedTravelDescription
+        selectedInterests = draftSelectedInterests
     }
     
     private func genderButton(title: String) -> some View {
@@ -441,11 +511,13 @@ struct FiltersView: View {
         selectedGender = "All"
         selectedCountryID = nil
         selectedTravelDescription = nil
+        selectedInterests = []
         minAgeText = ""
         maxAgeText = ""
         draftSelectedGender = "All"
         draftSelectedCountryID = nil
         draftSelectedTravelDescription = nil
+        draftSelectedInterests = []
     }
 }
 
@@ -647,6 +719,71 @@ private struct TravelDescriptionPickerView: View {
                 .scrollIndicators(.hidden)
             }
             .padding(.top, 8)
+        }
+    }
+}
+
+private struct InterestsPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedInterests: Set<String>
+
+    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text("Interests")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(InterestOptions.all, id: \.self) { interest in
+                            let isSelected = selectedInterests.contains(interest)
+
+                            Button {
+                                toggleInterest(interest)
+                            } label: {
+                                Text(interest)
+                                    .font(.travelBody)
+                                    .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(isSelected ? Colors.accent : Colors.card)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+    }
+
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else {
+            selectedInterests = [interest]
         }
     }
 }

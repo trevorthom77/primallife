@@ -517,6 +517,7 @@ struct MapBoxView: View {
                     .ignoresSafeArea()
                     .onAppear {
                         applySavedDestination(using: proxy.camera)
+                        applyInitialZoom(using: proxy.map)
                         locationManager.requestPermission()
                         suppressLoadingFeedback = true
                     }
@@ -747,6 +748,17 @@ struct MapBoxView: View {
                 pitch: 0
             ),
             duration: 0
+        )
+    }
+
+    private func applyInitialZoom(using map: MapboxMap?) {
+        guard !hasSavedDestination, userCoordinate == nil else { return }
+        guard let center = map?.cameraState.center else { return }
+        viewport = .camera(
+            center: center,
+            zoom: 8,
+            bearing: 0,
+            pitch: 0
         )
     }
     

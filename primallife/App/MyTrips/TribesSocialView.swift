@@ -1,6 +1,26 @@
 import SwiftUI
 import Supabase
 
+private let tribesSocialBirthdayDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+private let tribesSocialBirthdayTimestampFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+private let tribesSocialBirthdayTimestampFormatterWithFractional: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 struct TribesSocialView: View {
     @State private var imageURL: URL?
     @State private var title: String
@@ -533,6 +553,10 @@ private struct OnboardingGenderRow: Decodable {
     let gender: String?
 }
 
+private struct OnboardingBirthdayRow: Decodable {
+    let birthday: String?
+}
+
 private enum TribeSocialCache {
     static var memberCounts: [UUID: Int] = [:]
     static var members: [UUID: [TribeMember]] = [:]
@@ -737,11 +761,27 @@ private extension TribesSocialView {
             .lowercased()
 
         if normalizedTribeGender.contains("girl") {
-            return await userGender(for: userID, supabase: supabase) == "female"
+            guard await userGender(for: userID, supabase: supabase) == "female" else {
+                return false
+            }
         }
 
         if normalizedTribeGender.contains("boy") {
-            return await userGender(for: userID, supabase: supabase) == "male"
+            guard await userGender(for: userID, supabase: supabase) == "male" else {
+                return false
+            }
+        }
+
+        if minAge != nil || maxAge != nil {
+            guard let age = await userAge(for: userID, supabase: supabase) else {
+                return false
+            }
+            if let minAge, age < minAge {
+                return false
+            }
+            if let maxAge, age > maxAge {
+                return false
+            }
         }
 
         return true
@@ -769,6 +809,36 @@ private extension TribesSocialView {
         } catch {
             return nil
         }
+    }
+
+    func userAge(for userID: UUID, supabase: SupabaseClient) async -> Int? {
+        if let cachedAge = age(from: profileStore.profile?.birthday) {
+            return cachedAge
+        }
+
+        do {
+            let rows: [OnboardingBirthdayRow] = try await supabase
+                .from("onboarding")
+                .select("birthday")
+                .eq("id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            return age(from: rows.first?.birthday)
+        } catch {
+            return nil
+        }
+    }
+
+    func age(from birthday: String?) -> Int? {
+        guard let birthday, !birthday.isEmpty else { return nil }
+
+        let birthDate = tribesSocialBirthdayTimestampFormatterWithFractional.date(from: birthday)
+            ?? tribesSocialBirthdayTimestampFormatter.date(from: birthday)
+            ?? tribesSocialBirthdayDateFormatter.date(from: birthday)
+        guard let birthDate else { return nil }
+
+        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
     }
 
     @MainActor

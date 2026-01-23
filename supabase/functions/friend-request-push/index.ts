@@ -258,9 +258,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
       const joinerFlag = isoToFlag(joiner?.origin)
       const joinerPrefix = joinerFlag ? `${joinerFlag} ` : ''
       const tribeName = tribe?.name?.trim() ?? ''
-      const title = `${joinerPrefix}${joinerName} just joined your tribe${
-        tribeName ? ` (${tribeName})` : ''
-      }`
+      const title = tribeName
+        ? `${joinerPrefix}${joinerName} just joined your tribe ${tribeName}`
+        : `${joinerPrefix}${joinerName} just joined your tribe`
 
       alert = title
 

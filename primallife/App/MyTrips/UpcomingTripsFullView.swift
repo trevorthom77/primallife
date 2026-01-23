@@ -383,13 +383,11 @@ struct UpcomingTripsFullView: View {
             .lowercased() ?? ""
         let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
 
-        let ageFilterRange: (min: Int, max: Int)? = {
-            guard let filterMinAge, let filterMaxAge else { return nil }
-            guard filterMaxAge >= filterMinAge else { return nil }
-            return (filterMinAge, filterMaxAge)
-        }()
+        let minAgeFilter = filterMinAge
+        let maxAgeFilter = filterMaxAge
+        let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
 
-        guard usesTypeFilter || ageFilterRange != nil else { return tribes }
+        guard usesTypeFilter || isAgeFilterActive else { return tribes }
 
         return tribes.filter { tribe in
             let matchesType: Bool = {
@@ -407,9 +405,11 @@ struct UpcomingTripsFullView: View {
             }()
 
             let matchesAge: Bool = {
-                guard let ageFilterRange else { return true }
+                guard isAgeFilterActive else { return true }
                 guard let minAge = tribe.minAge, let maxAge = tribe.maxAge else { return true }
-                return minAge <= ageFilterRange.max && maxAge >= ageFilterRange.min
+                if let minAgeFilter, maxAge < minAgeFilter { return false }
+                if let maxAgeFilter, minAge > maxAgeFilter { return false }
+                return true
             }()
 
             return matchesType && matchesAge
@@ -433,11 +433,9 @@ struct UpcomingTripsFullView: View {
             return (filterStart, filterEnd)
         }()
 
-        let ageFilterRange: (min: Int, max: Int)? = {
-            guard let filterMinAge, let filterMaxAge else { return nil }
-            guard filterMaxAge >= filterMinAge else { return nil }
-            return (filterMinAge, filterMaxAge)
-        }()
+        let minAgeFilter = filterMinAge
+        let maxAgeFilter = filterMaxAge
+        let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
 
         let genderFilter: String? = {
             guard let filterGender else { return nil }
@@ -445,7 +443,7 @@ struct UpcomingTripsFullView: View {
             return trimmed.isEmpty ? nil : trimmed
         }()
 
-        guard dateFilterRange != nil || ageFilterRange != nil || genderFilter != nil else {
+        guard dateFilterRange != nil || isAgeFilterActive || genderFilter != nil else {
             return visibleTravelers
         }
 
@@ -461,11 +459,13 @@ struct UpcomingTripsFullView: View {
             }()
 
             let matchesAge: Bool = {
-                guard let ageFilterRange else { return true }
+                guard isAgeFilterActive else { return true }
                 guard let age = viewModel.creatorAge(for: travelerID) else {
                     return true
                 }
-                return age >= ageFilterRange.min && age <= ageFilterRange.max
+                if let minAgeFilter, age < minAgeFilter { return false }
+                if let maxAgeFilter, age > maxAgeFilter { return false }
+                return true
             }()
 
             let matchesGender: Bool = {

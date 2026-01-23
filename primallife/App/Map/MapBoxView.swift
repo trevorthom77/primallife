@@ -140,6 +140,27 @@ struct MapBoxView: View {
         let allowedIDs = Set(filteredTravelers.map(\.id))
         return otherUserLocations.filter { allowedIDs.contains($0.id) }
     }
+
+    private var filteredMapTribes: [MapTribeLocation] {
+        let normalizedFilter = tribeFilterType?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
+        guard usesTypeFilter else { return mapTribes }
+
+        return mapTribes.filter { tribe in
+            let tribeGender = tribe.gender?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased() ?? ""
+            if normalizedFilter.contains("girl") {
+                return tribeGender.contains("girl")
+            }
+            if normalizedFilter.contains("boy") {
+                return tribeGender.contains("boy")
+            }
+            return true
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -171,7 +192,7 @@ struct MapBoxView: View {
                     }
                     
                     if communityTab == .tribes {
-                        ForEvery(mapTribes) { tribe in
+                        ForEvery(filteredMapTribes) { tribe in
                             MapViewAnnotation(coordinate: tribe.coordinate) {
                                 let flag = tribeCountryFlags[tribe.id] ?? ""
                                 NavigationLink {
@@ -505,7 +526,7 @@ struct MapBoxView: View {
                         if selectedPlace == nil {
                             MapCommunityPanel(
                                 tab: $communityTab,
-                                tribes: mapTribes,
+                                tribes: filteredMapTribes,
                                 tribeFlags: tribeCountryFlags,
                                 tribeCreators: tribeCreatorsByID,
                                 travelers: filteredTravelers,

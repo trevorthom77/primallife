@@ -146,19 +146,36 @@ struct MapBoxView: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased() ?? ""
         let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
-        guard usesTypeFilter else { return mapTribes }
+        let minAgeFilter = tribeFilterMinAge
+        let maxAgeFilter = tribeFilterMaxAge
+        let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
+
+        guard usesTypeFilter || isAgeFilterActive else { return mapTribes }
 
         return mapTribes.filter { tribe in
-            let tribeGender = tribe.gender?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased() ?? ""
-            if normalizedFilter.contains("girl") {
-                return tribeGender.contains("girl")
-            }
-            if normalizedFilter.contains("boy") {
-                return tribeGender.contains("boy")
-            }
-            return true
+            let matchesType: Bool = {
+                guard usesTypeFilter else { return true }
+                let tribeGender = tribe.gender?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased() ?? ""
+                if normalizedFilter.contains("girl") {
+                    return tribeGender.contains("girl")
+                }
+                if normalizedFilter.contains("boy") {
+                    return tribeGender.contains("boy")
+                }
+                return true
+            }()
+
+            let matchesAge: Bool = {
+                guard isAgeFilterActive else { return true }
+                guard let minAge = tribe.minAge, let maxAge = tribe.maxAge else { return true }
+                if let minAgeFilter, maxAge < minAgeFilter { return false }
+                if let maxAgeFilter, minAge > maxAgeFilter { return false }
+                return true
+            }()
+
+            return matchesType && matchesAge
         }
     }
     

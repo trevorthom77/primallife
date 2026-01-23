@@ -633,6 +633,53 @@ struct UpcomingTripsFilterView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 12) {
+                            Text("Interests")
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+
+                            if hasSelectedInterests {
+                                HStack(spacing: 12) {
+                                    Button {
+                                        showInterestsPicker = true
+                                    } label: {
+                                        Text(selectedInterestsLabel)
+                                            .font(.travelDetail)
+                                            .foregroundStyle(Colors.primaryText)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button("Remove") {
+                                        selectedInterests.removeAll()
+                                    }
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.accent)
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                            } else {
+                                Button {
+                                    showInterestsPicker = true
+                                } label: {
+                                    Text(selectedInterestsLabel)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.tertiaryText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.accent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Gender")
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.primaryText)

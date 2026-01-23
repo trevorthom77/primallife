@@ -758,17 +758,28 @@ struct EditProfileView: View {
 
     @ViewBuilder
     private var avatarPreview: some View {
+        let avatarURL = profileStore.profile?.avatarURL(using: supabase)
+
         if let avatarImage {
             Image(uiImage: avatarImage)
                 .resizable()
                 .scaledToFill()
-        } else if let avatarURL = profileStore.profile?.avatarURL(using: supabase) {
+        } else if let avatarURL,
+                  let cachedImage = profileStore.cachedAvatarImage,
+                  profileStore.cachedAvatarURL == avatarURL {
+            cachedImage
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL {
             AsyncImage(url: avatarURL) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
+                        .onAppear {
+                            profileStore.cacheAvatar(image, url: avatarURL)
+                        }
                 default:
                     Color.clear
                 }

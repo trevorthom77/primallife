@@ -525,6 +525,7 @@ struct TribesSocialView: View {
         }) {
             TribesSocialMoreSheetView(
                 isCreator: isCreator,
+                hasJoinedTribe: hasJoinedTribe,
                 leaveAction: {
                     shouldShowLeaveConfirm = true
                     isShowingMoreSheet = false
@@ -1263,6 +1264,7 @@ private struct PlaceCard: View {
 private struct TribesSocialMoreSheetView: View {
     @Environment(\.dismiss) private var dismiss
     let isCreator: Bool
+    let hasJoinedTribe: Bool
     let leaveAction: () -> Void
     let reportAction: () -> Void
 
@@ -1283,7 +1285,7 @@ private struct TribesSocialMoreSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    if !isCreator {
+                    if !isCreator && hasJoinedTribe {
                         Button(action: leaveAction) {
                             HStack {
                                 Text("Leave Tribe")

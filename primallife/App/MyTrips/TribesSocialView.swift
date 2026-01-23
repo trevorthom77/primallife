@@ -54,6 +54,7 @@ struct TribesSocialView: View {
     @State private var shouldNavigateToChat = false
     @State private var hasJoinedTribe = false
     @State private var isJoiningTribe = false
+    @State private var isBlockedFromTribe = false
     @State private var currentUserGender: String?
     @State private var members: [TribeMember] = []
     @Environment(\.supabaseClient) private var supabase
@@ -265,7 +266,7 @@ struct TribesSocialView: View {
                             .padding(.vertical, 14)
                             .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
-                    } else {
+                    } else if !isBlockedFromTribe {
                         Button {
                             if hasJoinedTribe {
                                 shouldNavigateToChat = true
@@ -496,6 +497,7 @@ struct TribesSocialView: View {
         }
         .task {
             await loadJoinStatus()
+            await loadBlockStatus()
             await loadCurrentUserGender()
             await loadMemberCount()
             await loadMembers()
@@ -951,6 +953,27 @@ private extension TribesSocialView {
         } catch {
             hasJoinedTribe = false
             cacheJoinStatus(false)
+        }
+    }
+
+    @MainActor
+    func loadBlockStatus() async {
+        guard let supabase,
+              let tribeID,
+              let userID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let rows: [TribeBlockRow] = try await supabase
+                .from("tribe_blocks")
+                .select("blocked_id")
+                .eq("tribe_id", value: tribeID.uuidString)
+                .eq("blocked_id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            isBlockedFromTribe = !rows.isEmpty
+        } catch {
+            isBlockedFromTribe = false
         }
     }
 

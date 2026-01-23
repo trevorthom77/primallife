@@ -483,6 +483,9 @@ struct TribesSocialView: View {
                     confirmTitle: "Leave",
                     confirmAction: {
                         isShowingLeaveConfirm = false
+                        Task {
+                            _ = await leaveTribe()
+                        }
                     },
                     cancelAction: {
                         isShowingLeaveConfirm = false
@@ -778,6 +781,35 @@ private extension TribesSocialView {
                 .insert(payload)
                 .execute()
             cacheJoinStatus(true)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @MainActor
+    func leaveTribe() async -> Bool {
+        guard let supabase,
+              let tribeID,
+              let userID = supabase.auth.currentUser?.id else { return false }
+
+        do {
+            try await supabase
+                .from("tribes_join")
+                .delete()
+                .eq("id", value: userID.uuidString)
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+            hasJoinedTribe = false
+            cacheJoinStatus(false)
+            if totalTravelers > 0 {
+                totalTravelers -= 1
+                cacheMemberCount(totalTravelers)
+            }
+            if !members.isEmpty {
+                members.removeAll { $0.id == userID }
+                cacheMembers(members)
+            }
             return true
         } catch {
             return false

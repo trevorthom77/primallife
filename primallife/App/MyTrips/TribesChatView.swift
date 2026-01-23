@@ -134,6 +134,14 @@ private struct TribeMemberProfileRow: Decodable {
     }
 }
 
+private struct TribeOwnerRow: Decodable {
+    let ownerID: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case ownerID = "owner_id"
+    }
+}
+
 private struct TribeMessagePayload: Encodable {
     let tribeID: UUID
     let senderID: UUID
@@ -207,6 +215,7 @@ struct TribesChatView: View {
     @State private var draft = ""
     @State private var shouldAnimateScroll = false
     @State private var sendFeedbackToggle = false
+    @State private var isOwner = false
     @State private var realtimeChannel: RealtimeChannelV2?
     @State private var realtimeTask: Task<Void, Never>?
     @FocusState private var isInputFocused: Bool
@@ -303,6 +312,7 @@ struct TribesChatView: View {
             isInputFocused = false
         }
         .task(id: tribeID) {
+            await loadOwnerStatus()
             await loadPlans()
             await loadMessages()
             await loadMemberCount()
@@ -328,6 +338,7 @@ struct TribesChatView: View {
         .sheet(isPresented: $isShowingMembersSheet) {
             TribeMembersSheetView(
                 members: members,
+                isOwner: isOwner,
                 onLoad: {
                     await loadMembers()
                 }
@@ -840,6 +851,25 @@ struct TribesChatView: View {
                 .value
             totalTravelers = rows.count
             cacheMemberCount(rows.count)
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func loadOwnerStatus() async {
+        guard let supabase,
+              let currentUserID = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let rows: [TribeOwnerRow] = try await supabase
+                .from("tribes")
+                .select("owner_id")
+                .eq("id", value: tribeID.uuidString)
+                .execute()
+                .value
+
+            isOwner = rows.first?.ownerID == currentUserID
         } catch {
             return
         }

@@ -521,6 +521,7 @@ struct TribesSocialView: View {
         .sheet(isPresented: $isShowingMembersSheet) {
             TribeMembersSheetView(
                 members: members,
+                isOwner: isCreator,
                 onLoad: {
                     await loadMembers()
                 }
@@ -1236,6 +1237,7 @@ private struct PlaceCard: View {
 
 struct TribeMembersSheetView: View {
     let members: [TribeMember]
+    let isOwner: Bool
     let onLoad: () async -> Void
     @State private var isShowingKickConfirm = false
     @State private var kickMember: TribeMember?
@@ -1321,15 +1323,17 @@ struct TribeMembersSheetView: View {
 
             Spacer()
 
-            Button(action: {
-                kickMember = member
-                isShowingKickConfirm = true
-            }) {
-                Text("Kick")
-                    .font(.travelDetail)
-                    .foregroundStyle(Color.red)
+            if isOwner {
+                Button(action: {
+                    kickMember = member
+                    isShowingKickConfirm = true
+                }) {
+                    Text("Kick")
+                        .font(.travelDetail)
+                        .foregroundStyle(Color.red)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

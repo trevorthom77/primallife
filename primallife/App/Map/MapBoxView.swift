@@ -83,11 +83,11 @@ struct MapBoxView: View {
     @State private var suppressLoadingFeedback = true
     @StateObject private var tribeImageStore = TribeImageStore()
     @StateObject private var travelerImageStore = TravelerImageStore()
+    private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let refreshMovementThresholdFraction: Double = 0.3
     private let refreshRadiusChangeThresholdFraction: Double = 0.3
     private let refreshMinimumInterval: TimeInterval = 0
-    private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     
     private let customPlaceImageNames = [
         "italy",
@@ -518,7 +518,7 @@ struct MapBoxView: View {
                     .ignoresSafeArea()
                     .onAppear {
                         applySavedDestination(using: proxy.camera)
-                        applyInitialZoom(using: proxy.map)
+                        applyInitialZoom()
                         locationManager.requestPermission()
                         suppressLoadingFeedback = true
                     }
@@ -752,7 +752,7 @@ struct MapBoxView: View {
         )
     }
 
-    private func applyInitialZoom(using _: MapboxMap?) {
+    private func applyInitialZoom() {
         guard !hasSavedDestination, userCoordinate == nil else { return }
         viewport = .camera(
             center: defaultMapCenterCoordinate,

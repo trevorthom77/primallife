@@ -1076,6 +1076,12 @@ private extension TribesSocialView {
 
     var joinRestrictionText: String? {
         guard !hasJoinedTribe else { return nil }
+        let restrictions = [genderRestrictionText, ageRestrictionText].compactMap { $0 }
+        guard !restrictions.isEmpty else { return nil }
+        return restrictions.joined(separator: " | ")
+    }
+
+    var genderRestrictionText: String? {
         let normalizedTribeGender = resolvedGender
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
@@ -1097,12 +1103,52 @@ private extension TribesSocialView {
         return nil
     }
 
+    var ageRestrictionText: String? {
+        guard let restrictionLabel = ageRestrictionLabel else { return nil }
+        guard let userAge = resolvedUserAge else { return nil }
+
+        if let minAge, userAge < minAge {
+            return restrictionLabel
+        }
+
+        if let maxAge, userAge > maxAge {
+            return restrictionLabel
+        }
+
+        return nil
+    }
+
+    var ageRestrictionLabel: String? {
+        guard minAge != nil || maxAge != nil else { return nil }
+
+        if let minAge, let maxAge {
+            if minAge == maxAge {
+                return "Age \(minAge) Only"
+            }
+            return "Ages \(minAge)-\(maxAge)"
+        }
+
+        if let minAge {
+            return "Ages \(minAge)+"
+        }
+
+        if let maxAge {
+            return "Ages \(maxAge) and under"
+        }
+
+        return nil
+    }
+
     var resolvedUserGender: String? {
         if let currentUserGender, !currentUserGender.isEmpty {
             return currentUserGender
         }
 
         return cachedUserGender(for: supabase?.auth.currentUser?.id)
+    }
+
+    var resolvedUserAge: Int? {
+        age(from: profileStore.profile?.birthday)
     }
 
     var joinRestrictionColor: Color {

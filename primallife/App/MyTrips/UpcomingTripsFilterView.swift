@@ -103,6 +103,10 @@ struct UpcomingTripsFilterView: View {
         return maxAge < minAge
     }
 
+    private var isReturnDateInvalid: Bool {
+        !showsTribeFilters && hasCheckInDate && hasReturnDate && returnDate < checkInDate
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -330,6 +334,13 @@ struct UpcomingTripsFilterView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
+
+                            if isReturnDateInvalid {
+                                Text("Return date must be after check-in date.")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.secondaryText)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -493,8 +504,8 @@ struct UpcomingTripsFilterView: View {
                         .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
-                .disabled(isAgeRangeInvalid)
-                .opacity(isAgeRangeInvalid ? 0.6 : 1)
+                .disabled(isAgeRangeInvalid || isReturnDateInvalid)
+                .opacity(isAgeRangeInvalid || isReturnDateInvalid ? 0.6 : 1)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }

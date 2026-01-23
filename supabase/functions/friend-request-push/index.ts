@@ -262,7 +262,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         tribeName ? ` (${tribeName})` : ''
       }`
 
-      alert = { title, body: '' }
+      alert = title
 
       const memberIds = (members ?? [])
         .map((row: { id: string | null }) => row.id)

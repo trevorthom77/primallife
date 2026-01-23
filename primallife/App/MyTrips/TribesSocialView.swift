@@ -524,6 +524,9 @@ struct TribesSocialView: View {
                 isOwner: isCreator,
                 onLoad: {
                     await loadMembers()
+                },
+                onKick: { member in
+                    await kickMember(member)
                 }
             )
         }
@@ -755,6 +758,30 @@ private extension TribesSocialView {
             return true
         } catch {
             return false
+        }
+    }
+
+    @MainActor
+    func kickMember(_ member: TribeMember) async {
+        guard let supabase, let tribeID else { return }
+
+        do {
+            try await supabase
+                .from("tribes_join")
+                .delete()
+                .eq("id", value: member.id.uuidString)
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+            if totalTravelers > 0 {
+                totalTravelers -= 1
+                cacheMemberCount(totalTravelers)
+            }
+            if !members.isEmpty {
+                members.removeAll { $0.id == member.id }
+                cacheMembers(members)
+            }
+        } catch {
+            return
         }
     }
 
@@ -1239,6 +1266,7 @@ struct TribeMembersSheetView: View {
     let members: [TribeMember]
     let isOwner: Bool
     let onLoad: () async -> Void
+    let onKick: (TribeMember) async -> Void
     @State private var isShowingKickConfirm = false
     @State private var kickMember: TribeMember?
 
@@ -1277,6 +1305,9 @@ struct TribeMembersSheetView: View {
                         confirmAction: {
                             isShowingKickConfirm = false
                             self.kickMember = nil
+                            Task {
+                                await onKick(kickMember)
+                            }
                         },
                         cancelAction: {
                             isShowingKickConfirm = false

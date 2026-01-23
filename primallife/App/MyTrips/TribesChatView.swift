@@ -341,6 +341,9 @@ struct TribesChatView: View {
                 isOwner: isOwner,
                 onLoad: {
                     await loadMembers()
+                },
+                onKick: { member in
+                    await kickMember(member)
                 }
             )
         }
@@ -920,6 +923,30 @@ struct TribesChatView: View {
 
             members = newMembers
             cacheMembers(newMembers)
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func kickMember(_ member: TribeMember) async {
+        guard let supabase else { return }
+
+        do {
+            try await supabase
+                .from("tribes_join")
+                .delete()
+                .eq("id", value: member.id.uuidString)
+                .eq("tribe_id", value: tribeID.uuidString)
+                .execute()
+            if totalTravelers > 0 {
+                totalTravelers -= 1
+                cacheMemberCount(totalTravelers)
+            }
+            if !members.isEmpty {
+                members.removeAll { $0.id == member.id }
+                cacheMembers(members)
+            }
         } catch {
             return
         }

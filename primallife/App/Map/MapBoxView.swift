@@ -87,6 +87,7 @@ struct MapBoxView: View {
     private let refreshMovementThresholdFraction: Double = 0.3
     private let refreshRadiusChangeThresholdFraction: Double = 0.3
     private let refreshMinimumInterval: TimeInterval = 0
+    private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     
     private let customPlaceImageNames = [
         "italy",
@@ -751,11 +752,10 @@ struct MapBoxView: View {
         )
     }
 
-    private func applyInitialZoom(using map: MapboxMap?) {
+    private func applyInitialZoom(using _: MapboxMap?) {
         guard !hasSavedDestination, userCoordinate == nil else { return }
-        guard let center = map?.cameraState.center else { return }
         viewport = .camera(
-            center: center,
+            center: defaultMapCenterCoordinate,
             zoom: 8,
             bearing: 0,
             pitch: 0

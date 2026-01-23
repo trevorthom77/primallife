@@ -1207,6 +1207,18 @@ private struct MapTribeReviewView: View {
                             .foregroundStyle(Colors.primaryText)
                     }
 
+                    if let minAge, let maxAge {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Age range")
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+
+                            Text("\(minAge) - \(maxAge)")
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.primaryText)
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("About")
                             .font(.travelTitle)

@@ -113,6 +113,7 @@ struct TribesSocialView: View {
         _headerImage = State(initialValue: initialHeaderImage)
         _totalTravelers = State(initialValue: Self.cachedMemberCount(for: tribeID) ?? 0)
         _hasJoinedTribe = State(initialValue: Self.cachedJoinStatus(for: tribeID))
+        _isBlockedFromTribe = State(initialValue: Self.cachedBlockStatus(for: tribeID))
         _members = State(initialValue: Self.cachedMembers(for: tribeID) ?? [])
     }
 
@@ -653,6 +654,20 @@ private extension TribesSocialView {
         "tribeJoinStatus.\(tribeID.uuidString)"
     }
 
+    static func cachedBlockStatus(for tribeID: UUID?) -> Bool {
+        guard let tribeID else { return false }
+        return UserDefaults.standard.bool(forKey: blockCacheKey(for: tribeID))
+    }
+
+    func cacheBlockStatus(_ blocked: Bool) {
+        guard let tribeID else { return }
+        UserDefaults.standard.set(blocked, forKey: Self.blockCacheKey(for: tribeID))
+    }
+
+    static func blockCacheKey(for tribeID: UUID) -> String {
+        "tribeBlockStatus.\(tribeID.uuidString)"
+    }
+
     static func genderCacheKey(for userID: UUID) -> String {
         "userGender.\(userID.uuidString)"
     }
@@ -971,9 +986,11 @@ private extension TribesSocialView {
                 .limit(1)
                 .execute()
                 .value
-            isBlockedFromTribe = !rows.isEmpty
+            let isBlocked = !rows.isEmpty
+            isBlockedFromTribe = isBlocked
+            cacheBlockStatus(isBlocked)
         } catch {
-            isBlockedFromTribe = false
+            return
         }
     }
 

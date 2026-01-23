@@ -963,10 +963,8 @@ private struct TravelDescriptionPickerView: View {
                             Button {
                                 if isSelected {
                                     selectedDescription = nil
-                                    searchText = ""
                                 } else {
                                     selectedDescription = option
-                                    searchText = option
                                 }
                             } label: {
                                 HStack {

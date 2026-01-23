@@ -6,6 +6,7 @@ struct RecommendationsView: View {
     @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
+    @State private var selectedRecommendation: Recommendation?
 
     var body: some View {
         ZStack {
@@ -49,7 +50,10 @@ struct RecommendationsView: View {
                                     creatorAvatarURL: creatorAvatarURL,
                                     ratingText: ratingText,
                                     ratingColor: ratingColor,
-                                    photoURL: photoURL
+                                    photoURL: photoURL,
+                                    onMoreTapped: {
+                                        selectedRecommendation = recommendation
+                                    }
                                 )
                             }
                         }
@@ -62,6 +66,9 @@ struct RecommendationsView: View {
             .padding(.top, 16)
         }
         .navigationBarBackButtonHidden(true)
+        .sheet(item: $selectedRecommendation) { recommendation in
+            RecommendationMoreSheetView(recommendation: recommendation)
+        }
         .task {
             let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedDestination.isEmpty else { return }
@@ -113,6 +120,7 @@ struct RecommendationCard: View {
     let ratingText: String
     let ratingColor: Color
     let photoURL: URL?
+    let onMoreTapped: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -133,14 +141,26 @@ struct RecommendationCard: View {
                     .overlay(Colors.primaryText.opacity(0.02))
                 }
 
-                Text(ratingText)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.tertiaryText)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(ratingColor)
-                    .clipShape(Capsule())
-                    .padding(12)
+                HStack(spacing: 8) {
+                    Text(ratingText)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.tertiaryText)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(ratingColor)
+                        .clipShape(Capsule())
+
+                    Button(action: onMoreTapped) {
+                        Image(systemName: "ellipsis")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(width: 36, height: 36)
+                            .background(Colors.card.opacity(0.9))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(12)
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -196,5 +216,62 @@ struct RecommendationCard: View {
         }
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+}
+
+private struct RecommendationMoreSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    let recommendation: Recommendation
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Delete Recommendation")
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Text("This removes \(recommendation.name) from your recommendations.")
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Button(action: {}) {
+                        HStack {
+                            Text("Delete Recommendation")
+                                .font(.travelDetail)
+                                .foregroundStyle(Color.red)
+
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+
+                Spacer()
+            }
+            .padding(20)
+        }
+        .presentationDetents([.height(320)])
+        .presentationBackground(Colors.background)
+        .presentationDragIndicator(.hidden)
     }
 }

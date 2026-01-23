@@ -708,7 +708,7 @@ struct EditProfileView: View {
 
                 updatedAvatarPath = path
 
-                AvatarCacheBuster.recordUpdate(for: userID)
+                _ = AvatarCacheBuster.recordUpdate(for: userID)
 
                 if let avatarImage,
                    let publicURL = makePublicAvatarURL(for: path, userID: userID) {

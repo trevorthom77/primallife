@@ -74,6 +74,7 @@ struct MapBoxView: View {
     @State private var tribeFilterMinAge: Int?
     @State private var tribeFilterMaxAge: Int?
     @State private var tribeFilterGender: String?
+    @State private var tribeFilterType: String?
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -588,6 +589,7 @@ struct MapBoxView: View {
                         filterMinAge: $tribeFilterMinAge,
                         filterMaxAge: $tribeFilterMaxAge,
                         filterGender: $tribeFilterGender,
+                        filterTribeType: $tribeFilterType,
                         showsTribeFilters: true
                     )
                 } else {

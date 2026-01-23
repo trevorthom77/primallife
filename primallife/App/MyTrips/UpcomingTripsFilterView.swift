@@ -7,6 +7,7 @@ struct UpcomingTripsFilterView: View {
     @Binding var filterMinAge: Int?
     @Binding var filterMaxAge: Int?
     @Binding var filterGender: String?
+    @Binding var filterTribeType: String?
     let showsTribeFilters: Bool
     @State private var checkInDate: Date
     @State private var returnDate: Date
@@ -25,6 +26,7 @@ struct UpcomingTripsFilterView: View {
         filterMinAge: Binding<Int?>,
         filterMaxAge: Binding<Int?>,
         filterGender: Binding<String?>,
+        filterTribeType: Binding<String?>,
         showsTribeFilters: Bool
     ) {
         _filterCheckInDate = filterCheckInDate
@@ -32,6 +34,7 @@ struct UpcomingTripsFilterView: View {
         _filterMinAge = filterMinAge
         _filterMaxAge = filterMaxAge
         _filterGender = filterGender
+        _filterTribeType = filterTribeType
         self.showsTribeFilters = showsTribeFilters
         let initialCheckIn = filterCheckInDate.wrappedValue ?? Date()
         let initialReturn = filterReturnDate.wrappedValue ?? Date()
@@ -48,6 +51,18 @@ struct UpcomingTripsFilterView: View {
             }
             return .all
         }()
+        let initialTribeFilter: TribeFilterOption = {
+            let rawFilter = filterTribeType.wrappedValue?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased() ?? ""
+            if rawFilter.contains("girl") {
+                return .girlsOnly
+            }
+            if rawFilter.contains("boy") {
+                return .boysOnly
+            }
+            return .everyone
+        }()
         _checkInDate = State(initialValue: initialCheckIn)
         _returnDate = State(initialValue: initialReturn)
         _hasCheckInDate = State(initialValue: filterCheckInDate.wrappedValue != nil)
@@ -55,7 +70,7 @@ struct UpcomingTripsFilterView: View {
         _minAgeText = State(initialValue: initialMinAgeText)
         _maxAgeText = State(initialValue: initialMaxAgeText)
         _selectedGender = State(initialValue: initialGender)
-        _selectedTribeFilter = State(initialValue: .everyone)
+        _selectedTribeFilter = State(initialValue: initialTribeFilter)
     }
 
     private enum DatePickerType {
@@ -463,6 +478,9 @@ struct UpcomingTripsFilterView: View {
                     filterMinAge = ageValue(from: minAgeText)
                     filterMaxAge = ageValue(from: maxAgeText)
                     filterGender = selectedGender == .all ? nil : selectedGender.rawValue
+                    if showsTribeFilters {
+                        filterTribeType = selectedTribeFilter == .everyone ? nil : selectedTribeFilter.rawValue
+                    }
                     dismiss()
                 } label: {
                     Text("Update")
@@ -610,6 +628,9 @@ struct UpcomingTripsFilterView: View {
         filterMinAge = nil
         filterMaxAge = nil
         filterGender = nil
+        if showsTribeFilters {
+            filterTribeType = nil
+        }
         hasCheckInDate = false
         hasReturnDate = false
         checkInDate = Date()
@@ -617,5 +638,6 @@ struct UpcomingTripsFilterView: View {
         minAgeText = ""
         maxAgeText = ""
         selectedGender = .all
+        selectedTribeFilter = .everyone
     }
 }

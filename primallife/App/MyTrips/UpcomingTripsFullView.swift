@@ -18,6 +18,7 @@ struct UpcomingTripsFullView: View {
     @State private var filterMinAge: Int?
     @State private var filterMaxAge: Int?
     @State private var filterGender: String?
+    @State private var filterTribeType: String?
     @StateObject private var viewModel = MyTripsViewModel()
 
     private enum UpcomingTripsTab: String, CaseIterable {
@@ -59,6 +60,7 @@ struct UpcomingTripsFullView: View {
                             filterMinAge: $filterMinAge,
                             filterMaxAge: $filterMaxAge,
                             filterGender: $filterGender,
+                            filterTribeType: $filterTribeType,
                             showsTribeFilters: selectedTab == .tribes
                         )
                     } label: {
@@ -121,7 +123,7 @@ struct UpcomingTripsFullView: View {
                 if selectedTab == .tribes {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            if let tribes = tribesForTrip {
+                            if let tribes = filteredTribesForTrip {
                                 if tribes.isEmpty {
                                     Text("No tribes yet.")
                                         .font(.travelDetail)
@@ -372,6 +374,32 @@ struct UpcomingTripsFullView: View {
 
     private var tribesForTrip: [Tribe]? {
         viewModel.tribesByTrip[trip.id]
+    }
+
+    private var filteredTribesForTrip: [Tribe]? {
+        guard let tribes = tribesForTrip else { return nil }
+        guard let filterTribeType else { return tribes }
+        let normalizedFilter = filterTribeType
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard !normalizedFilter.isEmpty, normalizedFilter != "everyone" else { return tribes }
+        if normalizedFilter.contains("girl") {
+            return tribes.filter { tribe in
+                tribe.gender
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+                    .contains("girl")
+            }
+        }
+        if normalizedFilter.contains("boy") {
+            return tribes.filter { tribe in
+                tribe.gender
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+                    .contains("boy")
+            }
+        }
+        return tribes
     }
 
     private var travelersForTrip: [UUID]? {

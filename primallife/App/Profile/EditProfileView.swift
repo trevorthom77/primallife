@@ -708,8 +708,10 @@ struct EditProfileView: View {
 
                 updatedAvatarPath = path
 
+                AvatarCacheBuster.recordUpdate(for: userID)
+
                 if let avatarImage,
-                   let publicURL = makePublicAvatarURL(for: path) {
+                   let publicURL = makePublicAvatarURL(for: path, userID: userID) {
                     profileStore.cacheAvatar(Image(uiImage: avatarImage), url: publicURL)
                 }
             } catch {
@@ -744,13 +746,14 @@ struct EditProfileView: View {
         }
     }
 
-    private func makePublicAvatarURL(for path: String) -> URL? {
+    private func makePublicAvatarURL(for path: String, userID: UUID) -> URL? {
         guard let supabase else { return nil }
 
         do {
-            return try supabase.storage
+            let url = try supabase.storage
                 .from("profile-photos")
                 .getPublicURL(path: path)
+            return AvatarCacheBuster.cacheBustedURL(url, userID: userID)
         } catch {
             return nil
         }

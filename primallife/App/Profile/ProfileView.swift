@@ -47,6 +47,34 @@ private enum ProfileTribeImageCache {
     static var images: [URL: Image] = [:]
 }
 
+enum AvatarCacheBuster {
+    private static let keyPrefix = "avatar_cache_buster_"
+
+    static func recordUpdate(for userID: UUID) -> String {
+        let value = String(Int(Date().timeIntervalSince1970))
+        UserDefaults.standard.set(value, forKey: key(for: userID))
+        return value
+    }
+
+    static func cacheBustedURL(_ url: URL, userID: UUID) -> URL {
+        guard let value = UserDefaults.standard.string(forKey: key(for: userID)),
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return url
+        }
+
+        var items = components.queryItems ?? []
+        items.removeAll { $0.name == "v" }
+        items.append(URLQueryItem(name: "v", value: value))
+        components.queryItems = items
+        return components.url ?? url
+    }
+
+    private static func key(for userID: UUID) -> String {
+        "\(keyPrefix)\(userID.uuidString.lowercased())"
+    }
+}
+
 struct UserProfile: Decodable, Identifiable {
     let id: UUID
     let fullName: String
@@ -118,9 +146,14 @@ struct UserProfile: Decodable, Identifiable {
         guard let supabase, let avatarPath else { return nil }
         
         do {
-            return try supabase.storage
+            let url = try supabase.storage
                 .from("profile-photos")
                 .getPublicURL(path: avatarPath)
+            if let currentUserID = supabase.auth.currentUser?.id,
+               currentUserID == id {
+                return AvatarCacheBuster.cacheBustedURL(url, userID: currentUserID)
+            }
+            return url
         } catch {
             return nil
         }

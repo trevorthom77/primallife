@@ -77,6 +77,7 @@ struct MapBoxView: View {
     @State private var tribeFilterMaxAge: Int?
     @State private var tribeFilterGender: String?
     @State private var tribeFilterType: String?
+    @State private var tribeFilterInterests: Set<String> = []
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -189,8 +190,9 @@ struct MapBoxView: View {
         let minAgeFilter = tribeFilterMinAge
         let maxAgeFilter = tribeFilterMaxAge
         let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
+        let interestsFilter = tribeFilterInterests
 
-        guard usesTypeFilter || isAgeFilterActive else { return mapTribes }
+        guard usesTypeFilter || isAgeFilterActive || !interestsFilter.isEmpty else { return mapTribes }
 
         return mapTribes.filter { tribe in
             let matchesType: Bool = {
@@ -215,7 +217,12 @@ struct MapBoxView: View {
                 return true
             }()
 
-            return matchesType && matchesAge
+            let matchesInterests: Bool = {
+                guard !interestsFilter.isEmpty else { return true }
+                return tribe.interests.contains { interestsFilter.contains($0) }
+            }()
+
+            return matchesType && matchesAge && matchesInterests
         }
     }
     
@@ -670,7 +677,7 @@ struct MapBoxView: View {
                         filterOriginID: .constant(nil),
                         filterTribeType: $tribeFilterType,
                         filterTravelDescription: .constant(nil),
-                        filterInterests: .constant([]),
+                        filterInterests: $tribeFilterInterests,
                         showsTribeFilters: true
                     )
                 } else {

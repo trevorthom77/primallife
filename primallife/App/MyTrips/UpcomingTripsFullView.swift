@@ -214,6 +214,7 @@ struct UpcomingTripsFullView: View {
                                                 .background(Colors.card)
                                             }
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
+                                            .contentShape(RoundedRectangle(cornerRadius: 16))
                                         }
                                         .buttonStyle(.plain)
                                     }

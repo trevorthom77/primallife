@@ -143,6 +143,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
   const tripUserId = record.user_id as string | undefined
   const destination = (record.destination as string | undefined)?.trim()
   const joinerId = record.id as string | undefined
+  const creatorId = record.creator_id as string | undefined
+  const planTitleRaw = record.title as string | undefined
 
     let targetUserIds: string[] = []
     let alert: ApnsAlert | null = null
@@ -160,6 +162,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
   const isTribeMessageInsert = type === 'INSERT' && table === 'tribe_messages'
   const isMyTripsInsert = type === 'INSERT' && table === 'mytrips'
   const isTribesJoinInsert = type === 'INSERT' && table === 'tribes_join'
+  const isPlansInsert = type === 'INSERT' && table === 'plans'
 
     if (isFriendMessageInsert && senderId && friendId) {
       const { data } = await supabase
@@ -274,6 +277,32 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         ...(ownerId && ownerId !== joinerId ? [ownerId] : []),
       ]
       targetUserIds = Array.from(new Set(targets))
+    } else if (isPlansInsert && tribeId && creatorId) {
+      const { data: creator } = await supabase
+        .from('onboarding')
+        .select('full_name, origin')
+        .eq('id', creatorId)
+        .maybeSingle()
+
+      const { data: members } = await supabase
+        .from('tribes_join')
+        .select('id')
+        .eq('tribe_id', tribeId)
+
+      const creatorNameRaw = creator?.full_name?.trim() ?? ''
+      const creatorName = creatorNameRaw || 'Someone'
+      const creatorFlag = isoToFlag(creator?.origin)
+      const creatorPrefix = creatorFlag ? `${creatorFlag} ` : ''
+      const planTitle = (planTitleRaw ?? '').trim()
+      const baseTitle = `${creatorPrefix}${creatorName} just created a plan`
+      const title = planTitle ? `${baseTitle} ${planTitle}` : baseTitle
+
+      alert = title
+
+      const memberIds = (members ?? [])
+        .map((row: { id: string | null }) => row.id)
+        .filter((id: string | null): id is string => !!id && id !== creatorId)
+      targetUserIds = Array.from(new Set(memberIds))
     } else if (
       type === 'INSERT' &&
       status === 'pending' &&

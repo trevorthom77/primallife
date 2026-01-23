@@ -128,8 +128,13 @@ struct MapBoxView: View {
         normalizedTravelDescriptionFilter != nil
     }
 
+    private var isInterestsFilterActive: Bool {
+        !selectedInterests.isEmpty
+    }
+
     private var filteredTravelers: [MapTraveler] {
         let travelDescriptionFilter = normalizedTravelDescriptionFilter
+        let interestsFilter = selectedInterests
 
         return nearbyTravelers.filter { traveler in
             if isAgeFilterActive {
@@ -155,12 +160,21 @@ struct MapBoxView: View {
                     return false
                 }
             }
+            if !interestsFilter.isEmpty {
+                guard traveler.interests.contains(where: { interestsFilter.contains($0) }) else {
+                    return false
+                }
+            }
             return true
         }
     }
 
     private var filteredOtherUserLocations: [OtherUserLocation] {
-        guard isAgeFilterActive || isOriginFilterActive || isGenderFilterActive || isTravelDescriptionFilterActive else {
+        guard isAgeFilterActive
+                || isOriginFilterActive
+                || isGenderFilterActive
+                || isTravelDescriptionFilterActive
+                || isInterestsFilterActive else {
             return otherUserLocations
         }
         let allowedIDs = Set(filteredTravelers.map(\.id))
@@ -1030,7 +1044,7 @@ struct MapBoxView: View {
             
             let travelers: [TravelerRow] = try await supabase
                 .from("onboarding")
-                .select("id, avatar_url, full_name, origin, birthday, gender, travel_description")
+                .select("id, avatar_url, full_name, origin, birthday, gender, travel_description, interests")
                 .in("id", values: ids)
                 .execute()
                 .value
@@ -1068,7 +1082,8 @@ struct MapBoxView: View {
                         age: travelerAge(from: traveler.birthday),
                         gender: traveler.gender?.trimmingCharacters(in: .whitespacesAndNewlines),
                         travelDescription: traveler.travelDescription?
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: .whitespacesAndNewlines),
+                        interests: traveler.interests ?? []
                     )
                 }
             }
@@ -1459,6 +1474,7 @@ private struct TravelerRow: Decodable {
     let birthday: String?
     let gender: String?
     let travelDescription: String?
+    let interests: [String]?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -1468,6 +1484,7 @@ private struct TravelerRow: Decodable {
         case birthday
         case gender
         case travelDescription = "travel_description"
+        case interests
     }
 }
 
@@ -1492,6 +1509,7 @@ private struct MapTraveler: Identifiable {
     let age: Int?
     let gender: String?
     let travelDescription: String?
+    let interests: [String]
     
     var originDisplay: String? {
         guard let origin, !origin.isEmpty,

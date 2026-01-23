@@ -378,28 +378,42 @@ struct UpcomingTripsFullView: View {
 
     private var filteredTribesForTrip: [Tribe]? {
         guard let tribes = tribesForTrip else { return nil }
-        guard let filterTribeType else { return tribes }
-        let normalizedFilter = filterTribeType
+        let normalizedFilter = filterTribeType?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-        guard !normalizedFilter.isEmpty, normalizedFilter != "everyone" else { return tribes }
-        if normalizedFilter.contains("girl") {
-            return tribes.filter { tribe in
-                tribe.gender
+            .lowercased() ?? ""
+        let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
+
+        let ageFilterRange: (min: Int, max: Int)? = {
+            guard let filterMinAge, let filterMaxAge else { return nil }
+            guard filterMaxAge >= filterMinAge else { return nil }
+            return (filterMinAge, filterMaxAge)
+        }()
+
+        guard usesTypeFilter || ageFilterRange != nil else { return tribes }
+
+        return tribes.filter { tribe in
+            let matchesType: Bool = {
+                guard usesTypeFilter else { return true }
+                let tribeGender = tribe.gender
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     .lowercased()
-                    .contains("girl")
-            }
+                if normalizedFilter.contains("girl") {
+                    return tribeGender.contains("girl")
+                }
+                if normalizedFilter.contains("boy") {
+                    return tribeGender.contains("boy")
+                }
+                return true
+            }()
+
+            let matchesAge: Bool = {
+                guard let ageFilterRange else { return true }
+                guard let minAge = tribe.minAge, let maxAge = tribe.maxAge else { return true }
+                return minAge <= ageFilterRange.max && maxAge >= ageFilterRange.min
+            }()
+
+            return matchesType && matchesAge
         }
-        if normalizedFilter.contains("boy") {
-            return tribes.filter { tribe in
-                tribe.gender
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .lowercased()
-                    .contains("boy")
-            }
-        }
-        return tribes
     }
 
     private var travelersForTrip: [UUID]? {

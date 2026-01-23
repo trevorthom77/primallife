@@ -14,6 +14,7 @@ struct TripsView: View {
     @State private var activeDatePicker: DatePickerType?
     @State private var searchResults: [MapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
+    @State private var isAddingTrip = false
     @Environment(\.dismiss) private var dismiss
     
     private var isReturnDateInvalid: Bool {
@@ -135,8 +136,15 @@ struct TripsView: View {
                 }
                 
                 Button {
+                    guard !isAddingTrip else { return }
+                    isAddingTrip = true
                     Task {
-                        guard let supabase = supabase, supabase.auth.currentUser != nil else { return }
+                        guard let supabase = supabase, supabase.auth.currentUser != nil else {
+                            await MainActor.run {
+                                isAddingTrip = false
+                            }
+                            return
+                        }
                         await viewModel.addTrip(
                             destination: destination,
                             checkIn: checkInDate,
@@ -144,19 +152,29 @@ struct TripsView: View {
                             supabase: supabase
                         )
                         
-                        if viewModel.error == nil {
-                            dismiss()
+                        await MainActor.run {
+                            isAddingTrip = false
+                            if viewModel.error == nil {
+                                dismiss()
+                            }
                         }
                     }
                 } label: {
-                    Text("Add Trip")
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(isAddTripEnabled ? Colors.accent : Colors.accent.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .contentShape(RoundedRectangle(cornerRadius: 16))
+                    HStack(spacing: 8) {
+                        Text("Add Trip")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+
+                        if isAddingTrip {
+                            ProgressView()
+                                .tint(Colors.tertiaryText)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(isAddTripEnabled ? Colors.accent : Colors.accent.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
                 .disabled(!isAddTripEnabled)

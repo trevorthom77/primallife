@@ -14,10 +14,12 @@ struct FiltersView: View {
     @Binding var selectedGender: String
     @Binding var selectedCountryID: String?
     @State private var showCountryPicker = false
+    @State private var showTravelDescriptionPicker = false
     @State private var minAgeText: String
     @State private var maxAgeText: String
     @State private var draftSelectedGender: String
     @State private var draftSelectedCountryID: String?
+    @State private var selectedTravelDescription: String? = nil
     @FocusState private var focusedAgeField: AgeField?
 
     private var hasSelectedCountry: Bool {
@@ -32,6 +34,10 @@ struct FiltersView: View {
         return "\(country.flag) \(country.name)"
     }
 
+    private var selectedTravelDescriptionLabel: String {
+        selectedTravelDescription ?? "Add Travel Description"
+    }
+
     private var isAgeRangeInvalid: Bool {
         guard let minValue = ageValue(from: minAgeText),
               let maxValue = ageValue(from: maxAgeText) else {
@@ -44,6 +50,15 @@ struct FiltersView: View {
         case min
         case max
     }
+
+    private let travelDescriptionOptions = [
+        "Backpacking",
+        "Gap year",
+        "Studying abroad",
+        "Living abroad",
+        "Just love to travel",
+        "Digital nomad"
+    ]
 
     init(
         minAge: Binding<Int?>,
@@ -235,6 +250,53 @@ struct FiltersView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 12) {
+                        Text("Travel description")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+
+                        if selectedTravelDescription != nil {
+                            HStack(spacing: 12) {
+                                Button {
+                                    showTravelDescriptionPicker = true
+                                } label: {
+                                    Text(selectedTravelDescriptionLabel)
+                                        .font(.travelDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .buttonStyle(.plain)
+
+                                Button("Remove") {
+                                    selectedTravelDescription = nil
+                                }
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.accent)
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Button {
+                                showTravelDescriptionPicker = true
+                            } label: {
+                                Text(selectedTravelDescriptionLabel)
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Colors.accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Gender")
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
@@ -290,6 +352,12 @@ struct FiltersView: View {
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showCountryPicker) {
             CountryPickerView(selectedCountryID: $draftSelectedCountryID)
+        }
+        .sheet(isPresented: $showTravelDescriptionPicker) {
+            TravelDescriptionPickerView(
+                options: travelDescriptionOptions,
+                selectedDescription: $selectedTravelDescription
+            )
         }
         .onChange(of: focusedAgeField) { _, field in
             if field != .min {
@@ -366,6 +434,7 @@ struct FiltersView: View {
         maxAgeText = ""
         draftSelectedGender = "All"
         draftSelectedCountryID = nil
+        selectedTravelDescription = nil
     }
 }
 
@@ -472,6 +541,102 @@ private struct CountryPickerView: View {
             isSearchFocused = false
         }
         .ignoresSafeArea(.keyboard)
+    }
+}
+
+private struct TravelDescriptionPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    let options: [String]
+    @Binding var selectedDescription: String?
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+
+    private var selectedDescriptionText: String {
+        selectedDescription ?? ""
+    }
+
+    private var filteredOptions: [String] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+
+        if query.isEmpty || query == selectedDescriptionText {
+            return options
+        }
+        return options.filter { $0.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        ZStack {
+            Colors.background
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text("Travel description")
+                        .font(.customTitle)
+                        .foregroundStyle(Colors.primaryText)
+
+                    Spacer()
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.accent)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Colors.secondaryText)
+                    TextField("Search travel description", text: $searchText)
+                        .font(.travelBody)
+                        .foregroundColor(Colors.primaryText)
+                        .focused($isSearchFocused)
+                        .submitLabel(.search)
+                        .onSubmit {
+                            isSearchFocused = false
+                        }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Colors.card)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredOptions, id: \.self) { option in
+                            let isSelected = selectedDescription == option
+
+                            Button {
+                                if isSelected {
+                                    selectedDescription = nil
+                                } else {
+                                    selectedDescription = option
+                                }
+                            } label: {
+                                HStack {
+                                    Text(option)
+                                        .font(.travelBody)
+                                        .foregroundStyle(isSelected ? Colors.tertiaryText : Colors.primaryText)
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(isSelected ? Colors.accent : Colors.card)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .scrollDismissesKeyboard(.immediately)
+                .scrollIndicators(.hidden)
+            }
+            .padding(.top, 8)
+        }
     }
 }
 

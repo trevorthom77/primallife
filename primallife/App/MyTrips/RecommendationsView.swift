@@ -135,24 +135,11 @@ struct RecommendationCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .topTrailing) {
-                if let photoURL {
-                    AsyncImage(url: photoURL) { phase in
-                        if let image = phase.image {
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Colors.secondaryText.opacity(0.1)
-                        }
-                    }
-                    .frame(height: 200)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .overlay(Colors.primaryText.opacity(0.02))
-                }
-
-                HStack(spacing: 8) {
+            recommendationImage()
+                .frame(height: 160)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .overlay(alignment: .bottomLeading) {
                     Text(ratingText)
                         .font(.travelDetail)
                         .foregroundStyle(Colors.tertiaryText)
@@ -160,7 +147,9 @@ struct RecommendationCard: View {
                         .padding(.horizontal, 10)
                         .background(ratingColor)
                         .clipShape(Capsule())
-
+                        .padding(12)
+                }
+                .overlay(alignment: .topTrailing) {
                     if showsMoreButton {
                         Button(action: onMoreTapped) {
                             Image(systemName: "ellipsis")
@@ -171,10 +160,9 @@ struct RecommendationCard: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .padding(12)
                     }
                 }
-                .padding(12)
-            }
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(recommendation.name)
@@ -229,6 +217,26 @@ struct RecommendationCard: View {
         }
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    @ViewBuilder
+    private func recommendationImage() -> some View {
+        if let photoURL {
+            AsyncImage(url: photoURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    Colors.card
+                default:
+                    Colors.card
+                }
+            }
+        } else {
+            Colors.card
+        }
     }
 }
 

@@ -259,7 +259,15 @@ struct TribesSocialView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if let joinRestrictionText {
+                    if isBlockedFromTribe {
+                        Text("Blocked")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    } else if let joinRestrictionText {
                         Text(joinRestrictionText)
                             .font(.travelDetail)
                             .foregroundStyle(joinRestrictionColor)
@@ -267,7 +275,7 @@ struct TribesSocialView: View {
                             .padding(.vertical, 14)
                             .background(Colors.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
-                    } else if !isBlockedFromTribe {
+                    } else {
                         Button {
                             if hasJoinedTribe {
                                 shouldNavigateToChat = true

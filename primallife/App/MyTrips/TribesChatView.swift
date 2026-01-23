@@ -345,6 +345,9 @@ struct TribesChatView: View {
                 },
                 onKick: { member in
                     await kickMember(member)
+                },
+                onBlock: { member in
+                    await blockMember(member)
                 }
             )
         }
@@ -948,6 +951,40 @@ struct TribesChatView: View {
                 members.removeAll { $0.id == member.id }
                 cacheMembers(members)
             }
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    private func blockMember(_ member: TribeMember) async {
+        guard let supabase,
+              let blockerID = supabase.auth.currentUser?.id,
+              blockerID != member.id else { return }
+
+        struct TribeBlockInsert: Encodable {
+            let tribeID: UUID
+            let blockedID: UUID
+            let blockerID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case tribeID = "tribe_id"
+                case blockedID = "blocked_id"
+                case blockerID = "blocker_id"
+            }
+        }
+
+        do {
+            try await supabase
+                .from("tribe_blocks")
+                .insert(
+                    TribeBlockInsert(
+                        tribeID: tribeID,
+                        blockedID: member.id,
+                        blockerID: blockerID
+                    )
+                )
+                .execute()
         } catch {
             return
         }

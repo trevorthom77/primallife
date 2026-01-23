@@ -528,6 +528,9 @@ struct TribesSocialView: View {
                 },
                 onKick: { member in
                     await kickMember(member)
+                },
+                onBlock: { member in
+                    await blockMember(member)
                 }
             )
         }
@@ -781,6 +784,41 @@ private extension TribesSocialView {
                 members.removeAll { $0.id == member.id }
                 cacheMembers(members)
             }
+        } catch {
+            return
+        }
+    }
+
+    @MainActor
+    func blockMember(_ member: TribeMember) async {
+        guard let supabase,
+              let tribeID,
+              let blockerID = supabase.auth.currentUser?.id,
+              blockerID != member.id else { return }
+
+        struct TribeBlockInsert: Encodable {
+            let tribeID: UUID
+            let blockedID: UUID
+            let blockerID: UUID
+
+            enum CodingKeys: String, CodingKey {
+                case tribeID = "tribe_id"
+                case blockedID = "blocked_id"
+                case blockerID = "blocker_id"
+            }
+        }
+
+        do {
+            try await supabase
+                .from("tribe_blocks")
+                .insert(
+                    TribeBlockInsert(
+                        tribeID: tribeID,
+                        blockedID: member.id,
+                        blockerID: blockerID
+                    )
+                )
+                .execute()
         } catch {
             return
         }
@@ -1269,6 +1307,7 @@ struct TribeMembersSheetView: View {
     let currentUserID: UUID?
     let onLoad: () async -> Void
     let onKick: (TribeMember) async -> Void
+    let onBlock: (TribeMember) async -> Void
     @State private var isShowingKickConfirm = false
     @State private var kickMember: TribeMember?
     @State private var isShowingBlockConfirm = false
@@ -1332,8 +1371,15 @@ struct TribeMembersSheetView: View {
                         confirmTitle: "Block",
                         confirmColor: Colors.accent,
                         confirmAction: {
+                            guard let blockingMember = self.blockMember else {
+                                isShowingBlockConfirm = false
+                                return
+                            }
                             isShowingBlockConfirm = false
                             self.blockMember = nil
+                            Task {
+                                await onBlock(blockingMember)
+                            }
                         },
                         cancelAction: {
                             isShowingBlockConfirm = false

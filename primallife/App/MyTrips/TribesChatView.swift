@@ -208,6 +208,8 @@ struct TribesChatView: View {
     @State private var selectedPlan: TribePlan?
     @State private var isShowingMembersSheet = false
     @State private var members: [TribeMember] = []
+    @State private var kickMember: TribeMember?
+    @State private var isShowingKickConfirm = false
     @State private var messages: [TribeChatMessage] = []
     @State private var avatarImageCache: [URL: Image] = [:]
     @State private var draft = ""
@@ -362,6 +364,24 @@ struct TribesChatView: View {
                     }
                 }
             }
+            .overlay {
+                if isShowingKickConfirm, let kickMember {
+                    confirmationOverlay(
+                        title: "Kick Traveler",
+                        message: "This removes \(kickMember.fullName) from the tribe.",
+                        confirmTitle: "Kick",
+                        isDestructive: true,
+                        confirmAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        },
+                        cancelAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        }
+                    )
+                }
+            }
             .task {
                 await loadMembers()
             }
@@ -390,7 +410,10 @@ struct TribesChatView: View {
 
             Spacer()
 
-            Button(action: {}) {
+            Button(action: {
+                kickMember = member
+                isShowingKickConfirm = true
+            }) {
                 Text("Kick")
                     .font(.travelDetail)
                     .foregroundStyle(Color.red)
@@ -398,6 +421,62 @@ struct TribesChatView: View {
             .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func confirmationOverlay(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        isDestructive: Bool,
+        confirmAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Colors.primaryText
+                .opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelAction()
+                }
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.primaryText)
+
+                Text(message)
+                    .font(.travelBody)
+                    .foregroundStyle(Colors.secondaryText)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Colors.secondaryText.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    Button(action: confirmAction) {
+                        Text(confirmTitle)
+                            .font(.travelDetail)
+                            .foregroundStyle(Colors.tertiaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isDestructive ? Color.red : Colors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(Colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 24)
+        }
     }
 
     private var plansRow: some View {

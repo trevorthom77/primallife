@@ -56,6 +56,8 @@ struct TribesSocialView: View {
     @State private var isJoiningTribe = false
     @State private var currentUserGender: String?
     @State private var members: [TribeMember] = []
+    @State private var kickMember: TribeMember?
+    @State private var isShowingKickConfirm = false
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
@@ -492,6 +494,7 @@ struct TribesSocialView: View {
                     }
                 )
             }
+
         }
         .task {
             await loadJoinStatus()
@@ -674,6 +677,23 @@ private extension TribesSocialView {
                     }
                 }
             }
+            .overlay {
+                if isShowingKickConfirm, let kickMember {
+                    confirmationOverlay(
+                        title: "Kick Traveler",
+                        message: "This removes \(kickMember.fullName) from the tribe.",
+                        confirmTitle: "Kick",
+                        confirmAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        },
+                        cancelAction: {
+                            isShowingKickConfirm = false
+                            self.kickMember = nil
+                        }
+                    )
+                }
+            }
             .task {
                 await loadMembers()
             }
@@ -712,7 +732,10 @@ private extension TribesSocialView {
 
             Spacer()
 
-            Button(action: {}) {
+            Button(action: {
+                kickMember = member
+                isShowingKickConfirm = true
+            }) {
                 Text("Kick")
                     .font(.travelDetail)
                     .foregroundStyle(Color.red)

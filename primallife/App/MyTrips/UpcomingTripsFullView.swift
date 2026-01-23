@@ -393,7 +393,10 @@ struct UpcomingTripsFullView: View {
         let maxAgeFilter = filterMaxAge
         let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
 
-        guard usesTypeFilter || isAgeFilterActive else { return tribes }
+        let interestsFilter = filterInterests
+        let usesInterestsFilter = !interestsFilter.isEmpty
+
+        guard usesTypeFilter || isAgeFilterActive || usesInterestsFilter else { return tribes }
 
         return tribes.filter { tribe in
             let matchesType: Bool = {
@@ -418,7 +421,12 @@ struct UpcomingTripsFullView: View {
                 return true
             }()
 
-            return matchesType && matchesAge
+            let matchesInterests: Bool = {
+                guard usesInterestsFilter else { return true }
+                return tribe.interests.contains { interestsFilter.contains($0) }
+            }()
+
+            return matchesType && matchesAge && matchesInterests
         }
     }
 

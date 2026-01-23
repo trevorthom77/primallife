@@ -136,12 +136,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     }
 
     const table = payload?.table as string | undefined
-    const status = record.status as string | undefined
-    const requesterId = record.requester_id as string | undefined
-    const receiverId = record.receiver_id as string | undefined
-    const tribeId = record.tribe_id as string | undefined
-    const tripUserId = record.user_id as string | undefined
-    const destination = (record.destination as string | undefined)?.trim()
+  const status = record.status as string | undefined
+  const requesterId = record.requester_id as string | undefined
+  const receiverId = record.receiver_id as string | undefined
+  const tribeId = record.tribe_id as string | undefined
+  const tripUserId = record.user_id as string | undefined
+  const destination = (record.destination as string | undefined)?.trim()
+  const joinerId = record.id as string | undefined
 
     let targetUserIds: string[] = []
     let alert: ApnsAlert | null = null
@@ -153,11 +154,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
     const senderId = record.sender_id as string | undefined
     const friendId = record.friend_id as string | undefined
     const messageText = record.text as string | undefined
-    const isFriendMessageInsert =
-      type === 'INSERT' &&
-      (table === 'friend_messages' || (!!senderId && !!friendId))
-    const isTribeMessageInsert = type === 'INSERT' && table === 'tribe_messages'
-    const isMyTripsInsert = type === 'INSERT' && table === 'mytrips'
+  const isFriendMessageInsert =
+    type === 'INSERT' &&
+    (table === 'friend_messages' || (!!senderId && !!friendId))
+  const isTribeMessageInsert = type === 'INSERT' && table === 'tribe_messages'
+  const isMyTripsInsert = type === 'INSERT' && table === 'mytrips'
+  const isTribesJoinInsert = type === 'INSERT' && table === 'tribes_join'
 
     if (isFriendMessageInsert && senderId && friendId) {
       const { data } = await supabase
@@ -211,12 +213,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         .map((row: { id: string | null }) => row.id)
         .filter((id: string | null): id is string => !!id && id !== senderId)
       targetUserIds = Array.from(new Set(memberIds))
-    } else if (isMyTripsInsert && tripUserId && destination) {
-      const { data } = await supabase
-        .from('onboarding')
-        .select('full_name, origin')
-        .eq('id', tripUserId)
-        .maybeSingle()
+  } else if (isMyTripsInsert && tripUserId && destination) {
+    const { data } = await supabase
+      .from('onboarding')
+      .select('full_name, origin')
+      .eq('id', tripUserId)
+      .maybeSingle()
 
       const joinerName = data?.full_name ?? ''
       const joinerFlag = isoToFlag(data?.origin)
@@ -233,6 +235,43 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
         .map((row: { user_id: string | null }) => row.user_id)
         .filter((id: string | null): id is string => !!id && id !== tripUserId)
       targetUserIds = Array.from(new Set(travelerIds))
+    } else if (isTribesJoinInsert && joinerId && tribeId) {
+      const { data: joiner } = await supabase
+        .from('onboarding')
+        .select('full_name')
+        .eq('id', joinerId)
+        .maybeSingle()
+
+      const { data: tribe } = await supabase
+        .from('tribes')
+        .select('owner_id, name')
+        .eq('id', tribeId)
+        .maybeSingle()
+
+      const { data: members } = await supabase
+        .from('tribes_join')
+        .select('id')
+        .eq('tribe_id', tribeId)
+
+      const joinerNameRaw = joiner?.full_name?.trim() ?? ''
+      const joinerName = joinerNameRaw || 'Someone'
+      const tribeName = tribe?.name?.trim() ?? ''
+      const title = tribeName
+        ? `${joinerName} joined ${tribeName}`
+        : `${joinerName} joined your tribe`
+
+      alert = { title, body: '' }
+
+      const memberIds = (members ?? [])
+        .map((row: { id: string | null }) => row.id)
+        .filter((id: string | null): id is string => !!id && id !== joinerId)
+
+      const ownerId = tribe?.owner_id ?? null
+      const targets = [
+        ...memberIds,
+        ...(ownerId && ownerId !== joinerId ? [ownerId] : []),
+      ]
+      targetUserIds = Array.from(new Set(targets))
     } else if (
       type === 'INSERT' &&
       status === 'pending' &&

@@ -42,87 +42,113 @@ struct GlobeMapView: View {
     @State private var tribeCountryFlags: [UUID: String] = [:]
     @State private var tribeCreatorsByID: [String: MapTribeCreator] = [:]
     @StateObject private var tribeImageStore = TribeImageStore()
+    @State private var isShowingTribes = false
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            MapReader { proxy in
-                Map(viewport: $viewport) {
-                    ForEvery(mapTribes) { tribe in
-                        MapViewAnnotation(coordinate: tribe.coordinate) {
-                            let flag = tribeCountryFlags[tribe.id] ?? ""
-                            let creator = tribeCreatorsByID[tribe.ownerID.uuidString.lowercased()]
-                            NavigationLink {
-                                TribesSocialView(
-                                    imageURL: tribe.photoURL,
-                                    title: tribe.name,
-                                    location: tribe.destination,
-                                    flag: flag,
-                                    endDate: tribe.endDate,
-                                    minAge: tribe.minAge,
-                                    maxAge: tribe.maxAge,
-                                    createdAt: tribe.createdAt,
-                                    gender: tribe.gender,
-                                    aboutText: tribe.description,
-                                    interests: tribe.interests,
-                                    placeName: tribe.destination,
-                                    tribeID: tribe.id,
-                                    createdBy: creator?.fullName,
-                                    createdByAvatarPath: creator?.avatarPath,
-                                    isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
-                                )
-                            } label: {
-                                mapTribeAnnotation(for: tribe)
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                MapReader { proxy in
+                    Map(viewport: $viewport) {
+                        ForEvery(mapTribes) { tribe in
+                            MapViewAnnotation(coordinate: tribe.coordinate) {
+                                let flag = tribeCountryFlags[tribe.id] ?? ""
+                                let creator = tribeCreatorsByID[tribe.ownerID.uuidString.lowercased()]
+                                NavigationLink {
+                                    TribesSocialView(
+                                        imageURL: tribe.photoURL,
+                                        title: tribe.name,
+                                        location: tribe.destination,
+                                        flag: flag,
+                                        endDate: tribe.endDate,
+                                        minAge: tribe.minAge,
+                                        maxAge: tribe.maxAge,
+                                        createdAt: tribe.createdAt,
+                                        gender: tribe.gender,
+                                        aboutText: tribe.description,
+                                        interests: tribe.interests,
+                                        placeName: tribe.destination,
+                                        tribeID: tribe.id,
+                                        createdBy: creator?.fullName,
+                                        createdByAvatarPath: creator?.avatarPath,
+                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
+                                    )
+                                } label: {
+                                    mapTribeAnnotation(for: tribe)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                            .allowOverlap(true)
                         }
-                        .allowOverlap(true)
                     }
-                }
-                .ornamentOptions(
-                    OrnamentOptions(
-                        scaleBar: ScaleBarViewOptions(
-                            position: .topLeading,
-                            margins: .zero,
-                            visibility: .hidden,
-                            useMetricUnits: true
-                        ),
-                        compass: CompassViewOptions(
-                            visibility: .hidden
+                    .ornamentOptions(
+                        OrnamentOptions(
+                            scaleBar: ScaleBarViewOptions(
+                                position: .topLeading,
+                                margins: .zero,
+                                visibility: .hidden,
+                                useMetricUnits: true
+                            ),
+                            compass: CompassViewOptions(
+                                visibility: .hidden
+                            )
                         )
                     )
-                )
-                .mapStyle(
-                    MapStyle(
-                        uri: StyleURI(
-                            rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
-                        )!
+                    .mapStyle(
+                        MapStyle(
+                            uri: StyleURI(
+                                rawValue: "mapbox://styles/trevorthom7/cmi6lppz6001i01sachln4nbu"
+                            )!
+                        )
                     )
-                )
                 .cameraBounds(
                     CameraBoundsOptions(
                         minZoom: 3.0
                     )
                 )
-                .onMapIdle { _ in
-                    guard let map = proxy.map else { return }
-                    updateSearchArea(using: map)
-                    Task { await fetchMapTribes() }
-                }
+                    .onMapIdle { _ in
+                        guard let map = proxy.map else { return }
+                        updateSearchArea(using: map)
+                        Task { await fetchMapTribes() }
+                    }
                 .task {
                     await fetchMapTribes()
                 }
                 .ignoresSafeArea()
             }
 
-            GlobeMapPanel(
-                tribes: mapTribes,
-                tribeFlags: tribeCountryFlags,
-                tribeCreators: tribeCreatorsByID,
-                tribeImageStore: tribeImageStore
-            )
-                .padding(.horizontal)
-                .padding(.bottom, 120)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Button(action: {
+                        isShowingTribes = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Colors.accent)
+                                .frame(width: 44, height: 44)
+
+                            Image(systemName: "plus")
+                                .foregroundStyle(Colors.tertiaryText)
+                                .font(.system(size: 18, weight: .bold))
+                        }
+                    }
+                    
+                    Spacer()
+                }
+
+                GlobeMapPanel(
+                    tribes: mapTribes,
+                    tribeFlags: tribeCountryFlags,
+                    tribeCreators: tribeCreatorsByID,
+                    tribeImageStore: tribeImageStore
+                )
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 120)
         }
+        .navigationDestination(isPresented: $isShowingTribes) {
+            MapTribeView(isShowingTribes: $isShowingTribes)
+        }
+    }
     }
 
     private func fetchMapTribes() async {

@@ -46,6 +46,8 @@ struct GlobeMapView: View {
     @State private var isShowingTribes = false
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var airplaneFeedbackToggle = false
+    @State private var mapCamera: CameraAnimationsManager?
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)
@@ -125,6 +127,7 @@ struct GlobeMapView: View {
                         Task { await fetchMapTribes() }
                     }
                     .onAppear {
+                        mapCamera = proxy.camera
                         locationManager.requestPermission()
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
@@ -151,6 +154,33 @@ struct GlobeMapView: View {
                                 .font(.system(size: 18, weight: .bold))
                         }
                     }
+
+                    Button(action: {
+                        airplaneFeedbackToggle.toggle()
+                        guard let coordinate = userCoordinate, let camera = mapCamera else { return }
+                        camera.fly(
+                            to: CameraOptions(
+                                center: coordinate,
+                                zoom: 8,
+                                pitch: 0
+                            ),
+                            duration: 2
+                        )
+                    }) {
+                        Circle()
+                            .fill(Colors.card)
+                            .frame(width: 44, height: 44)
+                            .overlay {
+                                Image("location")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundStyle(Colors.primaryText)
+                            }
+                    }
+                    .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
+                    .buttonStyle(.plain)
                     
                     Spacer()
                 }

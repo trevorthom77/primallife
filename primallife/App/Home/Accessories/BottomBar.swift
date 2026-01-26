@@ -37,6 +37,10 @@ struct BottomBar: View {
             
             Spacer()
 
+            barIcon(name: "globe")
+
+            Spacer()
+
             barIcon(name: "airplane")
             
             Spacer()

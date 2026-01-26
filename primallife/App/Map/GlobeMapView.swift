@@ -151,7 +151,7 @@ struct GlobeMapView: View {
 
                             Image(systemName: "plus")
                                 .foregroundStyle(Colors.tertiaryText)
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: 20, weight: .bold))
                         }
                     }
 

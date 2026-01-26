@@ -1975,6 +1975,7 @@ private final class UserLocationManager: NSObject, ObservableObject, CLLocationM
     override init() {
         super.init()
         manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
     
     func requestPermission() {
@@ -1987,7 +1988,7 @@ private final class UserLocationManager: NSObject, ObservableObject, CLLocationM
         case .authorizedAlways, .authorizedWhenInUse:
             manager.requestLocation()
         default:
-            break
+            coordinate = nil
         }
     }
     

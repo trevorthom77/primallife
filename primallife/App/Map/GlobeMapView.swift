@@ -34,6 +34,7 @@ private let mapTripsTimestampFormatterWithFractional: ISO8601DateFormatter = {
 }()
 
 struct GlobeMapView: View {
+    @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @State private var viewport: Viewport = .styleDefault
     @State private var mapTribes: [MapTribeLocation] = []
@@ -43,12 +44,25 @@ struct GlobeMapView: View {
     @State private var tribeCreatorsByID: [String: MapTribeCreator] = [:]
     @StateObject private var tribeImageStore = TribeImageStore()
     @State private var isShowingTribes = false
+    @StateObject private var locationManager = UserLocationManager()
+    @State private var userCoordinate: CLLocationCoordinate2D?
+
+    private var userAvatarURL: URL? {
+        profileStore.profile?.avatarURL(using: supabase)
+    }
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 MapReader { proxy in
                     Map(viewport: $viewport) {
+                        if let coordinate = userCoordinate {
+                            MapViewAnnotation(coordinate: coordinate) {
+                                userLocationAnnotation
+                            }
+                            .priority(1)
+                        }
+
                         ForEvery(mapTribes) { tribe in
                             MapViewAnnotation(coordinate: tribe.coordinate) {
                                 let flag = tribeCountryFlags[tribe.id] ?? ""
@@ -100,20 +114,26 @@ struct GlobeMapView: View {
                             )!
                         )
                     )
-                .cameraBounds(
-                    CameraBoundsOptions(
-                        minZoom: 3.0
+                    .cameraBounds(
+                        CameraBoundsOptions(
+                            minZoom: 3.0
+                        )
                     )
-                )
                     .onMapIdle { _ in
                         guard let map = proxy.map else { return }
                         updateSearchArea(using: map)
                         Task { await fetchMapTribes() }
                     }
-                .task {
-                    await fetchMapTribes()
-                }
-                .ignoresSafeArea()
+                    .onAppear {
+                        locationManager.requestPermission()
+                    }
+                    .onReceive(locationManager.$coordinate) { coordinate in
+                        userCoordinate = coordinate
+                    }
+                    .task {
+                        await fetchMapTribes()
+                    }
+                    .ignoresSafeArea()
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -328,6 +348,82 @@ struct GlobeMapView: View {
             }
         }
     }
+
+    private var userLocationAnnotation: some View {
+        let outerSize: CGFloat = 66
+        let innerSize: CGFloat = 58
+        let strokeWidth: CGFloat = 4
+
+        return ZStack {
+            Circle()
+                .fill(Colors.card)
+                .frame(width: outerSize, height: outerSize)
+
+            let avatarURL = userAvatarURL
+
+            Group {
+                if let avatarURL,
+                   let cachedImage = profileStore.cachedAvatarImage,
+                   profileStore.cachedAvatarURL == avatarURL {
+                    cachedImage
+                        .resizable()
+                        .scaledToFill()
+                } else if let avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .onAppear {
+                                    profileStore.cacheAvatar(image, url: avatarURL)
+                                }
+                        } else {
+                            Colors.secondaryText.opacity(0.3)
+                        }
+                    }
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: innerSize, height: innerSize)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: strokeWidth)
+            }
+        }
+    }
+}
+
+private final class UserLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    @Published var coordinate: CLLocationCoordinate2D?
+    private let manager = CLLocationManager()
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.requestLocation()
+        default:
+            coordinate = nil
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        coordinate = locations.last?.coordinate
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 
 private struct GlobeMapPanel: View {

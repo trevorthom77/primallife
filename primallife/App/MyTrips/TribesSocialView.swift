@@ -41,7 +41,6 @@ struct TribesSocialView: View {
     let onDelete: (() -> Void)?
     let onBack: (() -> Void)?
     let initialHeaderImage: Image?
-    @State private var placeImageURL: URL?
     @State private var headerImage: Image?
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingLeaveConfirm = false
@@ -60,15 +59,6 @@ struct TribesSocialView: View {
     @Environment(\.supabaseClient) private var supabase
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.dismiss) private var dismiss
-    private let customPlaceImageNames = [
-        "italy",
-        "greece",
-        "puerto rico",
-        "costa rica",
-        "australia",
-        "jamaica",
-        "switzerland"
-    ]
 
     init(
         imageURL: URL?,
@@ -375,33 +365,6 @@ struct TribesSocialView: View {
                         .background(Colors.card)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Places")
-                            .font(.travelTitle)
-                            .foregroundStyle(Colors.primaryText)
-
-                        PlaceCard(
-                            imageURL: placeImageURL,
-                            customImageName: customPlaceImageName,
-                            name: resolvedPlaceName
-                        )
-                            .task {
-                                if customPlaceImageName != nil {
-                                    placeImageURL = nil
-                                    return
-                                }
-                                guard !resolvedPlaceName.isEmpty else {
-                                    placeImageURL = nil
-                                    return
-                                }
-                                placeImageURL = await UnsplashService.fetchImage(for: resolvedPlaceName)
-                            }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Created By")
@@ -1185,30 +1148,12 @@ private extension TribesSocialView {
             .filter { !$0.isEmpty }
     }
 
-    var resolvedPlaceName: String {
-        placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    }
-
     var resolvedCreator: String {
         if isCreator {
             return "You"
         }
 
         return createdBy?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    }
-
-    var customPlaceImageName: String? {
-        let candidates = [
-            resolvedPlaceName
-        ]
-
-        for name in customPlaceImageNames {
-            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
-                return name
-            }
-        }
-
-        return nil
     }
 
     var joinRestrictionText: String? {
@@ -1329,43 +1274,6 @@ private extension TribesSocialView {
         } else {
             Colors.card
         }
-    }
-}
-
-private struct PlaceCard: View {
-    let imageURL: URL?
-    let customImageName: String?
-    let name: String
-
-    var body: some View {
-        ZStack {
-            if let customImageName {
-                Image(customImageName)
-                    .resizable()
-                    .scaledToFill()
-            } else if let imageURL {
-                AsyncImage(url: imageURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    Colors.card
-                }
-            } else {
-                Colors.card
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(alignment: .topLeading) {
-            Text(name)
-                .font(.travelTitle)
-                .foregroundStyle(Colors.card)
-                .padding(.top, 20)
-                .padding(.horizontal, 16)
-        }
-        .clipped()
     }
 }
 

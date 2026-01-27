@@ -61,6 +61,50 @@ struct GlobeMapView: View {
         profileStore.profile?.avatarURL(using: supabase)
     }
 
+    private var filteredMapTribes: [MapTribeLocation] {
+        let normalizedFilter = tribeFilterType?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
+        let minAgeFilter = tribeFilterMinAge
+        let maxAgeFilter = tribeFilterMaxAge
+        let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
+        let interestsFilter = tribeFilterInterests
+
+        guard usesTypeFilter || isAgeFilterActive || !interestsFilter.isEmpty else { return mapTribes }
+
+        return mapTribes.filter { tribe in
+            let matchesType: Bool = {
+                guard usesTypeFilter else { return true }
+                let tribeGender = tribe.gender?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased() ?? ""
+                if normalizedFilter.contains("girl") {
+                    return tribeGender.contains("girl")
+                }
+                if normalizedFilter.contains("boy") {
+                    return tribeGender.contains("boy")
+                }
+                return true
+            }()
+
+            let matchesAge: Bool = {
+                guard isAgeFilterActive else { return true }
+                guard let minAge = tribe.minAge, let maxAge = tribe.maxAge else { return true }
+                if let minAgeFilter, maxAge < minAgeFilter { return false }
+                if let maxAgeFilter, minAge > maxAgeFilter { return false }
+                return true
+            }()
+
+            let matchesInterests: Bool = {
+                guard !interestsFilter.isEmpty else { return true }
+                return tribe.interests.contains { interestsFilter.contains($0) }
+            }()
+
+            return matchesType && matchesAge && matchesInterests
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -73,7 +117,7 @@ struct GlobeMapView: View {
                             .priority(1)
                         }
 
-                        ForEvery(mapTribes) { tribe in
+                        ForEvery(filteredMapTribes) { tribe in
                             MapViewAnnotation(coordinate: tribe.coordinate) {
                                 let flag = tribeCountryFlags[tribe.id] ?? ""
                                 let creator = tribeCreatorsByID[tribe.ownerID.uuidString.lowercased()]
@@ -211,7 +255,7 @@ struct GlobeMapView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 GlobeMapPanel(
-                    tribes: mapTribes,
+                    tribes: filteredMapTribes,
                     tribeFlags: tribeCountryFlags,
                     tribeCreators: tribeCreatorsByID,
                     tribeImageStore: tribeImageStore

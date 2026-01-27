@@ -54,6 +54,7 @@ struct GlobeMapView: View {
     @State private var tribeFilterInterests: Set<String> = []
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     @State private var mapCamera: CameraAnimationsManager?
     @State private var locationsRefreshTask: Task<Void, Never>?
@@ -200,6 +201,14 @@ struct GlobeMapView: View {
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
                         userCoordinate = coordinate
+                        guard !hasCenteredOnUser, let coordinate else { return }
+                        viewport = .camera(
+                            center: coordinate,
+                            zoom: 8,
+                            bearing: 0,
+                            pitch: 0
+                        )
+                        hasCenteredOnUser = true
                     }
                     .task {
                         refreshLocations()
@@ -216,7 +225,7 @@ struct GlobeMapView: View {
                                         .foregroundStyle(Colors.primaryText)
                                         .lineLimit(1)
 
-                                    Text("Australia")
+                                    Text("Sydney, Australia")
                                         .font(.travelBody)
                                         .foregroundStyle(Colors.primaryText)
                                         .lineLimit(1)

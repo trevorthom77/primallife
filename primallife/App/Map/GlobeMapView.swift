@@ -145,7 +145,7 @@ struct GlobeMapView: View {
                         await fetchMapTribes()
                     }
                     .overlay(alignment: .topLeading) {
-                        VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .top, spacing: 12) {
                             Button(action: {
                                 isShowingFilters = true
                             }) {
@@ -157,6 +157,51 @@ struct GlobeMapView: View {
                                     .background(Colors.card)
                                     .clipShape(Capsule())
                             }
+
+                            Spacer()
+
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    airplaneFeedbackToggle.toggle()
+                                    guard let coordinate = userCoordinate, let camera = mapCamera else { return }
+                                    camera.fly(
+                                        to: CameraOptions(
+                                            center: coordinate,
+                                            zoom: 8,
+                                            pitch: 0
+                                        ),
+                                        duration: 2
+                                    )
+                                }) {
+                                    Circle()
+                                        .fill(Colors.card)
+                                        .frame(width: 44, height: 44)
+                                        .overlay {
+                                            Image("location")
+                                                .renderingMode(.template)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 20, height: 20)
+                                                .foregroundStyle(Colors.primaryText)
+                                        }
+                                }
+                                .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
+                                .buttonStyle(.plain)
+
+                                Button(action: {
+                                    isShowingTribes = true
+                                }) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Colors.accent)
+                                            .frame(width: 44, height: 44)
+
+                                        Image(systemName: "plus")
+                                            .foregroundStyle(Colors.tertiaryText)
+                                            .font(.system(size: 18, weight: .bold))
+                                    }
+                                }
+                            }
                         }
                         .padding(.horizontal)
                         .padding(.top, 58)
@@ -165,51 +210,6 @@ struct GlobeMapView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Button(action: {
-                        isShowingTribes = true
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Colors.accent)
-                                .frame(width: 44, height: 44)
-
-                            Image(systemName: "plus")
-                                .foregroundStyle(Colors.tertiaryText)
-                                .font(.system(size: 20, weight: .bold))
-                        }
-                    }
-
-                    Button(action: {
-                        airplaneFeedbackToggle.toggle()
-                        guard let coordinate = userCoordinate, let camera = mapCamera else { return }
-                        camera.fly(
-                            to: CameraOptions(
-                                center: coordinate,
-                                zoom: 8,
-                                pitch: 0
-                            ),
-                            duration: 2
-                        )
-                    }) {
-                        Circle()
-                            .fill(Colors.card)
-                            .frame(width: 44, height: 44)
-                            .overlay {
-                                Image("location")
-                                    .renderingMode(.template)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(Colors.primaryText)
-                            }
-                    }
-                    .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
-                    .buttonStyle(.plain)
-                    
-                    Spacer()
-                }
-
                 GlobeMapPanel(
                     tribes: mapTribes,
                     tribeFlags: tribeCountryFlags,
@@ -513,7 +513,7 @@ private struct GlobeMapPanel: View {
                         .foregroundStyle(Colors.secondaryText)
                     Spacer()
                 }
-                .frame(height: 120)
+                .frame(height: 180)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -545,9 +545,9 @@ private struct GlobeMapPanel: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 10)
                 }
-                .frame(height: 120)
+                .frame(height: 180)
             }
         }
         .frame(maxWidth: .infinity)
@@ -560,10 +560,14 @@ private struct GlobeMapPanel: View {
         let flag = tribeFlags[tribe.id] ?? ""
         let destination = flag.isEmpty ? tribe.destination : "\(flag) \(tribe.destination)"
 
-        return HStack(spacing: 12) {
+        return VStack(alignment: .leading, spacing: 8) {
             tribeImage(for: tribe)
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(width: 92, height: 92)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Colors.card, lineWidth: 4)
+                }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(tribe.name)
@@ -573,15 +577,15 @@ private struct GlobeMapPanel: View {
                     .truncationMode(.tail)
 
                 Text(destination)
-                    .font(.travelDetail)
+                    .font(.tripsfont)
                     .foregroundStyle(Colors.secondaryText)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
         }
-        .frame(width: 220, alignment: .leading)
-        .padding(12)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(width: 200, alignment: .leading)
+        .padding(10)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     @ViewBuilder

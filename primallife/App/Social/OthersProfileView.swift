@@ -188,14 +188,6 @@ struct OthersProfileView: View {
                             .padding(.top, 8)
                         }
 
-                        if !isFriend && !isViewingOwnProfile {
-                            Text("Messaging is available for friends only.")
-                                .font(.custom(Fonts.regular, size: 16))
-                                .foregroundStyle(Colors.secondaryText)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
-                        }
-
                         HStack(spacing: 12) {
                             statCard(title: "Trips", value: "\(tripsCount)")
                             statCard(title: "Countries", value: "\(countriesCount)")

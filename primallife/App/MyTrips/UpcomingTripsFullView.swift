@@ -71,11 +71,11 @@ struct UpcomingTripsFullView: View {
                         )
                     } label: {
                         Text("Filter")
-                            .font(.travelDetail)
-                            .foregroundStyle(Colors.tertiaryText)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 11)
-                            .background(Colors.accent)
+                            .font(.travelBodySemibold)
+                            .foregroundStyle(Colors.primaryText)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(Colors.card)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)

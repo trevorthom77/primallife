@@ -1532,7 +1532,7 @@ private struct MapSearchSheet: View {
         
         var components = URLComponents(string: "https://api.mapbox.com/geocoding/v5/mapbox.places/\(encodedQuery).json")
         components?.queryItems = [
-            URLQueryItem(name: "types", value: "place,region"),
+            URLQueryItem(name: "types", value: "place,region,country"),
             URLQueryItem(name: "autocomplete", value: "true"),
             URLQueryItem(name: "limit", value: "10"),
             URLQueryItem(name: "language", value: "en"),

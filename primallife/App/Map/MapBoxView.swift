@@ -43,7 +43,6 @@ struct MapBoxView: View {
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
-    @State private var isShowingTribes = false
     @State private var viewport: Viewport = .styleDefault
     @State private var selectedPlace: MapboxPlace?
     @State private var placeImageURL: URL?
@@ -59,25 +58,15 @@ struct MapBoxView: View {
     @State private var airplaneFeedbackToggle = false
     @State private var flyFeedbackToggle = false
     @State private var otherUserLocations: [OtherUserLocation] = []
-    @State private var mapTribes: [MapTribeLocation] = []
-    @State private var tribeCountryFlags: [UUID: String] = [:]
-    @State private var tribeCreatorsByID: [String: MapTribeCreator] = [:]
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
-    @State private var communityTab: CommunityTab = .tribes
+    @State private var communityTab: CommunityTab = .travelers
     @State private var minAgeFilter: Int?
     @State private var maxAgeFilter: Int?
     @State private var selectedCountryID: String?
     @State private var selectedGender = "All"
     @State private var selectedTravelDescription: String?
     @State private var selectedInterests: Set<String> = []
-    @State private var tribeFilterCheckInDate: Date?
-    @State private var tribeFilterReturnDate: Date?
-    @State private var tribeFilterMinAge: Int?
-    @State private var tribeFilterMaxAge: Int?
-    @State private var tribeFilterGender: String?
-    @State private var tribeFilterType: String?
-    @State private var tribeFilterInterests: Set<String> = []
     @State private var locationQueryRadius: CLLocationDistance = 0
     @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
     @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
@@ -85,7 +74,6 @@ struct MapBoxView: View {
     @State private var isLoadingLocations = false
     @State private var loadingFeedbackToggle = false
     @State private var suppressLoadingFeedback = true
-    @StateObject private var tribeImageStore = TribeImageStore()
     @StateObject private var travelerImageStore = TravelerImageStore()
     private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
@@ -181,50 +169,6 @@ struct MapBoxView: View {
         let allowedIDs = Set(filteredTravelers.map(\.id))
         return otherUserLocations.filter { allowedIDs.contains($0.id) }
     }
-
-    private var filteredMapTribes: [MapTribeLocation] {
-        let normalizedFilter = tribeFilterType?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased() ?? ""
-        let usesTypeFilter = !normalizedFilter.isEmpty && normalizedFilter != "everyone"
-        let minAgeFilter = tribeFilterMinAge
-        let maxAgeFilter = tribeFilterMaxAge
-        let isAgeFilterActive = minAgeFilter != nil || maxAgeFilter != nil
-        let interestsFilter = tribeFilterInterests
-
-        guard usesTypeFilter || isAgeFilterActive || !interestsFilter.isEmpty else { return mapTribes }
-
-        return mapTribes.filter { tribe in
-            let matchesType: Bool = {
-                guard usesTypeFilter else { return true }
-                let tribeGender = tribe.gender?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .lowercased() ?? ""
-                if normalizedFilter.contains("girl") {
-                    return tribeGender.contains("girl")
-                }
-                if normalizedFilter.contains("boy") {
-                    return tribeGender.contains("boy")
-                }
-                return true
-            }()
-
-            let matchesAge: Bool = {
-                guard isAgeFilterActive else { return true }
-                guard let minAge = tribe.minAge, let maxAge = tribe.maxAge else { return true }
-                if let minAgeFilter, maxAge < minAgeFilter { return false }
-                if let maxAgeFilter, minAge > maxAgeFilter { return false }
-                return true
-            }()
-
-            let matchesInterests: Bool = {
-                guard !interestsFilter.isEmpty else { return true }
-                return tribe.interests.contains { interestsFilter.contains($0) }
-            }()
-
-            return matchesType && matchesAge && matchesInterests
-        }
-    }
     
     var body: some View {
         NavigationStack {
@@ -250,38 +194,6 @@ struct MapBoxView: View {
                                 } else {
                                     otherUserAnnotation(for: location)
                                 }
-                            }
-                            .allowOverlap(true)
-                        }
-                    }
-                    
-                    if communityTab == .tribes {
-                        ForEvery(filteredMapTribes) { tribe in
-                            MapViewAnnotation(coordinate: tribe.coordinate) {
-                                let flag = tribeCountryFlags[tribe.id] ?? ""
-                                NavigationLink {
-                                    TribesSocialView(
-                                        imageURL: tribe.photoURL,
-                                        title: tribe.name,
-                                        location: tribe.destination,
-                                        flag: flag,
-                                        endDate: tribe.endDate,
-                                        minAge: tribe.minAge,
-                                        maxAge: tribe.maxAge,
-                                        createdAt: tribe.createdAt,
-                                        gender: tribe.gender,
-                                        aboutText: tribe.description,
-                                        interests: tribe.interests,
-                                        placeName: tribe.destination,
-                                        tribeID: tribe.id,
-                                        createdBy: creatorName(for: tribe.ownerID),
-                                        createdByAvatarPath: creatorAvatarPath(for: tribe.ownerID),
-                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
-                                    )
-                                } label: {
-                                    mapTribeAnnotation(for: tribe)
-                                }
-                                .buttonStyle(.plain)
                             }
                             .allowOverlap(true)
                         }
@@ -366,7 +278,7 @@ struct MapBoxView: View {
                                     }
                                 }
 
-                                if communityTab == .travelers || communityTab == .tribes {
+                                if communityTab == .travelers {
                                     Button(action: {
                                         isShowingFilters = true
                                     }) {
@@ -413,20 +325,6 @@ struct MapBoxView: View {
                                 }
                                 .sensoryFeedback(.impact(weight: .medium), trigger: airplaneFeedbackToggle)
                                 .buttonStyle(.plain)
-                                
-                                Button(action: {
-                                    isShowingTribes = true
-                                }) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Colors.accent)
-                                            .frame(width: 44, height: 44)
-                                        
-                                        Image(systemName: "plus")
-                                            .foregroundStyle(Colors.tertiaryText)
-                                            .font(.system(size: 18, weight: .bold))
-                                    }
-                                }
                             }
                             .padding(.trailing)
                             .padding(.top, 122)
@@ -590,11 +488,7 @@ struct MapBoxView: View {
                         if selectedPlace == nil {
                             MapCommunityPanel(
                                 tab: $communityTab,
-                                tribes: filteredMapTribes,
-                                tribeFlags: tribeCountryFlags,
-                                tribeCreators: tribeCreatorsByID,
                                 travelers: filteredTravelers,
-                                tribeImageStore: tribeImageStore,
                                 travelerImageStore: travelerImageStore
                             )
                             .padding(.horizontal)
@@ -667,32 +561,14 @@ struct MapBoxView: View {
                 profileDestination
             }
             .navigationDestination(isPresented: $isShowingFilters) {
-                if communityTab == .tribes {
-                    UpcomingTripsFilterView(
-                        filterCheckInDate: $tribeFilterCheckInDate,
-                        filterReturnDate: $tribeFilterReturnDate,
-                        filterMinAge: $tribeFilterMinAge,
-                        filterMaxAge: $tribeFilterMaxAge,
-                        filterGender: $tribeFilterGender,
-                        filterOriginID: .constant(nil),
-                        filterTribeType: $tribeFilterType,
-                        filterTravelDescription: .constant(nil),
-                        filterInterests: $tribeFilterInterests,
-                        showsTribeFilters: true
-                    )
-                } else {
-                    FiltersView(
-                        minAge: $minAgeFilter,
-                        maxAge: $maxAgeFilter,
-                        selectedGender: $selectedGender,
-                        selectedCountryID: $selectedCountryID,
-                        selectedTravelDescription: $selectedTravelDescription,
-                        selectedInterests: $selectedInterests
-                    )
-                }
-            }
-            .navigationDestination(isPresented: $isShowingTribes) {
-                MapTribeView(isShowingTribes: $isShowingTribes)
+                FiltersView(
+                    minAge: $minAgeFilter,
+                    maxAge: $maxAgeFilter,
+                    selectedGender: $selectedGender,
+                    selectedCountryID: $selectedCountryID,
+                    selectedTravelDescription: $selectedTravelDescription,
+                    selectedInterests: $selectedInterests
+                )
             }
         }
     }
@@ -1099,86 +975,6 @@ struct MapBoxView: View {
         }
     }
 
-    private func fetchMapTribes() async {
-        guard let supabase else { return }
-        guard let coordinate = mapCenterCoordinate else { return }
-        let radius = locationQueryRadius
-        guard radius > 0 else { return }
-
-        let bounds = nearbyBounds(around: coordinate, radius: radius)
-        let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-
-        do {
-            let tribes: [MapTribeLocation] = try await supabase
-                .from("tribes")
-                .select("id, owner_id, name, destination, description, end_date, min_age, max_age, created_at, gender, interests, photo_url, latitude, longitude")
-                .eq("is_map_tribe", value: true)
-                .gte("latitude", value: bounds.minLatitude)
-                .lte("latitude", value: bounds.maxLatitude)
-                .gte("longitude", value: bounds.minLongitude)
-                .lte("longitude", value: bounds.maxLongitude)
-                .execute()
-                .value
-
-            let nearbyTribes = tribes.filter { tribe in
-                let location = CLLocation(latitude: tribe.latitude, longitude: tribe.longitude)
-                return location.distance(from: originLocation) <= radius
-            }
-
-            await MainActor.run {
-                mapTribes = nearbyTribes
-                tribeImageStore.preloadImages(for: nearbyTribes)
-            }
-            let ownerIDs = Array(Set(nearbyTribes.map(\.ownerID)))
-            await loadMapTribeCreators(for: ownerIDs)
-            await updateTribeCountryFlags(for: nearbyTribes)
-        } catch {
-            print("Failed to fetch map tribes: \(error.localizedDescription)")
-        }
-    }
-
-    private func loadMapTribeCreators(for userIDs: [UUID]) async {
-        guard let supabase else { return }
-        guard !userIDs.isEmpty else { return }
-
-        let normalizedIDs = Set(userIDs.map { $0.uuidString.lowercased() })
-        let missingIDs = await MainActor.run {
-            normalizedIDs.filter { tribeCreatorsByID[$0] == nil }
-        }
-        guard !missingIDs.isEmpty else { return }
-
-        do {
-            let creators: [MapTribeCreator] = try await supabase
-                .from("onboarding")
-                .select("id, full_name, avatar_url")
-                .in("id", values: Array(missingIDs))
-                .execute()
-                .value
-
-            let lookup = Dictionary(uniqueKeysWithValues: creators.map { ($0.id.lowercased(), $0) })
-            await MainActor.run {
-                tribeCreatorsByID.merge(lookup) { _, new in new }
-            }
-        } catch {
-            return
-        }
-    }
-
-    private func updateTribeCountryFlags(for tribes: [MapTribeLocation]) async {
-        let missingTribes = await MainActor.run {
-            tribes.filter { tribeCountryFlags[$0.id] == nil }
-        }
-        guard !missingTribes.isEmpty else { return }
-
-        for tribe in missingTribes {
-            let flag = await fetchCountryFlag(for: tribe.coordinate)
-            guard !flag.isEmpty else { continue }
-            await MainActor.run {
-                tribeCountryFlags[tribe.id] = flag
-            }
-        }
-    }
-
     private func fetchCountryFlag(for coordinate: CLLocationCoordinate2D) async -> String {
         guard
             let accessToken = Bundle.main.object(forInfoDictionaryKey: "MBXAccessToken") as? String,
@@ -1303,7 +1099,6 @@ struct MapBoxView: View {
         }
         locationsRefreshTask = Task {
             await fetchOtherLocations()
-            await fetchMapTribes()
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 isLoadingLocations = false
@@ -1412,39 +1207,6 @@ struct MapBoxView: View {
             }
         }
     }
-
-    private func mapTribeAnnotation(for tribe: MapTribeLocation) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Colors.card)
-                .frame(width: 66, height: 66)
-
-            Group {
-                if let photoURL = tribe.photoURL {
-                    if let cachedImage = tribeImageStore.image(for: photoURL) {
-                        cachedImage
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        Colors.secondaryText.opacity(0.3)
-                    }
-                } else {
-                    Colors.secondaryText.opacity(0.3)
-                }
-            }
-            .task(id: tribe.photoURL) {
-                if let photoURL = tribe.photoURL {
-                    tribeImageStore.loadImage(for: photoURL)
-                }
-            }
-            .frame(width: 58, height: 58)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Colors.card, lineWidth: 4)
-            }
-        }
-    }
 }
 
 private struct UserLocation: Identifiable, Decodable {
@@ -1492,18 +1254,6 @@ private struct TravelerRow: Decodable {
         case gender
         case travelDescription = "travel_description"
         case interests
-    }
-}
-
-private struct MapTribeCreator: Decodable {
-    let id: String
-    let fullName: String
-    let avatarPath: String?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case fullName = "full_name"
-        case avatarPath = "avatar_url"
     }
 }
 
@@ -1564,132 +1314,6 @@ private struct OtherUserLocation: Identifiable {
     }
 }
 
-private struct MapTribeLocation: Identifiable, Decodable {
-    let id: UUID
-    let ownerID: UUID
-    let name: String
-    let destination: String
-    let description: String?
-    let endDate: Date
-    let minAge: Int?
-    let maxAge: Int?
-    let createdAt: Date
-    let gender: String?
-    let interests: [String]
-    let latitude: Double
-    let longitude: Double
-    let photoURL: URL?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case ownerID = "owner_id"
-        case name
-        case destination
-        case description
-        case endDate = "end_date"
-        case minAge = "min_age"
-        case maxAge = "max_age"
-        case createdAt = "created_at"
-        case gender
-        case interests
-        case latitude
-        case longitude
-        case photoURL = "photo_url"
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        ownerID = try container.decode(UUID.self, forKey: .ownerID)
-        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
-        destination = try container.decodeIfPresent(String.self, forKey: .destination) ?? ""
-        description = try container.decodeIfPresent(String.self, forKey: .description)
-
-        let endDateString = try container.decode(String.self, forKey: .endDate)
-        guard let decodedEndDate = mapTripsDateFormatter.date(from: endDateString) else {
-            throw DecodingError.dataCorrupted(
-                .init(codingPath: [CodingKeys.endDate], debugDescription: "Invalid end date format")
-            )
-        }
-        endDate = decodedEndDate
-
-        minAge = try container.decodeIfPresent(Int.self, forKey: .minAge)
-        maxAge = try container.decodeIfPresent(Int.self, forKey: .maxAge)
-
-        let createdAtString = try container.decode(String.self, forKey: .createdAt)
-        guard let decodedCreatedAt = mapTripsTimestampFormatterWithFractional.date(from: createdAtString)
-            ?? mapTripsTimestampFormatter.date(from: createdAtString) else {
-            throw DecodingError.dataCorrupted(
-                .init(codingPath: [CodingKeys.createdAt], debugDescription: "Invalid created at format")
-            )
-        }
-        createdAt = decodedCreatedAt
-
-        gender = try container.decodeIfPresent(String.self, forKey: .gender)
-        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
-        latitude = try container.decode(Double.self, forKey: .latitude)
-        longitude = try container.decode(Double.self, forKey: .longitude)
-        if let photoURLString = try container.decodeIfPresent(String.self, forKey: .photoURL) {
-            photoURL = URL(string: photoURLString)
-        } else {
-            photoURL = nil
-        }
-    }
-
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-}
-
-private extension MapBoxView {
-    func creatorName(for ownerID: UUID) -> String? {
-        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
-    }
-
-    func creatorAvatarPath(for ownerID: UUID) -> String? {
-        tribeCreatorsByID[ownerID.uuidString.lowercased()]?.avatarPath
-    }
-}
-
-private enum MapTribeImageCache {
-    static var images: [URL: Image] = [:]
-}
-
-@MainActor
-private final class TribeImageStore: ObservableObject {
-    @Published private(set) var images: [URL: Image] = MapTribeImageCache.images
-    private var inFlight: Set<URL> = []
-
-    func image(for url: URL) -> Image? {
-        images[url]
-    }
-
-    func preloadImages(for tribes: [MapTribeLocation]) {
-        for tribe in tribes {
-            if let url = tribe.photoURL {
-                loadImage(for: url)
-            }
-        }
-    }
-
-    func loadImage(for url: URL) {
-        guard images[url] == nil, !inFlight.contains(url) else { return }
-        inFlight.insert(url)
-
-        Task {
-            defer { inFlight.remove(url) }
-            let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30)
-            do {
-                let (data, _) = try await URLSession.shared.data(for: request)
-                guard let uiImage = UIImage(data: data) else { return }
-                let image = Image(uiImage: uiImage)
-                images[url] = image
-                MapTribeImageCache.images[url] = image
-            } catch { }
-        }
-    }
-}
-
 private enum MapTravelerImageCache {
     static var images: [URL: Image] = [:]
 }
@@ -1724,11 +1348,7 @@ private final class TravelerImageStore: ObservableObject {
 private struct MapCommunityPanel: View {
     @Environment(\.supabaseClient) private var supabase
     @Binding var tab: CommunityTab
-    let tribes: [MapTribeLocation]
-    let tribeFlags: [UUID: String]
-    let tribeCreators: [String: MapTribeCreator]
     let travelers: [MapTraveler]
-    @ObservedObject var tribeImageStore: TribeImageStore
     @ObservedObject var travelerImageStore: TravelerImageStore
     
     var body: some View {
@@ -1756,52 +1376,7 @@ private struct MapCommunityPanel: View {
                 Spacer()
             }
             
-            if tab == .tribes {
-                if tribes.isEmpty {
-                    HStack {
-                        Spacer()
-                        Text("No tribes nearby yet.")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.secondaryText)
-                        Spacer()
-                    }
-                    .frame(height: 92)
-                } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(tribes) { tribe in
-                                let flag = tribeFlags[tribe.id] ?? ""
-                                let creator = tribeCreators[tribe.ownerID.uuidString.lowercased()]
-                                NavigationLink {
-                                    TribesSocialView(
-                                        imageURL: tribe.photoURL,
-                                        title: tribe.name,
-                                        location: tribe.destination,
-                                        flag: flag,
-                                        endDate: tribe.endDate,
-                                        minAge: tribe.minAge,
-                                        maxAge: tribe.maxAge,
-                                        createdAt: tribe.createdAt,
-                                        gender: tribe.gender,
-                                        aboutText: tribe.description,
-                                        interests: tribe.interests,
-                                        placeName: tribe.destination,
-                                        tribeID: tribe.id,
-                                        createdBy: creator?.fullName,
-                                        createdByAvatarPath: creator?.avatarPath,
-                                        isCreator: supabase?.auth.currentUser?.id == tribe.ownerID
-                                    )
-                                } label: {
-                                    tribeCard(tribe)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .frame(height: 92)
-                }
-            } else if travelers.isEmpty {
+            if travelers.isEmpty {
                 HStack {
                     Spacer()
                     Text("No travelers nearby yet.")
@@ -1835,54 +1410,6 @@ private struct MapCommunityPanel: View {
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .animation(.none, value: tab)
-    }
-    
-    private func tribeCard(_ tribe: MapTribeLocation) -> some View {
-        let flag = tribeFlags[tribe.id] ?? ""
-        let destination = flag.isEmpty ? tribe.destination : "\(flag) \(tribe.destination)"
-
-        return HStack(spacing: 12) {
-            tribeImage(for: tribe)
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(tribe.name)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.primaryText)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                Text(destination)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.secondaryText)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-        }
-        .frame(width: 220, alignment: .leading)
-        .padding(12)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
-    @ViewBuilder
-    private func tribeImage(for tribe: MapTribeLocation) -> some View {
-        if let photoURL = tribe.photoURL {
-            Group {
-                if let cachedImage = tribeImageStore.image(for: photoURL) {
-                    cachedImage
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Colors.secondaryText.opacity(0.3)
-                }
-            }
-            .task(id: photoURL) {
-                tribeImageStore.loadImage(for: photoURL)
-            }
-        } else {
-            Colors.secondaryText.opacity(0.3)
-        }
     }
     
     private func travelerCard(_ traveler: MapTraveler) -> some View {
@@ -1964,7 +1491,6 @@ private struct MapCommunityPanel: View {
 }
 
 private enum CommunityTab: String, CaseIterable {
-    case tribes = "Tribes"
     case travelers = "Travelers"
 }
 

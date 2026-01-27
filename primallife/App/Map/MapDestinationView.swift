@@ -18,8 +18,13 @@ struct MapDestinationView: View {
 
     init(coordinate: CLLocationCoordinate2D) {
         self.coordinate = coordinate
+        let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
+        let adjustedCoordinate = CLLocationCoordinate2D(
+            latitude: offsetLatitude,
+            longitude: coordinate.longitude
+        )
         _viewport = State(initialValue: .camera(
-            center: coordinate,
+            center: adjustedCoordinate,
             zoom: 7,
             bearing: 0,
             pitch: 0

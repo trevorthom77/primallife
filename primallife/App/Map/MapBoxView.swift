@@ -43,6 +43,7 @@ struct MapBoxView: View {
     @State private var isShowingFilters = false
     @State private var viewport: Viewport = .styleDefault
     @State private var selectedPlace: MapboxPlace?
+    @State private var destinationSelection: DestinationSelection?
     @State private var placeImageURL: URL?
     @State private var photoTask: Task<Void, Never>?
     @State private var selectedPlaceTravelerCount = 0
@@ -520,7 +521,12 @@ struct MapBoxView: View {
                             loadImage(for: place)
                             hideChrome = true
                             isShowingSearch = false
-                            guard let coordinate = place.coordinate, let camera = proxy.camera else { return }
+                            guard let coordinate = place.coordinate else { return }
+                            destinationSelection = DestinationSelection(
+                                latitude: coordinate.latitude,
+                                longitude: coordinate.longitude
+                            )
+                            guard let camera = proxy.camera else { return }
                             let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
                             let adjustedCoordinate = CLLocationCoordinate2D(latitude: offsetLatitude, longitude: coordinate.longitude)
                             camera.fly(
@@ -549,6 +555,9 @@ struct MapBoxView: View {
                     selectedTravelDescription: $selectedTravelDescription,
                     selectedInterests: $selectedInterests
                 )
+            }
+            .navigationDestination(item: $destinationSelection) { selection in
+                MapDestinationView(coordinate: selection.coordinate)
             }
         }
     }
@@ -1117,6 +1126,16 @@ private struct UserLocation: Identifiable, Decodable {
     let latitude: Double
     let longitude: Double
     
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+private struct DestinationSelection: Identifiable, Hashable {
+    let id = UUID()
+    let latitude: Double
+    let longitude: Double
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }

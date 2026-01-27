@@ -73,7 +73,7 @@ struct MapDestinationView: View {
                 .frame(height: 440)
                 .frame(maxWidth: .infinity)
                 .overlay(alignment: .topLeading) {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 16) {
                         if !locationName.isEmpty {
                             Text(locationName)
                                 .font(.travelTitle)
@@ -84,6 +84,18 @@ struct MapDestinationView: View {
                             Text(countryDisplay)
                                 .font(.travelBody)
                                 .foregroundStyle(Colors.secondaryText)
+                        }
+
+                        let flyLabel = locationName.isEmpty ? countryDisplay : locationName
+
+                        Button(action: {}) {
+                            Text(flyLabel.isEmpty ? "Fly" : "Fly to \(flyLabel)")
+                                .font(.travelBodySemibold)
+                                .foregroundStyle(Colors.tertiaryText)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(Colors.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                     }
                     .padding(.horizontal, 24)

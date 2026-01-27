@@ -18,6 +18,18 @@ struct MapDestinationView: View {
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     @State private var viewport: Viewport
+    @State private var placeImageURL: URL?
+    @State private var photoTask: Task<Void, Never>?
+
+    private let customPlaceImageNames = [
+        "italy",
+        "greece",
+        "puerto rico",
+        "costa rica",
+        "australia",
+        "jamaica",
+        "switzerland"
+    ]
 
     init(coordinate: CLLocationCoordinate2D, locationName: String, countryDisplay: String) {
         self.coordinate = coordinate
@@ -74,6 +86,28 @@ struct MapDestinationView: View {
                 .frame(maxWidth: .infinity)
                 .overlay(alignment: .topLeading) {
                     VStack(alignment: .leading, spacing: 16) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Colors.secondaryText.opacity(0.12))
+
+                            if let customImageName = customImageName {
+                                Image(customImageName)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else if let imageURL = placeImageURL {
+                                AsyncImage(url: imageURL) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    }
+                                }
+                            }
+                        }
+                        .frame(height: 170)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
                         if !locationName.isEmpty {
                             Text(locationName)
                                 .font(.travelTitle)
@@ -109,6 +143,12 @@ struct MapDestinationView: View {
                 }
                 .padding(.leading)
                 .padding(.top, 58)
+            }
+            .onAppear {
+                loadImage()
+            }
+            .onDisappear {
+                photoTask?.cancel()
             }
             .navigationBarBackButtonHidden(true)
             .ignoresSafeArea()
@@ -159,4 +199,36 @@ struct MapDestinationView: View {
         }
     }
 
+    private var imageQuery: String {
+        locationName.isEmpty ? countryDisplay : locationName
+    }
+
+    private var customImageName: String? {
+        let candidates = [locationName, countryDisplay]
+
+        for name in customPlaceImageNames {
+            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
+                return name
+            }
+        }
+
+        return nil
+    }
+
+    private func loadImage() {
+        photoTask?.cancel()
+        placeImageURL = nil
+
+        let query = imageQuery
+        guard !query.isEmpty else { return }
+        guard customImageName == nil else { return }
+
+        photoTask = Task {
+            let url = await UnsplashService.fetchImage(for: query)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                placeImageURL = url
+            }
+        }
+    }
 }

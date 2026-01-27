@@ -1307,7 +1307,7 @@ private struct MapCommunityPanel: View {
                             }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 10)
                 }
                 .frame(height: 180)
             }
@@ -1318,11 +1318,15 @@ private struct MapCommunityPanel: View {
     }
     
     private func travelerCard(_ traveler: MapTraveler) -> some View {
-        HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             travelerImage(for: traveler)
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            
+                .frame(width: 92, height: 92)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Colors.card, lineWidth: 4)
+                }
+
             VStack(alignment: .leading, spacing: 6) {
                 if !traveler.name.isEmpty {
                     if let age = traveler.age {
@@ -1332,7 +1336,7 @@ private struct MapCommunityPanel: View {
                                 .foregroundStyle(Colors.primaryText)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
-                            
+
                             Text("\(age)")
                                 .font(.travelDetail)
                                 .foregroundStyle(Colors.secondaryText)
@@ -1352,7 +1356,7 @@ private struct MapCommunityPanel: View {
                     HStack(spacing: 8) {
                         if let originDisplay = traveler.originDisplay {
                             Text(originDisplay)
-                                .font(.travelDetail)
+                                .font(.tripsfont)
                                 .foregroundStyle(Colors.secondaryText)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -1360,7 +1364,7 @@ private struct MapCommunityPanel: View {
 
                         if let distanceMiles = traveler.distanceMiles {
                             Text(String(format: "%.1f mi", distanceMiles))
-                                .font(.travelDetail)
+                                .font(.tripsfont)
                                 .foregroundStyle(Colors.secondaryText)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -1369,9 +1373,9 @@ private struct MapCommunityPanel: View {
                 }
             }
         }
-        .frame(width: 220, alignment: .leading)
-        .padding(12)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(width: 200, alignment: .leading)
+        .padding(10)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     @ViewBuilder

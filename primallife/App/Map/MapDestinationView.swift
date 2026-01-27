@@ -8,9 +8,12 @@
 import SwiftUI
 import CoreLocation
 import MapboxMaps
+import Supabase
 
 struct MapDestinationView: View {
     let coordinate: CLLocationCoordinate2D
+    @EnvironmentObject private var profileStore: ProfileStore
+    @Environment(\.supabaseClient) private var supabase
     @State private var viewport: Viewport
 
     init(coordinate: CLLocationCoordinate2D) {
@@ -26,7 +29,7 @@ struct MapDestinationView: View {
     var body: some View {
         Map(viewport: $viewport) {
             MapViewAnnotation(coordinate: coordinate) {
-                destinationMarker
+                userLocationAnnotation
             }
         }
             .ornamentOptions(
@@ -52,9 +55,48 @@ struct MapDestinationView: View {
             .ignoresSafeArea()
     }
 
-    private var destinationMarker: some View {
-        Circle()
-            .fill(Colors.accent)
-            .frame(width: 22, height: 22)
+    private var userLocationAnnotation: some View {
+        let outerSize: CGFloat = 66
+        let innerSize: CGFloat = 58
+        let strokeWidth: CGFloat = 4
+
+        return ZStack {
+            Circle()
+                .fill(Colors.card)
+                .frame(width: outerSize, height: outerSize)
+
+            let avatarURL = profileStore.profile?.avatarURL(using: supabase)
+
+            Group {
+                if let avatarURL,
+                   let cachedImage = profileStore.cachedAvatarImage,
+                   profileStore.cachedAvatarURL == avatarURL {
+                    cachedImage
+                        .resizable()
+                        .scaledToFill()
+                } else if let avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .onAppear {
+                                    profileStore.cacheAvatar(image, url: avatarURL)
+                                }
+                        } else {
+                            Colors.secondaryText.opacity(0.3)
+                        }
+                    }
+                } else {
+                    Colors.secondaryText.opacity(0.3)
+                }
+            }
+            .frame(width: innerSize, height: innerSize)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Colors.card, lineWidth: strokeWidth)
+            }
+        }
     }
 }

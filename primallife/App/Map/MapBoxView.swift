@@ -170,6 +170,13 @@ struct MapBoxView: View {
                         .priority(1)
                     }
                     
+                    if let previewCoordinate = selectedPlace?.coordinate {
+                        MapViewAnnotation(coordinate: previewCoordinate) {
+                            userLocationAnnotation
+                        }
+                        .priority(1)
+                    }
+                    
                     ForEvery(filteredOtherUserLocations) { location in
                         MapViewAnnotation(coordinate: location.coordinate) {
                             if let userID = UUID(uuidString: location.id) {

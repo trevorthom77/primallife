@@ -485,7 +485,9 @@ struct MapBoxView: View {
                             Task {
                                 await upsertUserLocation(coordinate)
                             }
-                            loadLocations(for: coordinate)
+                            if !isUsingSelectedDestination {
+                                loadLocations(for: coordinate)
+                            }
                         }
                         
                         guard !isUsingSelectedDestination else { return }
@@ -676,6 +678,7 @@ struct MapBoxView: View {
         )
         hasCenteredOnUser = true
         cacheDestinationCoordinate(coordinate)
+        loadLocations(for: coordinate)
     }
     
     private func applySavedDestination(using camera: CameraAnimationsManager?) {

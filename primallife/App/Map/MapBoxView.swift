@@ -522,7 +522,7 @@ struct MapBoxView: View {
                                     zoom: 7,
                                     pitch: 0
                                 ),
-                                duration: 5
+                                duration: 0
                             )
                         }
                     }

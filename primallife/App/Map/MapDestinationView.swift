@@ -70,14 +70,14 @@ struct MapDestinationView: View {
                 .frame(maxWidth: .infinity)
                 .ignoresSafeArea(edges: .bottom)
             }
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackButton {
-                        dismiss()
-                    }
+            .overlay(alignment: .topLeading) {
+                BackButton {
+                    dismiss()
                 }
+                .padding(.leading)
+                .padding(.top, 58)
             }
+            .navigationBarBackButtonHidden(true)
             .ignoresSafeArea()
     }
 

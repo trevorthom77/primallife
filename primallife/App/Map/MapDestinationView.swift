@@ -12,13 +12,17 @@ import Supabase
 
 struct MapDestinationView: View {
     let coordinate: CLLocationCoordinate2D
+    let locationName: String
+    let countryDisplay: String
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
     @State private var viewport: Viewport
 
-    init(coordinate: CLLocationCoordinate2D) {
+    init(coordinate: CLLocationCoordinate2D, locationName: String, countryDisplay: String) {
         self.coordinate = coordinate
+        self.locationName = locationName
+        self.countryDisplay = countryDisplay
         let offsetLatitude = min(90, max(-90, coordinate.latitude - 0.7))
         let adjustedCoordinate = CLLocationCoordinate2D(
             latitude: offsetLatitude,
@@ -68,6 +72,23 @@ struct MapDestinationView: View {
                 .fill(Colors.card)
                 .frame(height: 440)
                 .frame(maxWidth: .infinity)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if !locationName.isEmpty {
+                            Text(locationName)
+                                .font(.travelTitle)
+                                .foregroundStyle(Colors.primaryText)
+                        }
+                        
+                        if !countryDisplay.isEmpty {
+                            Text(countryDisplay)
+                                .font(.travelBody)
+                                .foregroundStyle(Colors.secondaryText)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 28)
+                }
                 .ignoresSafeArea(edges: .bottom)
             }
             .overlay(alignment: .topLeading) {
@@ -125,4 +146,5 @@ struct MapDestinationView: View {
             }
         }
     }
+
 }

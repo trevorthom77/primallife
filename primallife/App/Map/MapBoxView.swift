@@ -524,7 +524,9 @@ struct MapBoxView: View {
                             guard let coordinate = place.coordinate else { return }
                             destinationSelection = DestinationSelection(
                                 latitude: coordinate.latitude,
-                                longitude: coordinate.longitude
+                                longitude: coordinate.longitude,
+                                locationName: place.primaryName,
+                                countryDisplay: place.countryDisplay
                             )
                             guard let camera = proxy.camera else { return }
                             let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
@@ -557,7 +559,11 @@ struct MapBoxView: View {
                 )
             }
             .navigationDestination(item: $destinationSelection) { selection in
-                MapDestinationView(coordinate: selection.coordinate)
+                MapDestinationView(
+                    coordinate: selection.coordinate,
+                    locationName: selection.locationName,
+                    countryDisplay: selection.countryDisplay
+                )
             }
         }
     }
@@ -1135,6 +1141,8 @@ private struct DestinationSelection: Identifiable, Hashable {
     let id = UUID()
     let latitude: Double
     let longitude: Double
+    let locationName: String
+    let countryDisplay: String
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)

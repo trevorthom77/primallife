@@ -39,9 +39,9 @@ struct HomeView: View {
             
             switch selectedTab {
             case "map":
-                MapBoxView(hideChrome: $hideChrome)
+                MapBoxView(hideChrome: $hideChrome, minZoomOut: 6.0)
             case "globe":
-                GlobeMapView()
+                GlobeMapView(minZoomOut: 6.0)
             case "airplane":
                  Color.clear
             case "message":

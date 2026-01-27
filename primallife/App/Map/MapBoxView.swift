@@ -35,6 +35,7 @@ private let mapTripsTimestampFormatterWithFractional: ISO8601DateFormatter = {
 
 struct MapBoxView: View {
     @Binding var hideChrome: Bool
+    let minZoomOut: Double
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
@@ -211,7 +212,7 @@ struct MapBoxView: View {
                     )
                     .cameraBounds(
                         CameraBoundsOptions(
-                            minZoom: 3.0
+                            minZoom: minZoomOut
                         )
                     )
                     .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
@@ -1425,7 +1426,7 @@ private final class UserLocationManager: NSObject, ObservableObject, CLLocationM
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 #Preview("Map") {
-    MapBoxView(hideChrome: .constant(false))
+    MapBoxView(hideChrome: .constant(false), minZoomOut: 3.0)
         .environmentObject(ProfileStore())
 }
 

@@ -34,6 +34,7 @@ private let mapTripsTimestampFormatterWithFractional: ISO8601DateFormatter = {
 }()
 
 struct GlobeMapView: View {
+    let minZoomOut: Double
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @State private var viewport: Viewport = .styleDefault
@@ -181,7 +182,7 @@ struct GlobeMapView: View {
                     )
                     .cameraBounds(
                         CameraBoundsOptions(
-                            minZoom: 3.0
+                            minZoom: minZoomOut
                         )
                     )
                     .onMapIdle { _ in

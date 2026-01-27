@@ -38,9 +38,6 @@ struct MapBoxView: View {
     let minZoomOut: Double
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
-    @AppStorage("mapSavedDestinationLatitude") private var savedDestinationLatitude: Double = 0
-    @AppStorage("mapSavedDestinationLongitude") private var savedDestinationLongitude: Double = 0
-    @AppStorage("mapHasSavedDestination") private var hasSavedDestination = false
     @State private var isShowingSearch = false
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
@@ -53,7 +50,6 @@ struct MapBoxView: View {
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var userLocationName = ""
     @State private var userLocationFlag = ""
-    @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     @State private var flyFeedbackToggle = false
@@ -476,7 +472,6 @@ struct MapBoxView: View {
                     }
                     .ignoresSafeArea()
                     .onAppear {
-                        applySavedDestination(using: proxy.camera)
                         applyInitialZoom()
                         locationManager.requestPermission()
                         suppressLoadingFeedback = true
@@ -486,12 +481,8 @@ struct MapBoxView: View {
                             Task {
                                 await upsertUserLocation(coordinate)
                             }
-                            if !isUsingSelectedDestination {
-                                loadLocations(for: coordinate)
-                            }
+                            loadLocations(for: coordinate)
                         }
-                        
-                        guard !isUsingSelectedDestination else { return }
                         userCoordinate = coordinate
                         if let coordinate {
                             resolveUserLocationName(for: coordinate)
@@ -668,7 +659,6 @@ struct MapBoxView: View {
     }
     
     private func applyDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
-        isUsingSelectedDestination = true
         userCoordinate = coordinate
         resolveUserLocationName(for: coordinate)
         viewport = .camera(
@@ -678,41 +668,17 @@ struct MapBoxView: View {
             pitch: 0
         )
         hasCenteredOnUser = true
-        cacheDestinationCoordinate(coordinate)
         loadLocations(for: coordinate)
-    }
-    
-    private func applySavedDestination(using camera: CameraAnimationsManager?) {
-        guard hasSavedDestination else { return }
-        let coordinate = CLLocationCoordinate2D(
-            latitude: savedDestinationLatitude,
-            longitude: savedDestinationLongitude
-        )
-        applyDestinationCoordinate(coordinate)
-        camera?.fly(
-            to: CameraOptions(
-                center: coordinate,
-                zoom: 8,
-                pitch: 0
-            ),
-            duration: 0
-        )
     }
 
     private func applyInitialZoom() {
-        guard !hasSavedDestination, userCoordinate == nil else { return }
+        guard userCoordinate == nil else { return }
         viewport = .camera(
             center: defaultMapCenterCoordinate,
             zoom: 8,
             bearing: 0,
             pitch: 0
         )
-    }
-    
-    private func cacheDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
-        hasSavedDestination = true
-        savedDestinationLatitude = coordinate.latitude
-        savedDestinationLongitude = coordinate.longitude
     }
 
     private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {

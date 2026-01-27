@@ -187,54 +187,6 @@ struct TribesSocialView: View {
                                 .clipped()
                                 .allowsHitTesting(false)
                         }
-                        .overlay(alignment: .bottomLeading) {
-                            Button(action: {
-                                isShowingMembersSheet = true
-                            }) {
-                                HStack(spacing: -8) {
-                                    ForEach(members.prefix(3)) { member in
-                                        ZStack {
-                                            if let avatarURL = member.avatarURL {
-                                                AsyncImage(url: avatarURL) { phase in
-                                                    if let image = phase.image {
-                                                        image
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                    } else {
-                                                        Color.clear
-                                                    }
-                                                }
-                                            } else {
-                                                Color.clear
-                                            }
-                                        }
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(Circle())
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-                                    }
-
-                                    ZStack {
-                                        Circle()
-                                            .fill(Colors.background)
-                                            .frame(width: 36, height: 36)
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.card, lineWidth: 3)
-                                            }
-
-                                        Text("\(totalTravelers)+")
-                                            .font(.custom(Fonts.semibold, size: 12))
-                                            .foregroundStyle(Colors.primaryText)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
-                        }
                         .clipShape(RoundedRectangle(cornerRadius: 16))
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -256,6 +208,52 @@ struct TribesSocialView: View {
                                 .font(.travelDetail)
                         }
                         .foregroundStyle(Colors.secondaryText)
+
+                        Button(action: {
+                            isShowingMembersSheet = true
+                        }) {
+                            HStack(spacing: -8) {
+                                ForEach(members.prefix(3)) { member in
+                                    ZStack {
+                                        if let avatarURL = member.avatarURL {
+                                            AsyncImage(url: avatarURL) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                } else {
+                                                    Color.clear
+                                                }
+                                            }
+                                        } else {
+                                            Color.clear
+                                        }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 3)
+                                    }
+                                }
+
+                                ZStack {
+                                    Circle()
+                                        .fill(Colors.background)
+                                        .frame(width: 36, height: 36)
+                                        .overlay {
+                                            Circle()
+                                                .stroke(Colors.card, lineWidth: 3)
+                                        }
+
+                                    Text("\(totalTravelers)+")
+                                        .font(.custom(Fonts.semibold, size: 12))
+                                        .foregroundStyle(Colors.primaryText)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 

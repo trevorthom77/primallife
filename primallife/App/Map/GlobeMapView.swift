@@ -44,6 +44,14 @@ struct GlobeMapView: View {
     @State private var tribeCreatorsByID: [String: MapTribeCreator] = [:]
     @StateObject private var tribeImageStore = TribeImageStore()
     @State private var isShowingTribes = false
+    @State private var isShowingFilters = false
+    @State private var tribeFilterCheckInDate: Date?
+    @State private var tribeFilterReturnDate: Date?
+    @State private var tribeFilterMinAge: Int?
+    @State private var tribeFilterMaxAge: Int?
+    @State private var tribeFilterGender: String?
+    @State private var tribeFilterType: String?
+    @State private var tribeFilterInterests: Set<String> = []
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var airplaneFeedbackToggle = false
@@ -136,6 +144,23 @@ struct GlobeMapView: View {
                     .task {
                         await fetchMapTribes()
                     }
+                    .overlay(alignment: .topLeading) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Button(action: {
+                                isShowingFilters = true
+                            }) {
+                                Text("Filter")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.tertiaryText)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 11)
+                                    .background(Colors.accent)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 58)
+                    }
                     .ignoresSafeArea()
             }
 
@@ -197,6 +222,20 @@ struct GlobeMapView: View {
         }
         .navigationDestination(isPresented: $isShowingTribes) {
             MapTribeView(isShowingTribes: $isShowingTribes)
+        }
+        .navigationDestination(isPresented: $isShowingFilters) {
+            UpcomingTripsFilterView(
+                filterCheckInDate: $tribeFilterCheckInDate,
+                filterReturnDate: $tribeFilterReturnDate,
+                filterMinAge: $tribeFilterMinAge,
+                filterMaxAge: $tribeFilterMaxAge,
+                filterGender: $tribeFilterGender,
+                filterOriginID: .constant(nil),
+                filterTribeType: $tribeFilterType,
+                filterTravelDescription: .constant(nil),
+                filterInterests: $tribeFilterInterests,
+                showsTribeFilters: true
+            )
         }
     }
     }

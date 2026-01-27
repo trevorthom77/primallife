@@ -71,7 +71,7 @@ struct MapBoxView: View {
     @StateObject private var travelerImageStore = TravelerImageStore()
     private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
-    private let fixedLocationQueryRadiusMeters: CLLocationDistance = 10 * 1609.344
+    private let fixedLocationQueryRadiusMeters: CLLocationDistance = 50 * 1609.344
     
     private let customPlaceImageNames = [
         "italy",

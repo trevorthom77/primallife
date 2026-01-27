@@ -52,6 +52,18 @@ struct MapDestinationView: View {
                     )!
                 )
             )
+            .overlay(alignment: .bottom) {
+                UnevenRoundedRectangle(
+                    cornerRadii: RectangleCornerRadii(
+                        topLeading: 32,
+                        topTrailing: 32
+                    )
+                )
+                .fill(Colors.card)
+                .frame(height: 440)
+                .frame(maxWidth: .infinity)
+                .ignoresSafeArea(edges: .bottom)
+            }
             .ignoresSafeArea()
     }
 

@@ -55,6 +55,8 @@ struct GlobeMapView: View {
     @State private var tribeFilterInterests: Set<String> = []
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
+    @State private var userLocationName = ""
+    @State private var userLocationFlag = ""
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
     @State private var mapCamera: CameraAnimationsManager?
@@ -204,6 +206,12 @@ struct GlobeMapView: View {
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
                         userCoordinate = coordinate
+                        if let coordinate {
+                            resolveUserLocationName(for: coordinate)
+                        } else {
+                            userLocationName = ""
+                            userLocationFlag = ""
+                        }
                         guard !hasCenteredOnUser, let coordinate else { return }
                         viewport = .camera(
                             center: coordinate,
@@ -222,12 +230,14 @@ struct GlobeMapView: View {
                                 Image(systemName: "magnifyingglass")
                                     .foregroundStyle(Colors.secondaryText)
 
-                                Text("🇦🇺")
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
-                                    .lineLimit(1)
+                                if !userLocationName.isEmpty, !userLocationFlag.isEmpty {
+                                    Text(userLocationFlag)
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .lineLimit(1)
+                                }
 
-                                Text("Sydney, Australia")
+                                Text(userLocationName.isEmpty ? "Search" : userLocationName)
                                     .font(.travelBody)
                                     .foregroundStyle(Colors.primaryText)
                                     .lineLimit(1)
@@ -486,6 +496,35 @@ struct GlobeMapView: View {
             bearing: 0,
             pitch: 0
         )
+    }
+
+    private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {
+        userLocationFlag = ""
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        CLGeocoder().reverseGeocodeLocation(location) { placemarks, _ in
+            let placemark = placemarks?.first
+            let city = placemark?.locality
+                ?? placemark?.subAdministrativeArea
+                ?? placemark?.administrativeArea
+                ?? placemark?.name
+            let country = placemark?.country
+            let cityName = city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let countryName = country?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let parts = [cityName, countryName].filter { !$0.isEmpty }
+            let displayName = parts.joined(separator: ", ")
+            guard !displayName.isEmpty else { return }
+            DispatchQueue.main.async {
+                userLocationName = displayName
+            }
+        }
+
+        Task {
+            let flag = await fetchCountryFlag(for: coordinate)
+            guard !flag.isEmpty else { return }
+            await MainActor.run {
+                userLocationFlag = flag
+            }
+        }
     }
 
     private func visibleRadius(for center: CLLocationCoordinate2D, in bounds: CoordinateBounds) -> CLLocationDistance {

@@ -60,7 +60,6 @@ struct MapBoxView: View {
     @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
-    @State private var communityTab: CommunityTab = .travelers
     @State private var minAgeFilter: Int?
     @State private var maxAgeFilter: Int?
     @State private var selectedCountryID: String?
@@ -181,22 +180,20 @@ struct MapBoxView: View {
                         .priority(1)
                     }
                     
-                    if communityTab == .travelers {
-                        ForEvery(filteredOtherUserLocations) { location in
-                            MapViewAnnotation(coordinate: location.coordinate) {
-                                if let userID = UUID(uuidString: location.id) {
-                                    NavigationLink {
-                                        OthersProfileView(userID: userID)
-                                    } label: {
-                                        otherUserAnnotation(for: location)
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
+                    ForEvery(filteredOtherUserLocations) { location in
+                        MapViewAnnotation(coordinate: location.coordinate) {
+                            if let userID = UUID(uuidString: location.id) {
+                                NavigationLink {
+                                    OthersProfileView(userID: userID)
+                                } label: {
                                     otherUserAnnotation(for: location)
                                 }
+                                .buttonStyle(.plain)
+                            } else {
+                                otherUserAnnotation(for: location)
                             }
-                            .allowOverlap(true)
                         }
+                        .allowOverlap(true)
                     }
                 }
                     .ornamentOptions(
@@ -278,18 +275,16 @@ struct MapBoxView: View {
                                     }
                                 }
 
-                                if communityTab == .travelers {
-                                    Button(action: {
-                                        isShowingFilters = true
-                                    }) {
-                                        Text("Filter")
-                                            .font(.travelBodySemibold)
-                                            .foregroundStyle(Colors.primaryText)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 12)
-                                            .background(Colors.card)
-                                            .clipShape(Capsule())
-                                    }
+                                Button(action: {
+                                    isShowingFilters = true
+                                }) {
+                                    Text("Filter")
+                                        .font(.travelBodySemibold)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.card)
+                                        .clipShape(Capsule())
                                 }
                             }
                             .padding(.horizontal)
@@ -487,7 +482,6 @@ struct MapBoxView: View {
                         }
                         if selectedPlace == nil {
                             MapCommunityPanel(
-                                tab: $communityTab,
                                 travelers: filteredTravelers,
                                 travelerImageStore: travelerImageStore
                             )
@@ -1347,35 +1341,11 @@ private final class TravelerImageStore: ObservableObject {
 
 private struct MapCommunityPanel: View {
     @Environment(\.supabaseClient) private var supabase
-    @Binding var tab: CommunityTab
     let travelers: [MapTraveler]
     @ObservedObject var travelerImageStore: TravelerImageStore
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    ForEach(CommunityTab.allCases, id: \.self) { item in
-                        Button {
-                            tab = item
-                        } label: {
-                            Text(item.rawValue)
-                                .font(.travelDetail)
-                                .foregroundStyle(tab == item ? Colors.tertiaryText : Colors.primaryText)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 14)
-                                .frame(maxWidth: .infinity)
-                                .background(tab == item ? Colors.accent : Colors.secondaryText.opacity(0.18))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .frame(maxWidth: 280)
-                
-                Spacer()
-            }
-            
             if travelers.isEmpty {
                 HStack {
                     Spacer()
@@ -1409,7 +1379,6 @@ private struct MapCommunityPanel: View {
         .padding(16)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .animation(.none, value: tab)
     }
     
     private func travelerCard(_ traveler: MapTraveler) -> some View {
@@ -1488,10 +1457,6 @@ private struct MapCommunityPanel: View {
             Colors.secondaryText.opacity(0.3)
         }
     }
-}
-
-private enum CommunityTab: String, CaseIterable {
-    case travelers = "Travelers"
 }
 
 private final class UserLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {

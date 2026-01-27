@@ -56,6 +56,16 @@ struct GlobeMapView: View {
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var airplaneFeedbackToggle = false
     @State private var mapCamera: CameraAnimationsManager?
+    @State private var locationsRefreshTask: Task<Void, Never>?
+    @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
+    @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
+    @State private var lastLocationsRefreshTime: TimeInterval = 0
+    @State private var isLoadingLocations = false
+    @State private var loadingFeedbackToggle = false
+    @State private var suppressLoadingFeedback = true
+    private let refreshMovementThresholdFraction: Double = 0.3
+    private let refreshRadiusChangeThresholdFraction: Double = 0.3
+    private let refreshMinimumInterval: TimeInterval = 0
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)
@@ -176,17 +186,23 @@ struct GlobeMapView: View {
                     .onMapIdle { _ in
                         guard let map = proxy.map else { return }
                         updateSearchArea(using: map)
-                        Task { await fetchMapTribes() }
+                        guard let center = mapCenterCoordinate else { return }
+                        let radius = locationQueryRadius
+                        guard radius > 0 else { return }
+                        guard shouldRefreshLocations(for: center, radius: radius) else { return }
+                        refreshLocations()
                     }
+                    .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
                     .onAppear {
                         mapCamera = proxy.camera
                         locationManager.requestPermission()
+                        suppressLoadingFeedback = true
                     }
                     .onReceive(locationManager.$coordinate) { coordinate in
                         userCoordinate = coordinate
                     }
                     .task {
-                        await fetchMapTribes()
+                        refreshLocations()
                     }
                     .overlay(alignment: .topLeading) {
                         HStack(alignment: .top, spacing: 12) {
@@ -272,7 +288,17 @@ struct GlobeMapView: View {
                         .padding(.horizontal)
                         .padding(.top, 58)
                     }
+                    .overlay(alignment: .top) {
+                        if isLoadingLocations {
+                            loadingIndicator
+                                .padding(.top, 120)
+                                .padding(.horizontal)
+                        }
+                    }
                     .ignoresSafeArea()
+                    .onDisappear {
+                        stopLocationsRefresh()
+                    }
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -450,6 +476,67 @@ struct GlobeMapView: View {
         let verticalRadius = min(centerLocation.distance(from: northLocation), centerLocation.distance(from: southLocation))
         let horizontalRadius = min(centerLocation.distance(from: eastLocation), centerLocation.distance(from: westLocation))
         return min(verticalRadius, horizontalRadius)
+    }
+
+    private func shouldRefreshLocations(for center: CLLocationCoordinate2D, radius: CLLocationDistance) -> Bool {
+        let now = Date().timeIntervalSinceReferenceDate
+        if now - lastLocationsRefreshTime < refreshMinimumInterval {
+            return false
+        }
+        guard let lastCenter = lastLocationsRefreshCenter, lastLocationsRefreshRadius > 0 else {
+            return true
+        }
+        let lastRadius = lastLocationsRefreshRadius
+        let lastLocation = CLLocation(latitude: lastCenter.latitude, longitude: lastCenter.longitude)
+        let currentLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let distance = currentLocation.distance(from: lastLocation)
+        let moveThreshold = radius * refreshMovementThresholdFraction
+        let radiusThreshold = lastRadius * refreshRadiusChangeThresholdFraction
+        return distance >= moveThreshold || abs(radius - lastRadius) >= radiusThreshold
+    }
+
+    private func refreshLocations() {
+        locationsRefreshTask?.cancel()
+        guard let center = mapCenterCoordinate, locationQueryRadius > 0 else {
+            isLoadingLocations = false
+            return
+        }
+        lastLocationsRefreshCenter = center
+        lastLocationsRefreshRadius = locationQueryRadius
+        lastLocationsRefreshTime = Date().timeIntervalSinceReferenceDate
+        if !suppressLoadingFeedback {
+            isLoadingLocations = true
+            loadingFeedbackToggle.toggle()
+        }
+        locationsRefreshTask = Task {
+            await fetchMapTribes()
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                isLoadingLocations = false
+                suppressLoadingFeedback = false
+            }
+        }
+    }
+
+    private func stopLocationsRefresh() {
+        locationsRefreshTask?.cancel()
+        locationsRefreshTask = nil
+        isLoadingLocations = false
+    }
+
+    private var loadingIndicator: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .tint(Colors.primaryText)
+
+            Text("Loading...")
+                .font(.travelDetail)
+                .foregroundStyle(Colors.primaryText)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Colors.card)
+        .clipShape(Capsule())
     }
 
     private func mapTribeAnnotation(for tribe: MapTribeLocation) -> some View {

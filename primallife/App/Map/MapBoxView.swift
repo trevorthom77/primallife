@@ -52,7 +52,6 @@ struct MapBoxView: View {
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var userLocationName = ""
     @State private var userLocationFlag = ""
-    @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var isUsingSelectedDestination = false
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
@@ -66,19 +65,13 @@ struct MapBoxView: View {
     @State private var selectedGender = "All"
     @State private var selectedTravelDescription: String?
     @State private var selectedInterests: Set<String> = []
-    @State private var locationQueryRadius: CLLocationDistance = 0
-    @State private var lastLocationsRefreshCenter: CLLocationCoordinate2D?
-    @State private var lastLocationsRefreshRadius: CLLocationDistance = 0
-    @State private var lastLocationsRefreshTime: TimeInterval = 0
     @State private var isLoadingLocations = false
     @State private var loadingFeedbackToggle = false
     @State private var suppressLoadingFeedback = true
     @StateObject private var travelerImageStore = TravelerImageStore()
     private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
-    private let refreshMovementThresholdFraction: Double = 0.3
-    private let refreshRadiusChangeThresholdFraction: Double = 0.3
-    private let refreshMinimumInterval: TimeInterval = 0
+    private let fixedLocationQueryRadiusMeters: CLLocationDistance = 10 * 1609.344
     
     private let customPlaceImageNames = [
         "italy",
@@ -221,15 +214,6 @@ struct MapBoxView: View {
                             minZoom: 3.0
                         )
                     )
-                    .onMapIdle { _ in
-                        guard let map = proxy.map else { return }
-                        updateSearchArea(using: map)
-                        guard let center = mapCenterCoordinate else { return }
-                        let radius = locationQueryRadius
-                        guard radius > 0 else { return }
-                        guard shouldRefreshLocations(for: center, radius: radius) else { return }
-                        refreshLocations()
-                    }
                     .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
                     .overlay(alignment: .top) {
                         if !hideChrome {
@@ -501,6 +485,7 @@ struct MapBoxView: View {
                             Task {
                                 await upsertUserLocation(coordinate)
                             }
+                            loadLocations(for: coordinate)
                         }
                         
                         guard !isUsingSelectedDestination else { return }
@@ -691,10 +676,6 @@ struct MapBoxView: View {
         )
         hasCenteredOnUser = true
         cacheDestinationCoordinate(coordinate)
-        
-        Task {
-            await fetchOtherLocations()
-        }
     }
     
     private func applySavedDestination(using camera: CameraAnimationsManager?) {
@@ -872,11 +853,9 @@ struct MapBoxView: View {
         return Set(outgoingIDs + incomingIDs)
     }
 
-    private func fetchOtherLocations() async {
+    private func fetchOtherLocations(around coordinate: CLLocationCoordinate2D) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        guard let coordinate = mapCenterCoordinate else { return }
-        let radius = locationQueryRadius
-        guard radius > 0 else { return }
+        let radius = fixedLocationQueryRadiusMeters
         
         let bounds = nearbyBounds(around: coordinate, radius: radius)
         let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
@@ -1038,61 +1017,14 @@ struct MapBoxView: View {
         return hash
     }
     
-    private func updateSearchArea(using map: MapboxMap) {
-        let cameraState = map.cameraState
-        let cameraOptions = CameraOptions(cameraState: cameraState)
-        let bounds = map.coordinateBounds(for: cameraOptions)
-        guard !bounds.isEmpty else { return }
-        let center = cameraState.center
-        let radius = visibleRadius(for: center, in: bounds)
-        guard radius > 0 else { return }
-        mapCenterCoordinate = center
-        locationQueryRadius = radius
-    }
-
-    private func visibleRadius(for center: CLLocationCoordinate2D, in bounds: CoordinateBounds) -> CLLocationDistance {
-        let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
-        let northLocation = CLLocation(latitude: bounds.north, longitude: center.longitude)
-        let southLocation = CLLocation(latitude: bounds.south, longitude: center.longitude)
-        let eastLocation = CLLocation(latitude: center.latitude, longitude: bounds.east)
-        let westLocation = CLLocation(latitude: center.latitude, longitude: bounds.west)
-        let verticalRadius = min(centerLocation.distance(from: northLocation), centerLocation.distance(from: southLocation))
-        let horizontalRadius = min(centerLocation.distance(from: eastLocation), centerLocation.distance(from: westLocation))
-        return min(verticalRadius, horizontalRadius)
-    }
-
-    private func shouldRefreshLocations(for center: CLLocationCoordinate2D, radius: CLLocationDistance) -> Bool {
-        let now = Date().timeIntervalSinceReferenceDate
-        if now - lastLocationsRefreshTime < refreshMinimumInterval {
-            return false
-        }
-        guard let lastCenter = lastLocationsRefreshCenter, lastLocationsRefreshRadius > 0 else {
-            return true
-        }
-        let lastRadius = lastLocationsRefreshRadius
-        let lastLocation = CLLocation(latitude: lastCenter.latitude, longitude: lastCenter.longitude)
-        let currentLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
-        let distance = currentLocation.distance(from: lastLocation)
-        let moveThreshold = radius * refreshMovementThresholdFraction
-        let radiusThreshold = lastRadius * refreshRadiusChangeThresholdFraction
-        return distance >= moveThreshold || abs(radius - lastRadius) >= radiusThreshold
-    }
-
-    private func refreshLocations() {
+    private func loadLocations(for coordinate: CLLocationCoordinate2D) {
         locationsRefreshTask?.cancel()
-        guard let center = mapCenterCoordinate, locationQueryRadius > 0 else {
-            isLoadingLocations = false
-            return
-        }
-        lastLocationsRefreshCenter = center
-        lastLocationsRefreshRadius = locationQueryRadius
-        lastLocationsRefreshTime = Date().timeIntervalSinceReferenceDate
         if !suppressLoadingFeedback {
             isLoadingLocations = true
             loadingFeedbackToggle.toggle()
         }
         locationsRefreshTask = Task {
-            await fetchOtherLocations()
+            await fetchOtherLocations(around: coordinate)
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 isLoadingLocations = false

@@ -220,6 +220,7 @@ struct GlobeMapView: View {
             .padding(.horizontal)
             .padding(.bottom, 120)
         }
+        .ignoresSafeArea()
         .navigationDestination(isPresented: $isShowingTribes) {
             MapTribeView(isShowingTribes: $isShowingTribes)
         }
@@ -512,7 +513,7 @@ private struct GlobeMapPanel: View {
                         .foregroundStyle(Colors.secondaryText)
                     Spacer()
                 }
-                .frame(height: 92)
+                .frame(height: 120)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -546,7 +547,7 @@ private struct GlobeMapPanel: View {
                     }
                     .padding(.vertical, 4)
                 }
-                .frame(height: 92)
+                .frame(height: 120)
             }
         }
         .frame(maxWidth: .infinity)

@@ -1354,7 +1354,7 @@ private struct MapCommunityPanel: View {
                         .foregroundStyle(Colors.secondaryText)
                     Spacer()
                 }
-                .frame(height: 92)
+                .frame(height: 180)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -1373,7 +1373,7 @@ private struct MapCommunityPanel: View {
                     }
                     .padding(.vertical, 4)
                 }
-                .frame(height: 92)
+                .frame(height: 180)
             }
         }
         .padding(16)

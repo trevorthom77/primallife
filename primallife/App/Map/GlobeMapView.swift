@@ -190,19 +190,41 @@ struct GlobeMapView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         HStack(alignment: .top, spacing: 12) {
-                            Button(action: {
-                                isShowingFilters = true
-                            }) {
-                                Text("Filter")
-                                    .font(.travelBodySemibold)
-                                    .foregroundStyle(Colors.primaryText)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 12)
-                                    .background(Colors.card)
-                                    .clipShape(Capsule())
-                            }
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundStyle(Colors.secondaryText)
 
-                            Spacer()
+                                    Text("🇦🇺")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .lineLimit(1)
+
+                                    Text("Australia")
+                                        .font(.travelBody)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 16)
+                                .background(Colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                                Button(action: {
+                                    isShowingFilters = true
+                                }) {
+                                    Text("Filter")
+                                        .font(.travelBodySemibold)
+                                        .foregroundStyle(Colors.primaryText)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 12)
+                                        .background(Colors.card)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                             VStack(spacing: 12) {
                                 Button(action: {

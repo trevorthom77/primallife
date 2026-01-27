@@ -215,29 +215,29 @@ struct GlobeMapView: View {
                         refreshLocations()
                     }
                     .overlay(alignment: .topLeading) {
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "magnifyingglass")
-                                        .foregroundStyle(Colors.secondaryText)
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundStyle(Colors.secondaryText)
 
-                                    Text("🇦🇺")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
-                                        .lineLimit(1)
+                                Text("🇦🇺")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .lineLimit(1)
 
-                                    Text("Sydney, Australia")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 16)
-                                .padding(.horizontal, 16)
-                                .background(Colors.card)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                Text("Sydney, Australia")
+                                    .font(.travelBody)
+                                    .foregroundStyle(Colors.primaryText)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 16)
+                            .background(Colors.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
+                            HStack {
                                 Button(action: {
                                     isShowingFilters = true
                                 }) {
@@ -249,10 +249,9 @@ struct GlobeMapView: View {
                                         .background(Colors.card)
                                         .clipShape(Capsule())
                                 }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                            VStack(spacing: 12) {
+                                Spacer()
+
                                 Button(action: {
                                     airplaneFeedbackToggle.toggle()
                                     guard let coordinate = userCoordinate, let camera = mapCamera else { return }

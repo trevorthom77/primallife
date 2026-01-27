@@ -14,11 +14,12 @@ struct MapDestinationView: View {
     let coordinate: CLLocationCoordinate2D
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
+    @Environment(\.dismiss) private var dismiss
     @State private var viewport: Viewport
 
     init(coordinate: CLLocationCoordinate2D) {
         self.coordinate = coordinate
-        let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
+        let offsetLatitude = min(90, max(-90, coordinate.latitude - 0.7))
         let adjustedCoordinate = CLLocationCoordinate2D(
             latitude: offsetLatitude,
             longitude: coordinate.longitude
@@ -68,6 +69,14 @@ struct MapDestinationView: View {
                 .frame(height: 440)
                 .frame(maxWidth: .infinity)
                 .ignoresSafeArea(edges: .bottom)
+            }
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    BackButton {
+                        dismiss()
+                    }
+                }
             }
             .ignoresSafeArea()
     }

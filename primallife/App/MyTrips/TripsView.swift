@@ -5,6 +5,8 @@ struct TripsView: View {
     @Environment(\.supabaseClient) var supabase
     @ObservedObject var viewModel: MyTripsViewModel
     @State private var destination = ""
+    @State private var selectedCountryCode: String?
+    @State private var selectedPlaceType: String?
     @State private var searchQuery = ""
     @State private var checkInDate = Date()
     @State private var returnDate = Date()
@@ -149,6 +151,8 @@ struct TripsView: View {
                             destination: destination,
                             checkIn: checkInDate,
                             returnDate: returnDate,
+                            countryCode: selectedCountryCode,
+                            placeType: selectedPlaceType,
                             supabase: supabase
                         )
                         
@@ -222,6 +226,8 @@ struct TripsView: View {
                                         searchTask?.cancel()
                                         searchResults = []
                                         destination = result.title
+                                        selectedCountryCode = result.countryCode.isEmpty ? nil : result.countryCode
+                                        selectedPlaceType = result.placeType
                                         isShowingDestinationSheet = false
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
@@ -384,6 +390,7 @@ private struct MapboxPlace: Identifiable, Decodable {
     let id: String
     let placeName: String
     let properties: MapboxProperties?
+    let placeType: String?
     private let contextCode: String?
     
     var displayName: String {
@@ -407,7 +414,7 @@ private struct MapboxPlace: Identifiable, Decodable {
         return remaining.joined(separator: ", ")
     }
     
-    private var countryCode: String {
+    var countryCode: String {
         let propertyCode = properties?
             .shortCode?
             .uppercased()
@@ -428,6 +435,7 @@ private struct MapboxPlace: Identifiable, Decodable {
         case id
         case placeName = "place_name"
         case properties
+        case placeType = "place_type"
         case context
     }
     
@@ -437,6 +445,7 @@ private struct MapboxPlace: Identifiable, Decodable {
         placeName = try container.decode(String.self, forKey: .placeName)
         
         properties = try container.decodeIfPresent(MapboxProperties.self, forKey: .properties)
+        placeType = try container.decodeIfPresent([String].self, forKey: .placeType)?.first
         
         let contexts = try container.decodeIfPresent([MapboxContext].self, forKey: .context) ?? []
         contextCode = contexts.first(where: { $0.id.hasPrefix("country") })?.shortCode?.split(separator: "-").first.map(String.init)

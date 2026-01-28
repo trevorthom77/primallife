@@ -26,6 +26,8 @@ struct Trip: Decodable, Identifiable {
     let id: UUID
     let userID: UUID
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let checkIn: Date
     let returnDate: Date
     let createdAt: String
@@ -34,6 +36,8 @@ struct Trip: Decodable, Identifiable {
         case id
         case userID = "user_id"
         case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case checkIn = "check_in"
         case returnDate = "return_date"
         case createdAt = "created_at"
@@ -44,6 +48,8 @@ struct Trip: Decodable, Identifiable {
         id = try container.decode(UUID.self, forKey: .id)
         userID = try container.decode(UUID.self, forKey: .userID)
         destination = try container.decode(String.self, forKey: .destination)
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+        placeType = try container.decodeIfPresent(String.self, forKey: .placeType)
 
         let checkInString = try container.decode(String.self, forKey: .checkIn)
         guard let checkInDate = myTripsDateFormatter.date(from: checkInString) else {
@@ -67,12 +73,16 @@ struct Trip: Decodable, Identifiable {
 struct NewTrip: Encodable {
     let userID: UUID
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let checkIn: Date
     let returnDate: Date
     
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
         case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case checkIn = "check_in"
         case returnDate = "return_date"
     }
@@ -81,6 +91,8 @@ struct NewTrip: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(userID, forKey: .userID)
         try container.encode(destination, forKey: .destination)
+        try container.encodeIfPresent(countryCode, forKey: .countryCode)
+        try container.encodeIfPresent(placeType, forKey: .placeType)
         try container.encode(myTripsDateFormatter.string(from: checkIn), forKey: .checkIn)
         try container.encode(myTripsDateFormatter.string(from: returnDate), forKey: .returnDate)
     }
@@ -275,7 +287,14 @@ final class MyTripsViewModel: ObservableObject {
         }
     }
 
-    func addTrip(destination: String, checkIn: Date, returnDate: Date, supabase: SupabaseClient?) async {
+    func addTrip(
+        destination: String,
+        checkIn: Date,
+        returnDate: Date,
+        countryCode: String?,
+        placeType: String?,
+        supabase: SupabaseClient?
+    ) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         let tripKey = pendingTripKey(destination: destination, checkIn: checkIn, returnDate: returnDate)
         if pendingTripKeys.contains(tripKey)
@@ -289,6 +308,8 @@ final class MyTripsViewModel: ObservableObject {
         let payload = NewTrip(
             userID: userID,
             destination: destination,
+            countryCode: countryCode,
+            placeType: placeType,
             checkIn: checkIn,
             returnDate: returnDate
         )
@@ -387,10 +408,19 @@ final class MyTripsViewModel: ObservableObject {
         do {
             let startOfToday = Calendar.current.startOfDay(for: Date())
             let startOfTodayString = myTripsDateFormatter.string(from: startOfToday)
+            let travelerFilterColumn: String
+            let travelerFilterValue: String
+            if trip.placeType == "country" {
+                travelerFilterColumn = "country_code"
+                travelerFilterValue = trip.countryCode ?? ""
+            } else {
+                travelerFilterColumn = "destination"
+                travelerFilterValue = trip.destination
+            }
             let fetchedTravelers: [TripTraveler] = try await supabase
                 .from("mytrips")
                 .select("user_id, check_in, return_date")
-                .eq("destination", value: trip.destination)
+                .eq(travelerFilterColumn, value: travelerFilterValue)
                 .gte("return_date", value: startOfTodayString)
                 .execute()
                 .value

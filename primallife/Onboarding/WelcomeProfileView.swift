@@ -155,6 +155,8 @@ struct WelcomeProfileView: View {
         let payload = NewTrip(
             userID: userID,
             destination: destination,
+            countryCode: nil,
+            placeType: nil,
             checkIn: checkIn,
             returnDate: returnDate
         )

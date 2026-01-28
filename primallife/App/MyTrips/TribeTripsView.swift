@@ -901,6 +901,8 @@ private struct TribeGenderView: View {
 private struct NewTribe: Encodable {
     let ownerID: UUID
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let name: String
     let description: String?
     let endDate: Date
@@ -914,6 +916,8 @@ private struct NewTribe: Encodable {
     enum CodingKeys: String, CodingKey {
         case ownerID = "owner_id"
         case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case name
         case description
         case endDate = "end_date"
@@ -929,6 +933,8 @@ private struct NewTribe: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(ownerID, forKey: .ownerID)
         try container.encode(destination, forKey: .destination)
+        try container.encodeIfPresent(countryCode, forKey: .countryCode)
+        try container.encodeIfPresent(placeType, forKey: .placeType)
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
         try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)
@@ -1250,6 +1256,8 @@ private struct TribeReviewView: View {
             let payload = NewTribe(
                 ownerID: userID,
                 destination: trip.destination,
+                countryCode: trip.countryCode,
+                placeType: trip.placeType,
                 name: resolvedName,
                 description: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 endDate: returnDate,

@@ -360,10 +360,19 @@ final class MyTripsViewModel: ObservableObject {
         loadingTribeTripIDs.insert(trip.id)
 
         do {
+            let tribeFilterColumn: String
+            let tribeFilterValue: String
+            if trip.placeType == "country" {
+                tribeFilterColumn = "country_code"
+                tribeFilterValue = trip.countryCode ?? ""
+            } else {
+                tribeFilterColumn = "destination"
+                tribeFilterValue = trip.destination
+            }
             let fetchedTribes: [Tribe] = try await supabase
                 .from("tribes")
                 .select()
-                .eq("destination", value: trip.destination)
+                .eq(tribeFilterColumn, value: tribeFilterValue)
                 .execute()
                 .value
 

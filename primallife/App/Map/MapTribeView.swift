@@ -1334,14 +1334,15 @@ private struct MapTribeReviewView: View {
 
         do {
             let photoURL = try await uploadGroupPhotoIfNeeded(supabase: supabase, userID: userID)
-            guard let destination = await resolveDestinationName(for: selectedLocation) else {
+            guard let locationDetails = await resolveDestinationDetails(for: selectedLocation) else {
                 errorMessage = "Unable to resolve location."
                 return
             }
 
             let payload = NewMapTribe(
                 ownerID: userID,
-                destination: destination,
+                destination: locationDetails.destination,
+                countryCode: locationDetails.countryCode,
                 name: resolvedName,
                 description: trimmedAbout.isEmpty ? nil : trimmedAbout,
                 endDate: returnDate,
@@ -1395,7 +1396,9 @@ private struct MapTribeReviewView: View {
             .getPublicURL(path: path)
     }
 
-    private func resolveDestinationName(for coordinate: CLLocationCoordinate2D) async -> String? {
+    private func resolveDestinationDetails(
+        for coordinate: CLLocationCoordinate2D
+    ) async -> (destination: String, countryCode: String?)? {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         return await withCheckedContinuation { continuation in
             CLGeocoder().reverseGeocodeLocation(location) { placemarks, _ in
@@ -1404,8 +1407,14 @@ private struct MapTribeReviewView: View {
                     ?? placemark?.subAdministrativeArea
                     ?? placemark?.administrativeArea
                     ?? placemark?.name
-                let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-                continuation.resume(returning: trimmed?.isEmpty == false ? trimmed : nil)
+                let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedCountryCode = placemark?.isoCountryCode?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let normalizedCountryCode = trimmedCountryCode?.isEmpty == false ? trimmedCountryCode : nil
+                guard let destination = trimmedName, !destination.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: (destination: destination, countryCode: normalizedCountryCode))
             }
         }
     }
@@ -1433,6 +1442,7 @@ private enum MapTribeGenderOption: String, CaseIterable, Identifiable {
 private struct NewMapTribe: Encodable {
     let ownerID: UUID
     let destination: String
+    let countryCode: String?
     let name: String
     let description: String?
     let endDate: Date
@@ -1449,6 +1459,7 @@ private struct NewMapTribe: Encodable {
     enum CodingKeys: String, CodingKey {
         case ownerID = "owner_id"
         case destination
+        case countryCode = "country_code"
         case name
         case description
         case endDate = "end_date"
@@ -1467,6 +1478,7 @@ private struct NewMapTribe: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(ownerID, forKey: .ownerID)
         try container.encode(destination, forKey: .destination)
+        try container.encodeIfPresent(countryCode, forKey: .countryCode)
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
         try container.encode(Self.dateFormatter.string(from: endDate), forKey: .endDate)

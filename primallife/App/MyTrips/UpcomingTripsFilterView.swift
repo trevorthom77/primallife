@@ -20,6 +20,10 @@ struct UpcomingTripsFilterView: View {
     @State private var showOriginPicker = false
     @State private var minAgeText: String = ""
     @State private var maxAgeText: String = ""
+    @State private var isShowingMinAgePicker = false
+    @State private var isShowingMaxAgePicker = false
+    @State private var tempMinAge = 18
+    @State private var tempMaxAge = 18
     @FocusState private var focusedAgeField: AgeField?
     @State private var selectedGender: GenderOption
     @State private var selectedTribeFilter: TribeFilterOption
@@ -249,85 +253,67 @@ struct UpcomingTripsFilterView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Age range")
-                                .font(.travelDetail)
+                                .font(.travelTitle)
                                 .foregroundStyle(Colors.primaryText)
 
                             VStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Minimum age")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $minAgeText,
-                                            prompt: Text("Enter minimum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
+                                Button {
+                                    tempMinAge = ageValue(from: minAgeText) ?? 18
+                                    isShowingMinAgePicker = true
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Minimum age")
+                                            .font(.travelDetail)
                                             .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .min)
-                                            .onChange(of: minAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    minAgeText = digits
-                                                }
-                                            }
 
-                                        Spacer()
+                                        HStack {
+                                            Text(minAgeText.isEmpty ? "Enter minimum age" : minAgeText)
+                                                .font(.travelBody)
+                                                .foregroundStyle(
+                                                    minAgeText.isEmpty
+                                                        ? Colors.secondaryText
+                                                        : Colors.primaryText
+                                                )
+
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
+                                    .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .cornerRadius(12)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .min
-                                }
+                                .buttonStyle(.plain)
 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Maximum age")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $maxAgeText,
-                                            prompt: Text("Enter maximum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
+                                Button {
+                                    tempMaxAge = ageValue(from: maxAgeText) ?? ageValue(from: minAgeText) ?? 18
+                                    isShowingMaxAgePicker = true
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Maximum age")
+                                            .font(.travelDetail)
                                             .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .max)
-                                            .onChange(of: maxAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    maxAgeText = digits
-                                                }
-                                            }
 
-                                        Spacer()
+                                        HStack {
+                                            Text(maxAgeText.isEmpty ? "Enter maximum age" : maxAgeText)
+                                                .font(.travelBody)
+                                                .foregroundStyle(
+                                                    maxAgeText.isEmpty
+                                                        ? Colors.secondaryText
+                                                        : Colors.primaryText
+                                                )
+
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
+                                    .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .cornerRadius(12)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .max
-                                }
+                                .buttonStyle(.plain)
                             }
 
                             if isAgeRangeInvalid {
@@ -454,85 +440,67 @@ struct UpcomingTripsFilterView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Age range")
-                                .font(.travelDetail)
+                                .font(.travelTitle)
                                 .foregroundStyle(Colors.primaryText)
 
                             VStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Minimum age")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $minAgeText,
-                                            prompt: Text("Enter minimum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
+                                Button {
+                                    tempMinAge = ageValue(from: minAgeText) ?? 18
+                                    isShowingMinAgePicker = true
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Minimum age")
+                                            .font(.travelDetail)
                                             .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .min)
-                                            .onChange(of: minAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    minAgeText = digits
-                                                }
-                                            }
 
-                                        Spacer()
+                                        HStack {
+                                            Text(minAgeText.isEmpty ? "Enter minimum age" : minAgeText)
+                                                .font(.travelBody)
+                                                .foregroundStyle(
+                                                    minAgeText.isEmpty
+                                                        ? Colors.secondaryText
+                                                        : Colors.primaryText
+                                                )
+
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
+                                    .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .cornerRadius(12)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .min
-                                }
+                                .buttonStyle(.plain)
 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Maximum age")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    HStack {
-                                        TextField(
-                                            "",
-                                            text: $maxAgeText,
-                                            prompt: Text("Enter maximum age")
-                                                .foregroundStyle(Colors.secondaryText)
-                                        )
-                                            .font(.travelBody)
+                                Button {
+                                    tempMaxAge = ageValue(from: maxAgeText) ?? ageValue(from: minAgeText) ?? 18
+                                    isShowingMaxAgePicker = true
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Maximum age")
+                                            .font(.travelDetail)
                                             .foregroundStyle(Colors.primaryText)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedAgeField, equals: .max)
-                                            .onChange(of: maxAgeText) { _, newValue in
-                                                let digits = digitsOnly(newValue)
-                                                if digits != newValue {
-                                                    maxAgeText = digits
-                                                }
-                                            }
 
-                                        Spacer()
+                                        HStack {
+                                            Text(maxAgeText.isEmpty ? "Enter maximum age" : maxAgeText)
+                                                .font(.travelBody)
+                                                .foregroundStyle(
+                                                    maxAgeText.isEmpty
+                                                        ? Colors.secondaryText
+                                                        : Colors.primaryText
+                                                )
+
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
+                                    .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Colors.card)
+                                    .cornerRadius(12)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Colors.card)
-                                .cornerRadius(12)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    focusedAgeField = .max
-                                }
+                                .buttonStyle(.plain)
                             }
 
                             if isAgeRangeInvalid {
@@ -784,6 +752,72 @@ struct UpcomingTripsFilterView: View {
                     maxAgeText = clamped
                 }
             }
+        }
+        .sheet(isPresented: $isShowingMinAgePicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            minAgeText = clampedAgeText(String(tempMinAge))
+                            isShowingMinAgePicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    Picker("", selection: $tempMinAge) {
+                        ForEach(18...200, id: \.self) { age in
+                            Text("\(age)")
+                                .font(.travelBody)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(Colors.accent)
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
+        }
+        .sheet(isPresented: $isShowingMaxAgePicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            maxAgeText = clampedAgeText(String(tempMaxAge))
+                            isShowingMaxAgePicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    Picker("", selection: $tempMaxAge) {
+                        ForEach(18...200, id: \.self) { age in
+                            Text("\(age)")
+                                .font(.travelBody)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(Colors.accent)
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
         }
         .sheet(isPresented: $showOriginPicker) {
             CountryPickerView(selectedCountryID: $selectedOriginID)

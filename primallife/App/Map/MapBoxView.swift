@@ -42,18 +42,13 @@ struct MapBoxView: View {
     @State private var isShowingProfile = false
     @State private var isShowingFilters = false
     @State private var viewport: Viewport = .styleDefault
-    @State private var selectedPlace: MapboxPlace?
     @State private var destinationSelection: DestinationSelection?
-    @State private var placeImageURL: URL?
-    @State private var photoTask: Task<Void, Never>?
-    @State private var selectedPlaceTravelerCount = 0
     @StateObject private var locationManager = UserLocationManager()
     @State private var userCoordinate: CLLocationCoordinate2D?
     @State private var userLocationName = ""
     @State private var userLocationFlag = ""
     @State private var hasCenteredOnUser = false
     @State private var airplaneFeedbackToggle = false
-    @State private var flyFeedbackToggle = false
     @State private var otherUserLocations: [OtherUserLocation] = []
     @State private var nearbyTravelers: [MapTraveler] = []
     @State private var locationsRefreshTask: Task<Void, Never>?
@@ -70,16 +65,6 @@ struct MapBoxView: View {
     private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let fixedLocationQueryRadiusMeters: CLLocationDistance = 60 * 1609.344
-    
-    private let customPlaceImageNames = [
-        "italy",
-        "greece",
-        "puerto rico",
-        "costa rica",
-        "australia",
-        "jamaica",
-        "switzerland"
-    ]
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)
@@ -166,13 +151,6 @@ struct MapBoxView: View {
                 Map(viewport: $viewport) {
                     if let coordinate = userCoordinate {
                         MapViewAnnotation(coordinate: coordinate) {
-                            userLocationAnnotation
-                        }
-                        .priority(1)
-                    }
-                    
-                    if let previewCoordinate = selectedPlace?.coordinate {
-                        MapViewAnnotation(coordinate: previewCoordinate) {
                             userLocationAnnotation
                         }
                         .priority(1)
@@ -314,18 +292,6 @@ struct MapBoxView: View {
                             .padding(.top, 122)
                         }
                     }
-                    .overlay(alignment: .topLeading) {
-                        if selectedPlace != nil {
-                            BackButton {
-                                selectedPlace = nil
-                                placeImageURL = nil
-                                photoTask?.cancel()
-                                hideChrome = false
-                            }
-                            .padding(.leading)
-                            .padding(.top, 58)
-                        }
-                    }
                     .overlay(alignment: .top) {
                         if isLoadingLocations {
                             loadingIndicator
@@ -334,149 +300,12 @@ struct MapBoxView: View {
                         }
                     }
                     .overlay(alignment: .bottom) {
-                        if let place = selectedPlace {
-                            UnevenRoundedRectangle(
-                                cornerRadii: RectangleCornerRadii(
-                                    topLeading: 32,
-                                    topTrailing: 32
-                                )
-                            )
-                            .fill(Colors.card)
-                            .frame(height: 440)
-                            .frame(maxWidth: .infinity)
-                            .overlay(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    HStack(alignment: .center) {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text(place.primaryName)
-                                                .font(.travelTitle)
-                                                .foregroundStyle(Colors.primaryText)
-                                            
-                                            if !place.countryDisplay.isEmpty {
-                                                Text(place.countryDisplay)
-                                                    .font(.travelBody)
-                                                    .foregroundStyle(Colors.secondaryText)
-                                            }
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        HStack(spacing: -8) {
-                                            Image("profile4")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 36, height: 36)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
-                                                }
-                                            
-                                            Image("profile5")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 36, height: 36)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
-                                                }
-                                            
-                                            Image("profile6")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 36, height: 36)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
-                                                }
-                                            
-                                            Image("profile9")
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 36, height: 36)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Colors.card, lineWidth: 3)
-                                                }
-                                            
-                                            ZStack {
-                                                Circle()
-                                                    .fill(Colors.background)
-                                                    .frame(width: 36, height: 36)
-                                                    .overlay {
-                                                        Circle()
-                                                            .stroke(Colors.card, lineWidth: 3)
-                                                    }
-                                                
-                                                Text("\(selectedPlaceTravelerCount)+")
-                                                    .font(.custom(Fonts.semibold, size: 12))
-                                                    .foregroundStyle(Colors.primaryText)
-                                            }
-                                        }
-                                    }
-                                    
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(Colors.secondaryText.opacity(0.12))
-                                        
-                                        if let customImageName = customImageName(for: place) {
-                                            Image(customImageName)
-                                                .resizable()
-                                                .scaledToFill()
-                                        } else if let imageURL = placeImageURL {
-                                            AsyncImage(url: imageURL) { phase in
-                                                if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .frame(height: 170)
-                                    .frame(maxWidth: .infinity)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    
-                                    Text("5,343 miles away")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
-                                    
-                                    Button(action: {
-                                        flyFeedbackToggle.toggle()
-                                        handleFly(to: place, camera: proxy.camera)
-                                    }) {
-                                        Text("Fly")
-                                            .font(.travelDetail)
-                                            .foregroundStyle(Colors.tertiaryText)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 18)
-                                    }
-                                    .sensoryFeedback(.impact(weight: .medium), trigger: flyFeedbackToggle)
-                                    .background(Colors.accent)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                }
-                                .padding(.horizontal, 24)
-                                .padding(.top, 28)
-                            }
-                            .ignoresSafeArea(edges: .bottom)
-                            .onTapGesture {
-                                selectedPlace = nil
-                                placeImageURL = nil
-                                photoTask?.cancel()
-                                hideChrome = false
-                            }
-                        }
-                        if selectedPlace == nil {
-                            MapCommunityPanel(
-                                travelers: filteredTravelers,
-                                travelerImageStore: travelerImageStore
-                            )
-                            .padding(.horizontal)
-                            .padding(.bottom, 120)
-                        }
+                        MapCommunityPanel(
+                            travelers: filteredTravelers,
+                            travelerImageStore: travelerImageStore
+                        )
+                        .padding(.horizontal)
+                        .padding(.bottom, 120)
                     }
                     .ignoresSafeArea()
                     .onAppear {
@@ -508,18 +337,8 @@ struct MapBoxView: View {
                         )
                         hasCenteredOnUser = true
                     }
-                    .task(id: selectedPlace?.id) {
-                        selectedPlaceTravelerCount = 0
-                        guard let place = selectedPlace else { return }
-                        selectedPlaceTravelerCount = await fetchSelectedPlaceTravelerCount(for: place)
-                    }
                     .sheet(isPresented: $isShowingSearch) {
                         MapSearchSheet { place in
-                            selectedPlace = place
-                            placeImageURL = nil
-                            photoTask?.cancel()
-                            loadImage(for: place)
-                            hideChrome = true
                             isShowingSearch = false
                             guard let coordinate = place.coordinate else { return }
                             destinationSelection = DestinationSelection(
@@ -528,21 +347,19 @@ struct MapBoxView: View {
                                 locationName: place.primaryName,
                                 countryDisplay: place.countryDisplay
                             )
-                            guard let camera = proxy.camera else { return }
-                            let offsetLatitude = min(90, max(-90, coordinate.latitude - 1.0))
-                            let adjustedCoordinate = CLLocationCoordinate2D(latitude: offsetLatitude, longitude: coordinate.longitude)
-                            camera.fly(
-                                to: CameraOptions(
-                                    center: adjustedCoordinate,
-                                    zoom: 7,
-                                    pitch: 0
-                                ),
-                                duration: 0
-                            )
                         }
                     }
                     .onDisappear {
                         stopLocationsRefresh()
+                    }
+                    .navigationDestination(item: $destinationSelection) { selection in
+                        MapDestinationView(
+                            coordinate: selection.coordinate,
+                            locationName: selection.locationName,
+                            countryDisplay: selection.countryDisplay
+                        ) { coordinate in
+                            flyToDestination(coordinate, camera: proxy.camera)
+                        }
                     }
             }
             .navigationDestination(isPresented: $isShowingProfile) {
@@ -556,13 +373,6 @@ struct MapBoxView: View {
                     selectedCountryID: $selectedCountryID,
                     selectedTravelDescription: $selectedTravelDescription,
                     selectedInterests: $selectedInterests
-                )
-            }
-            .navigationDestination(item: $destinationSelection) { selection in
-                MapDestinationView(
-                    coordinate: selection.coordinate,
-                    locationName: selection.locationName,
-                    countryDisplay: selection.countryDisplay
                 )
             }
         }
@@ -651,35 +461,6 @@ struct MapBoxView: View {
         .background(Colors.background)
     }
     
-    private func loadImage(for place: MapboxPlace) {
-        photoTask?.cancel()
-        placeImageURL = nil
-        
-        let query = place.primaryName.isEmpty ? place.countryName : place.primaryName
-        guard !query.isEmpty else { return }
-        guard customImageName(for: place) == nil else { return }
-        
-        photoTask = Task {
-            let url = await UnsplashService.fetchImage(for: query)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                placeImageURL = url
-            }
-        }
-    }
-
-    private func customImageName(for place: MapboxPlace) -> String? {
-        let candidates = [place.primaryName, place.placeName]
-        
-        for name in customPlaceImageNames {
-            for candidate in candidates where candidate.localizedCaseInsensitiveContains(name) {
-                return name
-            }
-        }
-        
-        return nil
-    }
-    
     private func applyDestinationCoordinate(_ coordinate: CLLocationCoordinate2D) {
         userCoordinate = coordinate
         resolveUserLocationName(for: coordinate)
@@ -732,16 +513,8 @@ struct MapBoxView: View {
         }
     }
     
-    private func handleFly(to place: MapboxPlace, camera: CameraAnimationsManager?) {
-        guard let coordinate = place.coordinate else { return }
-        
-        selectedPlace = nil
-        placeImageURL = nil
-        photoTask?.cancel()
-        hideChrome = false
-        
+    private func flyToDestination(_ coordinate: CLLocationCoordinate2D, camera: CameraAnimationsManager?) {
         applyDestinationCoordinate(coordinate)
-        
         camera?.fly(
             to: CameraOptions(
                 center: coordinate,
@@ -775,42 +548,6 @@ struct MapBoxView: View {
                 .execute()
         } catch {
             print("Failed to upsert location: \(error.localizedDescription)")
-        }
-    }
-
-    private func fetchSelectedPlaceTravelerCount(for place: MapboxPlace) async -> Int {
-        guard let supabase else { return 0 }
-
-        let destination = place.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !destination.isEmpty else { return 0 }
-
-        struct TripTraveler: Decodable {
-            let userID: UUID
-
-            enum CodingKeys: String, CodingKey {
-                case userID = "user_id"
-            }
-        }
-
-        let startOfToday = Calendar.current.startOfDay(for: Date())
-        let startOfTodayString = mapTripsDateFormatter.string(from: startOfToday)
-
-        do {
-            let travelers: [TripTraveler] = try await supabase
-                .from("mytrips")
-                .select("user_id")
-                .eq("destination", value: destination)
-                .gte("return_date", value: startOfTodayString)
-                .execute()
-                .value
-
-            var uniqueUserIDs = Set(travelers.map { $0.userID })
-            if let currentUserID = supabase.auth.currentUser?.id {
-                uniqueUserIDs.remove(currentUserID)
-            }
-            return uniqueUserIDs.count
-        } catch {
-            return 0
         }
     }
 

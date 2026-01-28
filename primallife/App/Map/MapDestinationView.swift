@@ -14,6 +14,7 @@ struct MapDestinationView: View {
     let coordinate: CLLocationCoordinate2D
     let locationName: String
     let countryDisplay: String
+    let onFly: (CLLocationCoordinate2D) -> Void
     @EnvironmentObject private var profileStore: ProfileStore
     @Environment(\.supabaseClient) private var supabase
     @Environment(\.dismiss) private var dismiss
@@ -31,10 +32,16 @@ struct MapDestinationView: View {
         "switzerland"
     ]
 
-    init(coordinate: CLLocationCoordinate2D, locationName: String, countryDisplay: String) {
+    init(
+        coordinate: CLLocationCoordinate2D,
+        locationName: String,
+        countryDisplay: String,
+        onFly: @escaping (CLLocationCoordinate2D) -> Void
+    ) {
         self.coordinate = coordinate
         self.locationName = locationName
         self.countryDisplay = countryDisplay
+        self.onFly = onFly
         let offsetLatitude = min(90, max(-90, coordinate.latitude - 0.7))
         let adjustedCoordinate = CLLocationCoordinate2D(
             latitude: offsetLatitude,
@@ -122,7 +129,13 @@ struct MapDestinationView: View {
 
                         let flyLabel = locationName.isEmpty ? countryDisplay : locationName
 
-                        Button(action: {}) {
+                        Button(action: {
+                            dismiss()
+                            Task { @MainActor in
+                                await Task.yield()
+                                onFly(coordinate)
+                            }
+                        }) {
                             Text(flyLabel.isEmpty ? "Fly" : "Fly to \(flyLabel)")
                                 .font(.travelBodySemibold)
                                 .foregroundStyle(Colors.tertiaryText)

@@ -725,7 +725,10 @@ private struct MapTribeGenderView: View {
     @State private var isShowingReview = false
     @State private var minAgeText: String = ""
     @State private var maxAgeText: String = ""
-    @FocusState private var focusedAgeField: AgeField?
+    @State private var isShowingMinAgePicker = false
+    @State private var isShowingMaxAgePicker = false
+    @State private var tempMinAge = 18
+    @State private var tempMaxAge = 18
     private let genderOptions = MapTribeGenderOption.allCases
     
     private var accentColor: Color {
@@ -747,11 +750,6 @@ private struct MapTribeGenderView: View {
     private var isAgeRangeInvalid: Bool {
         guard let minAge = minAgeValue, let maxAge = maxAgeValue else { return false }
         return maxAge < minAge
-    }
-
-    private enum AgeField {
-        case min
-        case max
     }
 
     var body: some View {
@@ -806,81 +804,55 @@ private struct MapTribeGenderView: View {
                         .foregroundStyle(Colors.primaryText)
 
                     VStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Minimum age")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                        Button {
+                            tempMinAge = minAgeValue ?? 18
+                            isShowingMinAgePicker = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Minimum age")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
 
-                            HStack {
-                                TextField(
-                                    "",
-                                    text: $minAgeText,
-                                    prompt: Text("Enter minimum age")
-                                        .foregroundStyle(Colors.secondaryText)
-                                )
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
-                                .keyboardType(.numberPad)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused($focusedAgeField, equals: .min)
-                                .onChange(of: minAgeText) { _, newValue in
-                                    let digits = digitsOnly(newValue)
-                                    if digits != newValue {
-                                        minAgeText = digits
-                                    }
+                                HStack {
+                                    Text(minAgeText.isEmpty ? "Enter minimum age" : minAgeText)
+                                        .font(.travelBody)
+                                        .foregroundStyle(minAgeText.isEmpty ? Colors.secondaryText : Colors.primaryText)
+
+                                    Spacer()
                                 }
-
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                        .contentShape(RoundedRectangle(cornerRadius: 12))
-                        .onTapGesture {
-                            focusedAgeField = .min
-                        }
+                        .buttonStyle(.plain)
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Maximum age")
-                                .font(.travelDetail)
-                                .foregroundStyle(Colors.primaryText)
+                        Button {
+                            tempMaxAge = maxAgeValue ?? minAgeValue ?? 18
+                            isShowingMaxAgePicker = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Maximum age")
+                                    .font(.travelDetail)
+                                    .foregroundStyle(Colors.primaryText)
 
-                            HStack {
-                                TextField(
-                                    "",
-                                    text: $maxAgeText,
-                                    prompt: Text("Enter maximum age")
-                                        .foregroundStyle(Colors.secondaryText)
-                                )
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
-                                .keyboardType(.numberPad)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused($focusedAgeField, equals: .max)
-                                .onChange(of: maxAgeText) { _, newValue in
-                                    let digits = digitsOnly(newValue)
-                                    if digits != newValue {
-                                        maxAgeText = digits
-                                    }
+                                HStack {
+                                    Text(maxAgeText.isEmpty ? "Enter maximum age" : maxAgeText)
+                                        .font(.travelBody)
+                                        .foregroundStyle(maxAgeText.isEmpty ? Colors.secondaryText : Colors.primaryText)
+
+                                    Spacer()
                                 }
-
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Colors.card)
+                            .cornerRadius(12)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .cornerRadius(12)
-                        .contentShape(RoundedRectangle(cornerRadius: 12))
-                        .onTapGesture {
-                            focusedAgeField = .max
-                        }
+                        .buttonStyle(.plain)
                     }
 
                     if isAgeRangeInvalid {
@@ -929,9 +901,6 @@ private struct MapTribeGenderView: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .contentShape(Rectangle())
-        .onTapGesture {
-            focusedAgeField = nil
-        }
         .background(
             Colors.background
                 .ignoresSafeArea()
@@ -1009,20 +978,71 @@ private struct MapTribeGenderView: View {
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(.light)
         }
-        .onChange(of: focusedAgeField) { _, field in
-            if field != .min {
-                let clamped = clampedAgeText(minAgeText)
-                if clamped != minAgeText {
-                    minAgeText = clamped
-                }
-            }
+        .sheet(isPresented: $isShowingMinAgePicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            if field != .max {
-                let clamped = clampedAgeText(maxAgeText)
-                if clamped != maxAgeText {
-                    maxAgeText = clamped
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            minAgeText = clampedAgeText(String(tempMinAge))
+                            isShowingMinAgePicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    Picker("", selection: $tempMinAge) {
+                        ForEach(18...200, id: \.self) { age in
+                            Text("\(age)")
+                                .font(.travelBody)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(Colors.accent)
                 }
+                .padding(20)
             }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
+        }
+        .sheet(isPresented: $isShowingMaxAgePicker) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack {
+                        Spacer()
+
+                        Button("Done") {
+                            maxAgeText = clampedAgeText(String(tempMaxAge))
+                            isShowingMaxAgePicker = false
+                        }
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.accent)
+                    }
+
+                    Picker("", selection: $tempMaxAge) {
+                        ForEach(18...200, id: \.self) { age in
+                            Text("\(age)")
+                                .font(.travelBody)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(Colors.accent)
+                }
+                .padding(20)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .preferredColorScheme(.light)
         }
     }
 

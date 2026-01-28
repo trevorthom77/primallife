@@ -278,18 +278,20 @@ struct UpcomingTripsFullView: View {
                                                             }
                                                         }
 
-                                                        let originFlag = viewModel.creatorOriginFlag(for: travelerID)
-                                                        let originName = viewModel.creatorOriginName(for: travelerID)
-                                                        if originFlag != nil || originName != nil {
+                                                        let tripLocation = viewModel.travelerTripLocation(
+                                                            for: travelerID,
+                                                            tripID: trip.id
+                                                        )
+                                                        if tripLocation.flag != nil || tripLocation.name != nil {
                                                             HStack(spacing: 8) {
-                                                                if let flag = originFlag {
+                                                                if let flag = tripLocation.flag {
                                                                     Text(flag)
                                                                         .font(.travelDetail)
                                                                         .foregroundStyle(Colors.primaryText)
                                                                 }
 
-                                                                if let countryName = originName {
-                                                                    Text(countryName)
+                                                                if let locationName = tripLocation.name {
+                                                                    Text(locationName)
                                                                         .font(.travelDetail)
                                                                         .foregroundStyle(Colors.secondaryText)
                                                                 }

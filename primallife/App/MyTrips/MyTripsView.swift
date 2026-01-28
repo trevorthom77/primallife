@@ -127,6 +127,9 @@ struct Recommendation: Decodable, Identifiable {
 struct TravelerDateRange {
     let checkIn: Date
     let returnDate: Date
+    let destination: String
+    let countryCode: String?
+    let placeType: String?
 }
 
 struct NewRecommendation: Encodable {
@@ -382,11 +385,17 @@ final class MyTripsViewModel: ObservableObject {
 
         struct TripTraveler: Decodable {
             let userID: UUID
+            let destination: String
+            let countryCode: String?
+            let placeType: String?
             let checkIn: Date
             let returnDate: Date
 
             enum CodingKeys: String, CodingKey {
                 case userID = "user_id"
+                case destination
+                case countryCode = "country_code"
+                case placeType = "place_type"
                 case checkIn = "check_in"
                 case returnDate = "return_date"
             }
@@ -394,6 +403,9 @@ final class MyTripsViewModel: ObservableObject {
             init(from decoder: Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
                 userID = try container.decode(UUID.self, forKey: .userID)
+                destination = try container.decode(String.self, forKey: .destination)
+                countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+                placeType = try container.decodeIfPresent(String.self, forKey: .placeType)
 
                 let checkInString = try container.decode(String.self, forKey: .checkIn)
                 guard let decodedCheckIn = myTripsDateFormatter.date(from: checkInString) else {
@@ -427,7 +439,7 @@ final class MyTripsViewModel: ObservableObject {
             }
             let fetchedTravelers: [TripTraveler] = try await supabase
                 .from("mytrips")
-                .select("user_id, check_in, return_date")
+                .select("user_id, destination, country_code, place_type, check_in, return_date")
                 .eq(travelerFilterColumn, value: travelerFilterValue)
                 .gte("return_date", value: startOfTodayString)
                 .execute()
@@ -441,13 +453,19 @@ final class MyTripsViewModel: ObservableObject {
                     if traveler.checkIn < existing.checkIn {
                         dateRanges[traveler.userID] = TravelerDateRange(
                             checkIn: traveler.checkIn,
-                            returnDate: traveler.returnDate
+                            returnDate: traveler.returnDate,
+                            destination: traveler.destination,
+                            countryCode: traveler.countryCode,
+                            placeType: traveler.placeType
                         )
                     }
                 } else {
                     dateRanges[traveler.userID] = TravelerDateRange(
                         checkIn: traveler.checkIn,
-                        returnDate: traveler.returnDate
+                        returnDate: traveler.returnDate,
+                        destination: traveler.destination,
+                        countryCode: traveler.countryCode,
+                        placeType: traveler.placeType
                     )
                 }
             }
@@ -790,6 +808,26 @@ final class MyTripsViewModel: ObservableObject {
                 && normalizedCheckIn <= trip.returnDate
                 && normalizedReturn >= trip.checkIn
         }
+    }
+
+    func travelerTripLocation(for travelerID: UUID, tripID: UUID) -> (flag: String?, name: String?) {
+        guard let tripRange = travelerDatesByTrip[tripID]?[travelerID] else {
+            return (nil, nil)
+        }
+        let filteredScalars = tripRange.destination.unicodeScalars.filter { !$0.properties.isEmoji }
+        let cleanedDestination = String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCountryCode = tripRange.countryCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let country = trimmedCountryCode.flatMap { code in
+            CountryDatabase.all.first { $0.id == code }
+        }
+        if tripRange.placeType == "country" {
+            let name = country?.name ?? (cleanedDestination.isEmpty ? nil : cleanedDestination)
+            return (country?.flag, name)
+        }
+        let name = cleanedDestination.isEmpty ? country?.name : cleanedDestination
+        return (country?.flag, name)
     }
 }
 
@@ -1208,18 +1246,20 @@ struct MyTripsView: View {
                                                                 }
                                                             }
 
-                                                            let originFlag = viewModel.creatorOriginFlag(for: travelerID)
-                                                            let originName = viewModel.creatorOriginName(for: travelerID)
-                                                            if originFlag != nil || originName != nil {
+                                                            let tripLocation = viewModel.travelerTripLocation(
+                                                                for: travelerID,
+                                                                tripID: trip.id
+                                                            )
+                                                            if tripLocation.flag != nil || tripLocation.name != nil {
                                                                 HStack(spacing: 8) {
-                                                                    if let flag = originFlag {
+                                                                    if let flag = tripLocation.flag {
                                                                         Text(flag)
                                                                             .font(.travelDetail)
                                                                             .foregroundStyle(Colors.primaryText)
                                                                     }
 
-                                                                    if let countryName = originName {
-                                                                        Text(countryName)
+                                                                    if let locationName = tripLocation.name {
+                                                                        Text(locationName)
                                                                             .font(.travelDetail)
                                                                             .foregroundStyle(Colors.secondaryText)
                                                                     }

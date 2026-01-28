@@ -73,6 +73,8 @@ struct RecommendationCreationView: View {
         .navigationDestination(isPresented: $isShowingDetails) {
             RecommendationDetailsView(
                 destination: trip.destination,
+                countryCode: trip.countryCode,
+                placeType: trip.placeType,
                 supabase: supabase,
                 viewModel: viewModel,
                 onFinish: {
@@ -86,6 +88,8 @@ struct RecommendationCreationView: View {
 
 private struct RecommendationDetailsView: View {
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
     let onFinish: () -> Void
@@ -236,6 +240,8 @@ private struct RecommendationDetailsView: View {
         .navigationDestination(isPresented: $isShowingPhotoPrompt) {
             RecommendationPhotoPromptView(
                 destination: destination,
+                countryCode: countryCode,
+                placeType: placeType,
                 recommendationName: recommendationName,
                 recommendationSubtext: recommendationSubtext,
                 recommendationRating: recommendationRating,
@@ -294,6 +300,8 @@ private struct RecommendationDetailsView: View {
 
 private struct RecommendationPhotoPromptView: View {
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
@@ -397,6 +405,8 @@ private struct RecommendationPhotoPromptView: View {
         .navigationDestination(isPresented: $isShowingReview) {
             RecommendationReviewView(
                 destination: destination,
+                countryCode: countryCode,
+                placeType: placeType,
                 recommendationName: recommendationName,
                 recommendationSubtext: recommendationSubtext,
                 recommendationRating: recommendationRating,
@@ -419,6 +429,8 @@ private struct RecommendationPhotoPromptView: View {
 
 private struct RecommendationReviewView: View {
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
@@ -525,6 +537,8 @@ private struct RecommendationReviewView: View {
                         let ratingValue = Double(trimmedRating) ?? 0
                         await viewModel.addRecommendation(
                             destination: destination,
+                            countryCode: countryCode,
+                            placeType: placeType,
                             name: recommendationName,
                             note: recommendationSubtext,
                             rating: ratingValue,

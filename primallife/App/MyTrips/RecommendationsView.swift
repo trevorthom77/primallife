@@ -2,7 +2,7 @@ import SwiftUI
 import Supabase
 
 struct RecommendationsView: View {
-    let destination: String
+    let trip: Trip
     @ObservedObject var viewModel: MyTripsViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.supabaseClient) private var supabase
@@ -80,22 +80,23 @@ struct RecommendationsView: View {
             )
         }
         .task {
-            let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmedDestination.isEmpty else { return }
-            await viewModel.loadRecommendations(for: trimmedDestination, supabase: supabase)
+            await viewModel.loadRecommendations(
+                destination: trip.destination,
+                countryCode: trip.countryCode,
+                placeType: trip.placeType,
+                supabase: supabase
+            )
         }
     }
 
     private var recommendations: [Recommendation] {
-        let trimmed = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
-        return viewModel.recommendationsByDestination[trimmed] ?? []
+        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return [] }
+        return viewModel.recommendationsByDestination[lookupKey] ?? []
     }
 
     private var isLoading: Bool {
-        let trimmed = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        return viewModel.loadingRecommendationDestinations.contains(trimmed)
+        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return false }
+        return viewModel.loadingRecommendationDestinations.contains(lookupKey)
     }
 
     private func recommendationPhotoURL(for recommendation: Recommendation) -> URL? {

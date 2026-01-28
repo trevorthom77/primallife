@@ -102,6 +102,8 @@ struct Recommendation: Decodable, Identifiable {
     let id: UUID
     let creatorID: UUID
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let name: String
     let note: String
     let rating: Double
@@ -112,6 +114,8 @@ struct Recommendation: Decodable, Identifiable {
         case id
         case creatorID = "creator_id"
         case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case name
         case note
         case rating
@@ -128,6 +132,8 @@ struct TravelerDateRange {
 struct NewRecommendation: Encodable {
     let creatorID: UUID
     let destination: String
+    let countryCode: String?
+    let placeType: String?
     let name: String
     let note: String
     let rating: Double
@@ -136,6 +142,8 @@ struct NewRecommendation: Encodable {
     enum CodingKeys: String, CodingKey {
         case creatorID = "creator_id"
         case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case name
         case note
         case rating
@@ -453,36 +461,65 @@ final class MyTripsViewModel: ObservableObject {
         loadingTravelerTripIDs.remove(trip.id)
     }
 
-    func loadRecommendations(for destination: String, supabase: SupabaseClient?) async {
-        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let supabase,
-              !trimmedDestination.isEmpty,
-              !loadingRecommendationDestinations.contains(trimmedDestination) else { return }
+    func recommendationsKey(destination: String, countryCode: String?, placeType: String?) -> String? {
+        if placeType == "country" {
+            let trimmedCode = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return trimmedCode.isEmpty ? nil : trimmedCode
+        }
 
-        loadingRecommendationDestinations.insert(trimmedDestination)
-        defer { loadingRecommendationDestinations.remove(trimmedDestination) }
+        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedDestination.isEmpty ? nil : trimmedDestination
+    }
+
+    func recommendationsKey(for trip: Trip) -> String? {
+        recommendationsKey(
+            destination: trip.destination,
+            countryCode: trip.countryCode,
+            placeType: trip.placeType
+        )
+    }
+
+    func loadRecommendations(
+        destination: String,
+        countryCode: String?,
+        placeType: String?,
+        supabase: SupabaseClient?
+    ) async {
+        guard let supabase,
+              let lookupKey = recommendationsKey(
+                destination: destination,
+                countryCode: countryCode,
+                placeType: placeType
+              ),
+              !loadingRecommendationDestinations.contains(lookupKey) else { return }
+
+        loadingRecommendationDestinations.insert(lookupKey)
+        defer { loadingRecommendationDestinations.remove(lookupKey) }
+        let filterColumn = placeType == "country" ? "country_code" : "destination"
 
         do {
             let fetchedRecommendations: [Recommendation] = try await supabase
                 .from("recommendations")
                 .select()
-                .eq("destination", value: trimmedDestination)
+                .eq(filterColumn, value: lookupKey)
                 .order("created_at", ascending: false)
                 .execute()
                 .value
 
-            recommendationsByDestination[trimmedDestination] = fetchedRecommendations
+            recommendationsByDestination[lookupKey] = fetchedRecommendations
             let creatorIDs = Array(Set(fetchedRecommendations.map(\.creatorID)))
             if !creatorIDs.isEmpty {
                 await loadCreators(for: creatorIDs, supabase: supabase)
             }
         } catch {
-            recommendationsByDestination[trimmedDestination] = []
+            recommendationsByDestination[lookupKey] = []
         }
     }
 
     func addRecommendation(
         destination: String,
+        countryCode: String?,
+        placeType: String?,
         name: String,
         note: String,
         rating: Double,
@@ -491,6 +528,10 @@ final class MyTripsViewModel: ObservableObject {
     ) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
         let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCountryCode = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPlaceType = placeType?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedCountryCode = (trimmedCountryCode?.isEmpty == false) ? trimmedCountryCode : nil
+        let normalizedPlaceType = (trimmedPlaceType?.isEmpty == false) ? trimmedPlaceType : nil
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedDestination.isEmpty, !trimmedName.isEmpty, !trimmedNote.isEmpty else { return }
@@ -513,6 +554,8 @@ final class MyTripsViewModel: ObservableObject {
             let payload = NewRecommendation(
                 creatorID: userID,
                 destination: trimmedDestination,
+                countryCode: normalizedCountryCode,
+                placeType: normalizedPlaceType,
                 name: trimmedName,
                 note: trimmedNote,
                 rating: rating,
@@ -524,7 +567,12 @@ final class MyTripsViewModel: ObservableObject {
                 .insert(payload)
                 .execute()
 
-            await loadRecommendations(for: trimmedDestination, supabase: supabase)
+            await loadRecommendations(
+                destination: trimmedDestination,
+                countryCode: normalizedCountryCode,
+                placeType: normalizedPlaceType,
+                supabase: supabase
+            )
         } catch {
             self.error = "Unable to create recommendation."
         }
@@ -541,7 +589,12 @@ final class MyTripsViewModel: ObservableObject {
                 .eq("creator_id", value: "\(userID)")
                 .execute()
 
-            await loadRecommendations(for: recommendation.destination, supabase: supabase)
+            await loadRecommendations(
+                destination: recommendation.destination,
+                countryCode: recommendation.countryCode,
+                placeType: recommendation.placeType,
+                supabase: supabase
+            )
         } catch {
             self.error = "Unable to delete recommendation."
         }
@@ -1026,7 +1079,7 @@ struct MyTripsView: View {
 
                                         NavigationLink {
                                             RecommendationsView(
-                                                destination: trip.destination,
+                                                trip: trip,
                                                 viewModel: viewModel
                                             )
                                         } label: {
@@ -1046,7 +1099,7 @@ struct MyTripsView: View {
 
                                                 NavigationLink {
                                                     RecommendationsView(
-                                                        destination: trip.destination,
+                                                        trip: trip,
                                                         viewModel: viewModel
                                                     )
                                                 } label: {
@@ -1319,10 +1372,14 @@ struct MyTripsView: View {
     @MainActor
     private func loadRecommendationsForSelectedTrip(force: Bool = false) async {
         guard let trip = selectedTrip else { return }
-        let trimmedDestination = trip.destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedDestination.isEmpty else { return }
-        if !force, viewModel.recommendationsByDestination[trimmedDestination] != nil { return }
-        await viewModel.loadRecommendations(for: trimmedDestination, supabase: supabase)
+        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return }
+        if !force, viewModel.recommendationsByDestination[lookupKey] != nil { return }
+        await viewModel.loadRecommendations(
+            destination: trip.destination,
+            countryCode: trip.countryCode,
+            placeType: trip.placeType,
+            supabase: supabase
+        )
     }
 
     private func clampSelectedTripIndex() {
@@ -1353,9 +1410,8 @@ struct MyTripsView: View {
 
     private var recommendationsForSelectedTrip: [Recommendation]? {
         guard let trip = selectedTrip else { return nil }
-        let trimmedDestination = trip.destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedDestination.isEmpty else { return nil }
-        return viewModel.recommendationsByDestination[trimmedDestination]
+        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return nil }
+        return viewModel.recommendationsByDestination[lookupKey]
     }
 
     private func travelerCount(for trip: Trip) -> Int {

@@ -137,12 +137,15 @@ struct UpcomingTripsFullView: View {
                                         .padding(.vertical, 4)
                                 } else {
                                     ForEach(tribes) { tribe in
+                                        let tribeLocation = viewModel.tribeTripLocation(for: tribe)
+                                        let tribeLocationName = tribeLocation.name ?? trip.destination
+                                        let tribeLocationFlag = tribeLocation.flag ?? ""
                                         NavigationLink {
                                             TribesSocialView(
                                                 imageURL: tribe.photoURL,
                                                 title: tribe.name,
-                                                location: trip.destination,
-                                                flag: "",
+                                                location: tribeLocationName,
+                                                flag: tribeLocationFlag,
                                                 endDate: tribe.endDate,
                                                 minAge: tribe.minAge,
                                                 maxAge: tribe.maxAge,
@@ -183,14 +186,24 @@ struct UpcomingTripsFullView: View {
                                                     }
 
                                                 HStack(alignment: .center, spacing: 12) {
-                                                    VStack(alignment: .leading, spacing: 6) {
-                                                        Text(trip.destination)
+                                                VStack(alignment: .leading, spacing: 6) {
+                                                    HStack(spacing: 8) {
+                                                        if let flag = tribeLocation.flag {
+                                                            Text(flag)
+                                                                .font(.tripsfont)
+                                                                .foregroundStyle(Colors.primaryText)
+                                                        }
+
+                                                        Text(tribeLocationName)
                                                             .font(.tripsfont)
                                                             .foregroundStyle(Colors.secondaryText)
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
+                                                    }
 
-                                                        Text(tribe.name)
-                                                            .font(.travelTitle)
-                                                            .foregroundStyle(Colors.primaryText)
+                                                    Text(tribe.name)
+                                                        .font(.travelTitle)
+                                                        .foregroundStyle(Colors.primaryText)
                                                     }
 
                                                     Spacer()

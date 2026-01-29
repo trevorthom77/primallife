@@ -159,6 +159,9 @@ struct Tribe: Decodable, Identifiable {
     let ownerID: UUID
     let name: String
     let description: String?
+    let destination: String
+    let countryCode: String?
+    let placeType: String?
     let endDate: Date
     let minAge: Int?
     let maxAge: Int?
@@ -173,6 +176,9 @@ struct Tribe: Decodable, Identifiable {
         case ownerID = "owner_id"
         case name
         case description
+        case destination
+        case countryCode = "country_code"
+        case placeType = "place_type"
         case endDate = "end_date"
         case minAge = "min_age"
         case maxAge = "max_age"
@@ -189,6 +195,9 @@ struct Tribe: Decodable, Identifiable {
         ownerID = try container.decode(UUID.self, forKey: .ownerID)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
+        destination = try container.decode(String.self, forKey: .destination)
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+        placeType = try container.decodeIfPresent(String.self, forKey: .placeType)
 
         let endDateString = try container.decode(String.self, forKey: .endDate)
         guard let decodedEndDate = myTripsDateFormatter.date(from: endDateString) else {
@@ -838,6 +847,23 @@ final class MyTripsViewModel: ObservableObject {
         let name = cleanedDestination.isEmpty ? country?.name : cleanedDestination
         return (country?.flag, name)
     }
+
+    func tribeTripLocation(for tribe: Tribe) -> (flag: String?, name: String?) {
+        let filteredScalars = tribe.destination.unicodeScalars.filter { !$0.properties.isEmoji }
+        let cleanedDestination = String(String.UnicodeScalarView(filteredScalars))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCountryCode = tribe.countryCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let country = trimmedCountryCode.flatMap { code in
+            CountryDatabase.all.first { $0.id == code }
+        }
+        if tribe.placeType == "country" {
+            let name = country?.name ?? (cleanedDestination.isEmpty ? nil : cleanedDestination)
+            return (country?.flag, name)
+        }
+        let name = cleanedDestination.isEmpty ? country?.name : cleanedDestination
+        return (country?.flag, name)
+    }
 }
 
 struct MyTripsView: View {
@@ -1011,12 +1037,15 @@ struct MyTripsView: View {
                                             .padding(.vertical, 4)
                                     } else {
                                         ForEach(tribes.prefix(2)) { tribe in
+                                            let tribeLocation = viewModel.tribeTripLocation(for: tribe)
+                                            let tribeLocationName = tribeLocation.name ?? selectedTripDestination
+                                            let tribeLocationFlag = tribeLocation.flag ?? ""
                                             NavigationLink {
                                                 TribesSocialView(
                                                     imageURL: tribe.photoURL,
                                                     title: tribe.name,
-                                                    location: selectedTripDestination,
-                                                    flag: "",
+                                                    location: tribeLocationName,
+                                                    flag: tribeLocationFlag,
                                                     endDate: tribe.endDate,
                                                     minAge: tribe.minAge,
                                                     maxAge: tribe.maxAge,
@@ -1050,11 +1079,19 @@ struct MyTripsView: View {
                                                                 .lineLimit(1)
                                                                 .truncationMode(.tail)
                                                             
-                                                            Text(selectedTripDestination)
-                                                                .font(.travelDetail)
-                                                                .foregroundStyle(Colors.secondaryText)
-                                                                .lineLimit(1)
-                                                                .truncationMode(.tail)
+                                                            HStack(spacing: 8) {
+                                                                if let flag = tribeLocation.flag {
+                                                                    Text(flag)
+                                                                        .font(.travelDetail)
+                                                                        .foregroundStyle(Colors.primaryText)
+                                                                }
+
+                                                                Text(tribeLocationName)
+                                                                    .font(.travelDetail)
+                                                                    .foregroundStyle(Colors.secondaryText)
+                                                                    .lineLimit(1)
+                                                                    .truncationMode(.tail)
+                                                            }
                                                         }
                                                         
                                                         Spacer()

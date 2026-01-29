@@ -117,20 +117,20 @@ struct MapDestinationView: View {
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                        HStack(spacing: -10) {
+                        HStack(spacing: -8) {
                             ForEach(0..<3, id: \.self) { _ in
                                 Circle()
                                     .fill(Colors.secondaryText.opacity(0.2))
-                                    .frame(width: 34, height: 34)
+                                    .frame(width: 36, height: 36)
                                     .overlay {
                                         Circle()
-                                            .stroke(Colors.card, lineWidth: 2)
+                                            .stroke(Colors.card, lineWidth: 3)
                                     }
                             }
 
                             Circle()
                                 .fill(Colors.secondaryText.opacity(0.3))
-                                .frame(width: 34, height: 34)
+                                .frame(width: 36, height: 36)
                                 .overlay {
                                     Text("+\(nearbyTravelersCount)")
                                         .font(.badgeDetail)
@@ -138,7 +138,7 @@ struct MapDestinationView: View {
                                 }
                                 .overlay {
                                     Circle()
-                                        .stroke(Colors.card, lineWidth: 2)
+                                        .stroke(Colors.card, lineWidth: 3)
                                 }
                         }
 

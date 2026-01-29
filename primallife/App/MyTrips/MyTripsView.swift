@@ -852,10 +852,6 @@ struct MyTripsView: View {
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
     @State private var tribeImageURLCache: [UUID: URL] = [:]
-    @State private var recommendationImageCache: [UUID: Image] = [:]
-    @State private var recommendationImageURLCache: [UUID: URL] = [:]
-    @State private var tribeMemberImageCache: [UUID: Image] = [:]
-    @State private var tribeMemberImageURLCache: [UUID: URL] = [:]
     
     var body: some View {
         NavigationStack {
@@ -1348,14 +1344,12 @@ struct MyTripsView: View {
         }
         .task {
             await viewModel.loadTrips(supabase: supabase)
-            await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
             await loadRecommendationsForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             clampSelectedTripIndex()
-            await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
             await loadRecommendationsForSelectedTrip(force: true)
@@ -1380,28 +1374,6 @@ struct MyTripsView: View {
         }
     }
     
-    private func prefetchTripImages() async {
-        for trip in viewModel.trips where tripImageDetails[trip.id] == nil {
-            let query = tripImageQuery(for: trip)
-            if let details = await UnsplashService.fetchImageDetails(for: query) {
-                await cacheImageIfNeeded(from: details.url)
-                await MainActor.run {
-                    tripImageDetails[trip.id] = details
-                }
-            }
-        }
-    }
-    
-    private func cacheImageIfNeeded(from url: URL) async {
-        let request = URLRequest(url: url)
-        if URLCache.shared.cachedResponse(for: request) != nil { return }
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let cached = CachedURLResponse(response: response, data: data)
-            URLCache.shared.storeCachedResponse(cached, for: request)
-        } catch { }
-    }
-
     @MainActor
     private func loadTribesForSelectedTrip(force: Bool = false) async {
         guard let trip = selectedTrip else { return }
@@ -1513,22 +1485,13 @@ struct MyTripsView: View {
         let avatarURL = viewModel.creatorAvatarURL(for: memberID, supabase: supabase)
 
         Group {
-            if let cachedImage = cachedTribeMemberImage(for: memberID, url: avatarURL) {
-                cachedImage
-                    .resizable()
-                    .scaledToFill()
-            } else if let avatarURL {
+            if let avatarURL {
                 AsyncImage(url: avatarURL) { phase in
-                    switch phase {
-                    case .success(let image):
+                    if let image = phase.image {
                         image
                             .resizable()
                             .scaledToFill()
-                            .onAppear {
-                                tribeMemberImageCache[memberID] = image
-                                tribeMemberImageURLCache[memberID] = avatarURL
-                            }
-                    default:
+                    } else {
                         Color.clear
                     }
                 }
@@ -1548,21 +1511,13 @@ struct MyTripsView: View {
     private func recommendationImage(for recommendation: Recommendation) -> some View {
         let url = recommendationPhotoURL(for: recommendation)
 
-        if let cachedImage = cachedRecommendationImage(for: recommendation, url: url) {
-            cachedImage
-                .resizable()
-                .scaledToFill()
-        } else if let url {
+        if let url {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
-                        .onAppear {
-                            recommendationImageCache[recommendation.id] = image
-                            recommendationImageURLCache[recommendation.id] = url
-                        }
                 case .empty:
                     Colors.card
                 default:
@@ -1591,21 +1546,13 @@ struct MyTripsView: View {
 
     @ViewBuilder
     private func tribeImage(for tribe: Tribe) -> some View {
-        if let cachedImage = cachedTribeImage(for: tribe) {
-            cachedImage
-                .resizable()
-                .scaledToFill()
-        } else if let url = tribe.photoURL {
+        if let url = tribe.photoURL {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
-                        .onAppear {
-                            tribeImageCache[tribe.id] = image
-                            tribeImageURLCache[tribe.id] = url
-                        }
                 case .empty:
                     Colors.card
                 default:
@@ -1625,23 +1572,6 @@ struct MyTripsView: View {
         return cachedImage
     }
 
-    private func cachedRecommendationImage(for recommendation: Recommendation, url: URL?) -> Image? {
-        guard let url,
-              let cachedImage = recommendationImageCache[recommendation.id],
-              recommendationImageURLCache[recommendation.id] == url else {
-            return nil
-        }
-        return cachedImage
-    }
-
-    private func cachedTribeMemberImage(for memberID: UUID, url: URL?) -> Image? {
-        guard let url,
-              let cachedImage = tribeMemberImageCache[memberID],
-              tribeMemberImageURLCache[memberID] == url else {
-            return nil
-        }
-        return cachedImage
-    }
     
     private func tripDateRange(for trip: Trip) -> String {
         let start = trip.checkIn.formatted(.dateTime.month(.abbreviated).day())

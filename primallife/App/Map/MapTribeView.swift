@@ -10,23 +10,6 @@ struct MapTribeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingCreateForm = false
 
-    private let exampleTrips: [(title: String, count: Int, imageName: String)] = [
-        ("Beach Hike in Maui", 92, "maui"),
-        ("Island Hopping in Fiji", 124, "fiji"),
-        ("Lagoon Escape in Aruba", 117, "aruba"),
-        ("Surf Trip in Costa Rica", 101, "costa rica"),
-        ("Sailing the Bahamas", 139, "bahamas"),
-        ("Snorkel Week in Belize", 86, "belize")
-    ]
-    private let profileImageGroups: [[String]] = [
-        ["profile7", "profile14", "profile2", "profile21"],
-        ["profile9", "profile3", "profile18", "profile12"],
-        ["profile1", "profile22", "profile5", "profile16"],
-        ["profile11", "profile4", "profile24", "profile6"],
-        ["profile13", "profile8", "profile20", "profile10"],
-        ["profile17", "profile23", "profile15", "profile19"]
-    ]
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -45,83 +28,6 @@ struct MapTribeView: View {
                 Text("Your tribe shows up on the map wherever your plans take place.")
                     .font(.travelBody)
                     .foregroundStyle(Colors.secondaryText)
-
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    ForEach(Array(exampleTrips.enumerated()), id: \.element.title) { index, example in
-                        let profiles = profileImageGroups[index]
-                        VStack(alignment: .leading, spacing: 14) {
-                            AssetAsyncImage(name: example.imageName)
-                                .frame(height: 140)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                            Text(example.title)
-                                .font(.tripsfont)
-                                .foregroundStyle(Colors.primaryText)
-                                .lineLimit(2)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            HStack(spacing: -8) {
-                                Image(profiles[0])
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Image(profiles[1])
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Image(profiles[2])
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                Image(profiles[3])
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
-
-                                ZStack {
-                                    Circle()
-                                        .fill(Colors.background)
-                                        .frame(width: 36, height: 36)
-                                        .overlay {
-                                            Circle()
-                                                .stroke(Colors.card, lineWidth: 3)
-                                        }
-
-                                    Text("\(example.count)+")
-                                        .font(.badgeDetail)
-                                        .foregroundStyle(Colors.primaryText)
-                                }
-                            }
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    }
-                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -156,48 +62,6 @@ struct MapTribeView: View {
                     isShowingTribes = false
                 }
             )
-        }
-    }
-}
-
-private struct AssetAsyncImage: View {
-    let name: String
-
-    @Environment(\.displayScale) private var displayScale
-    @State private var image: UIImage?
-
-    var body: some View {
-        GeometryReader { proxy in
-            let pixelWidth = Int(proxy.size.width * displayScale)
-            let pixelHeight = Int(proxy.size.height * displayScale)
-
-            Group {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Color.clear
-                }
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .clipped()
-            .task(id: "\(pixelWidth)x\(pixelHeight)") {
-                await loadImage(pixelWidth: pixelWidth, pixelHeight: pixelHeight)
-            }
-        }
-    }
-
-    private func loadImage(pixelWidth: Int, pixelHeight: Int) async {
-        guard pixelWidth > 0, pixelHeight > 0, image == nil else { return }
-        let name = name
-        let targetSize = CGSize(width: pixelWidth, height: pixelHeight)
-        let renderedImage = await Task.detached(priority: .userInitiated) {
-            let baseImage = UIImage(named: name)
-            return baseImage?.preparingThumbnail(of: targetSize) ?? baseImage
-        }.value
-        await MainActor.run {
-            image = renderedImage
         }
     }
 }

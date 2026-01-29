@@ -41,10 +41,12 @@ struct RecommendationsView: View {
                                 let currentUserID = supabase?.auth.currentUser?.id
                                 let isCreator = currentUserID == recommendation.creatorID
                                 let ratingColor = recommendationRatingColor(ratingText)
+                                let creatorAvatarURL = viewModel.creatorAvatarURL(for: recommendation.creatorID, supabase: supabase)
 
                                 RecommendationCard(
                                     recommendation: recommendation,
                                     creatorName: creatorName,
+                                    creatorAvatarURL: creatorAvatarURL,
                                     ratingText: ratingText,
                                     ratingColor: ratingColor,
                                     showsMoreButton: isCreator,
@@ -106,6 +108,7 @@ struct RecommendationsView: View {
 struct RecommendationCard: View {
     let recommendation: Recommendation
     let creatorName: String?
+    let creatorAvatarURL: URL?
     let ratingText: String
     let ratingColor: Color
     let showsMoreButton: Bool
@@ -177,6 +180,24 @@ struct RecommendationCard: View {
                     OthersProfileView(userID: recommendation.creatorID)
                 } label: {
                     HStack(spacing: 10) {
+                        Group {
+                            if let creatorAvatarURL {
+                                AsyncImage(url: creatorAvatarURL) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } else {
+                                        Colors.secondaryText.opacity(0.3)
+                                    }
+                                }
+                            } else {
+                                Colors.secondaryText.opacity(0.3)
+                            }
+                        }
+                        .frame(width: 24, height: 24)
+                        .clipShape(Circle())
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Recommended by")
                                 .font(.badgeDetail)

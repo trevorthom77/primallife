@@ -22,6 +22,7 @@ struct MapDestinationView: View {
     @State private var placeImageURL: URL?
     @State private var photoTask: Task<Void, Never>?
     @State private var nearbyTravelersCount = 0
+    @State private var nearbyTravelers: [DestinationTraveler] = []
     @State private var nearbyTravelersTask: Task<Void, Never>?
 
     private let customPlaceImageNames = [
@@ -118,14 +119,8 @@ struct MapDestinationView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                         HStack(spacing: -8) {
-                            ForEach(0..<3, id: \.self) { _ in
-                                Circle()
-                                    .fill(Colors.secondaryText.opacity(0.2))
-                                    .frame(width: 44, height: 44)
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.card, lineWidth: 3)
-                                    }
+                            ForEach(0..<3, id: \.self) { index in
+                                travelerAvatar(at: index)
                             }
 
                             Circle()
@@ -277,6 +272,7 @@ struct MapDestinationView: View {
     private func loadNearbyTravelersCount() {
         nearbyTravelersTask?.cancel()
         nearbyTravelersCount = 0
+        nearbyTravelers = []
 
         nearbyTravelersTask = Task {
             guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -288,7 +284,7 @@ struct MapDestinationView: View {
             do {
                 let rows: [DestinationLocationRow] = try await supabase
                     .from("locations")
-                    .select("latitude, longitude")
+                    .select("id, latitude, longitude")
                     .neq("id", value: userID.uuidString)
                     .gte("latitude", value: bounds.minLatitude)
                     .lte("latitude", value: bounds.maxLatitude)
@@ -297,18 +293,73 @@ struct MapDestinationView: View {
                     .execute()
                     .value
 
-                let count = rows.filter { row in
+                let nearbyRows = rows.filter { row in
                     let location = CLLocation(latitude: row.latitude, longitude: row.longitude)
                     return location.distance(from: originLocation) <= radiusMeters
-                }.count
+                }
+
+                let count = nearbyRows.count
+                var travelers: [DestinationTraveler] = []
+
+                if !nearbyRows.isEmpty {
+                    do {
+                        let ids = nearbyRows.map { $0.id }
+                        let travelerRows: [DestinationTravelerRow] = try await supabase
+                            .from("onboarding")
+                            .select("id, avatar_url")
+                            .in("id", values: ids)
+                            .execute()
+                            .value
+
+                        let travelerLookup = Dictionary(
+                            uniqueKeysWithValues: travelerRows.map { ($0.id, $0.avatarPath) }
+                        )
+
+                        travelers = nearbyRows.map { row in
+                            DestinationTraveler(id: row.id, avatarPath: travelerLookup[row.id] ?? nil)
+                        }
+                    } catch {
+                        travelers = []
+                    }
+                }
 
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     nearbyTravelersCount = count
+                    nearbyTravelers = travelers
                 }
             } catch {
                 return
             }
+        }
+    }
+
+    @ViewBuilder
+    private func travelerAvatar(at index: Int) -> some View {
+        let size: CGFloat = 44
+        let strokeWidth: CGFloat = 3
+
+        Group {
+            if index < nearbyTravelers.count,
+               let avatarURL = nearbyTravelers[index].avatarURL(using: supabase) {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.2)
+                    }
+                }
+            } else {
+                Colors.secondaryText.opacity(0.2)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: strokeWidth)
         }
     }
 
@@ -328,6 +379,34 @@ struct MapDestinationView: View {
 }
 
 private struct DestinationLocationRow: Decodable {
+    let id: String
     let latitude: Double
     let longitude: Double
+}
+
+private struct DestinationTravelerRow: Decodable {
+    let id: String
+    let avatarPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case avatarPath = "avatar_url"
+    }
+}
+
+private struct DestinationTraveler: Identifiable {
+    let id: String
+    let avatarPath: String?
+
+    func avatarURL(using supabase: SupabaseClient?) -> URL? {
+        guard let supabase, let avatarPath else { return nil }
+
+        do {
+            return try supabase.storage
+                .from("profile-photos")
+                .getPublicURL(path: avatarPath)
+        } catch {
+            return nil
+        }
+    }
 }

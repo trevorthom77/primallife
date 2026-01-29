@@ -122,13 +122,7 @@ private struct RecommendationDetailsView: View {
                         .foregroundStyle(Colors.primaryText)
 
                     VStack(spacing: 8) {
-                        TextField(
-                            "Snorkeling in Mangel Halto",
-                            text: $recommendationName,
-                            prompt: Text("Snorkeling in Mangel Halto")
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.secondaryText)
-                        )
+                        TextField("", text: $recommendationName)
                             .font(.travelDetail)
                             .foregroundStyle(Colors.primaryText)
                             .padding()
@@ -158,26 +152,15 @@ private struct RecommendationDetailsView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    ZStack(alignment: .topLeading) {
-                        if recommendationSubtext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Text("We saw a lot of turtles, plus calm water and great visibility for snorkeling.")
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.secondaryText)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 18)
-                                .allowsHitTesting(false)
-                        }
-
-                        TextEditor(text: $recommendationSubtext)
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
-                            .padding(12)
-                            .frame(height: 140)
-                            .scrollContentBackground(.hidden)
-                            .focused($isNoteFocused)
-                    }
-                    .background(Colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    TextEditor(text: $recommendationSubtext)
+                        .font(.travelBody)
+                        .foregroundStyle(Colors.primaryText)
+                        .padding(12)
+                        .frame(height: 140)
+                        .scrollContentBackground(.hidden)
+                        .focused($isNoteFocused)
+                        .background(Colors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -185,7 +168,7 @@ private struct RecommendationDetailsView: View {
                         .font(.travelTitle)
                         .foregroundStyle(Colors.primaryText)
 
-                    TextField("e.g., 5.6", text: $recommendationRating)
+                    TextField("", text: $recommendationRating)
                         .font(.travelDetail)
                         .foregroundStyle(Colors.primaryText)
                         .padding()

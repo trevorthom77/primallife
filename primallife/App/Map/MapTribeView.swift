@@ -28,6 +28,8 @@ struct MapTribeView: View {
                 Text("Your tribe shows up on the map wherever your plans take place.")
                     .font(.travelBody)
                     .foregroundStyle(Colors.secondaryText)
+
+                MapTribePreviewCard()
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 24)
@@ -63,6 +65,84 @@ struct MapTribeView: View {
                 }
             )
         }
+    }
+}
+
+private struct MapTribePreviewCard: View {
+    private let imageName = "costaRicaTribe"
+    private let location = "Costa Rica"
+    private let tribeName = "Pura Vida Pack"
+    private let dateRange = "Apr 10 - Apr 18, 2026"
+    private let memberImages = ["profile2", "profile6", "profile9"]
+    private let extraCountText = "12+"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 160)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .overlay(alignment: .bottomLeading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar")
+                        Text(dateRange)
+                    }
+                    .font(.badgeDetail)
+                    .foregroundStyle(Colors.primaryText)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Colors.card.opacity(0.9))
+                    .clipShape(Capsule())
+                    .padding(12)
+                }
+
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(location)
+                        .font(.tripsfont)
+                        .foregroundStyle(Colors.secondaryText)
+
+                    Text(tribeName)
+                        .font(.travelTitle)
+                        .foregroundStyle(Colors.primaryText)
+                }
+
+                Spacer()
+
+                HStack(spacing: -8) {
+                    ForEach(memberImages, id: \.self) { image in
+                        Image(image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 36, height: 36)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+                    }
+
+                    ZStack {
+                        Circle()
+                            .fill(Colors.background)
+                            .frame(width: 36, height: 36)
+                            .overlay {
+                                Circle()
+                                    .stroke(Colors.card, lineWidth: 3)
+                            }
+
+                        Text(extraCountText)
+                            .font(.badgeDetail)
+                            .foregroundStyle(Colors.primaryText)
+                    }
+                }
+            }
+            .padding(16)
+            .background(Colors.card)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 

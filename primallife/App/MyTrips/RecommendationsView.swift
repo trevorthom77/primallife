@@ -23,7 +23,7 @@ struct RecommendationsView: View {
                 }
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if isLoading && recommendations.isEmpty {
                             ProgressView()
                                 .tint(Colors.accent)
@@ -109,43 +109,55 @@ struct RecommendationCard: View {
     let ratingColor: Color
     let showsMoreButton: Bool
     let onMoreTapped: () -> Void
+    @State private var isExpanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(ratingText)
-                    .font(.travelDetail)
-                    .foregroundStyle(Colors.tertiaryText)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(ratingColor)
-                    .clipShape(Capsule())
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(recommendation.name)
+                        .font(.travelBodySemibold)
+                        .foregroundStyle(Colors.primaryText)
+                        .lineLimit(2)
 
-                Spacer()
+                    Text(recommendation.note)
+                        .font(.travelDetail)
+                        .foregroundStyle(Colors.secondaryText)
+                        .lineLimit(isExpanded ? nil : 2)
+                        .multilineTextAlignment(.leading)
 
-                if showsMoreButton {
-                    Button(action: onMoreTapped) {
-                        Image(systemName: "ellipsis")
-                            .font(.travelBody)
-                            .foregroundStyle(Colors.primaryText)
-                            .frame(width: 36, height: 36)
-                            .background(Colors.card.opacity(0.9))
-                            .clipShape(Circle())
+                    if shouldShowMore {
+                        Button(isExpanded ? "Less" : "More") {
+                            isExpanded.toggle()
+                        }
+                        .font(.badgeDetail)
+                        .foregroundStyle(Colors.accent)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                }
+
+                VStack(alignment: .trailing, spacing: 8) {
+                    if showsMoreButton {
+                        Button(action: onMoreTapped) {
+                            Image(systemName: "ellipsis")
+                                .font(.tripsfont)
+                                .foregroundStyle(Colors.primaryText)
+                                .frame(width: 32, height: 32)
+                                .background(Colors.card.opacity(0.9))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Text(ratingText)
+                        .font(.tripsfont)
+                        .foregroundStyle(Colors.tertiaryText)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(ratingColor)
+                        .clipShape(Capsule())
                 }
             }
-
-            Text(recommendation.name)
-                .font(.travelTitle)
-                .foregroundStyle(Colors.primaryText)
-                .lineLimit(2)
-
-            Text(recommendation.note)
-                .font(.travelBody)
-                .foregroundStyle(Colors.secondaryText)
-                .lineLimit(3)
-                .multilineTextAlignment(.leading)
 
             if let creatorName {
                 NavigationLink {
@@ -157,7 +169,7 @@ struct RecommendationCard: View {
                                 .font(.badgeDetail)
                                 .foregroundStyle(Colors.tertiaryText)
                             Text(creatorName)
-                                .font(.travelDetail)
+                                .font(.tripsfont)
                                 .foregroundStyle(Colors.primaryText)
                         }
 
@@ -168,9 +180,13 @@ struct RecommendationCard: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(16)
+        .padding(12)
         .background(Colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var shouldShowMore: Bool {
+        recommendation.note.count > 120
     }
 }
 

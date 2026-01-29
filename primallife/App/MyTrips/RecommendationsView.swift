@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import UIKit
 
 struct RecommendationsView: View {
     let trip: Trip
@@ -110,6 +111,7 @@ struct RecommendationCard: View {
     let showsMoreButton: Bool
     let onMoreTapped: () -> Void
     @State private var isExpanded = false
+    @State private var isTruncated = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -125,12 +127,23 @@ struct RecommendationCard: View {
                         .foregroundStyle(Colors.secondaryText)
                         .lineLimit(isExpanded ? nil : 2)
                         .multilineTextAlignment(.leading)
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .onAppear {
+                                        updateTruncation(width: proxy.size.width)
+                                    }
+                                    .onChange(of: proxy.size.width) { _, newWidth in
+                                        updateTruncation(width: newWidth)
+                                    }
+                            }
+                        )
 
-                    if shouldShowMore {
+                    if isTruncated {
                         Button(isExpanded ? "Less" : "More") {
                             isExpanded.toggle()
                         }
-                        .font(.badgeDetail)
+                        .font(.travelDetail)
                         .foregroundStyle(Colors.accent)
                         .buttonStyle(.plain)
                     }
@@ -185,8 +198,19 @@ struct RecommendationCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private var shouldShowMore: Bool {
-        recommendation.note.count > 120
+    private func updateTruncation(width: CGFloat) {
+        guard width > 0 else { return }
+        let font = UIFont(name: Fonts.semibold, size: 18) ?? .systemFont(ofSize: 18, weight: .semibold)
+        let maxHeight = font.lineHeight * 2
+        let boundingHeight = (recommendation.note as NSString)
+            .boundingRect(
+                with: CGSize(width: width, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: font],
+                context: nil
+            )
+            .height
+        isTruncated = boundingHeight > maxHeight + 1
     }
 }
 

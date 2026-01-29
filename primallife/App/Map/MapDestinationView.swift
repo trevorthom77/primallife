@@ -115,6 +115,31 @@ struct MapDestinationView: View {
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
+                        HStack(spacing: -10) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle()
+                                    .fill(Colors.secondaryText.opacity(0.2))
+                                    .frame(width: 34, height: 34)
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Colors.card, lineWidth: 2)
+                                    }
+                            }
+
+                            Circle()
+                                .fill(Colors.secondaryText.opacity(0.3))
+                                .frame(width: 34, height: 34)
+                                .overlay {
+                                    Text("+5")
+                                        .font(.badgeDetail)
+                                        .foregroundStyle(Colors.primaryText)
+                                }
+                                .overlay {
+                                    Circle()
+                                        .stroke(Colors.card, lineWidth: 2)
+                                }
+                        }
+
                         if !locationName.isEmpty {
                             Text(locationName)
                                 .font(.travelTitle)

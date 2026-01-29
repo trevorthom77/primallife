@@ -180,7 +180,7 @@ struct RecommendationCard: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(12)
+        .padding(16)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }

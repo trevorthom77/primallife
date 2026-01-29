@@ -159,7 +159,7 @@ struct TribesSocialView: View {
                                 Image(systemName: "ellipsis")
                                     .font(.travelBody)
                                     .foregroundStyle(Colors.primaryText)
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 44, height: 44)
                                     .background(Colors.card.opacity(0.9))
                                     .clipShape(Circle())
                             }
@@ -219,7 +219,7 @@ struct TribesSocialView: View {
                                             Color.clear
                                         }
                                     }
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 44, height: 44)
                                     .clipShape(Circle())
                                     .overlay {
                                         Circle()
@@ -230,7 +230,7 @@ struct TribesSocialView: View {
                                 ZStack {
                                     Circle()
                                         .fill(Colors.background)
-                                        .frame(width: 36, height: 36)
+                                        .frame(width: 44, height: 44)
                                         .overlay {
                                             Circle()
                                                 .stroke(Colors.card, lineWidth: 3)
@@ -373,7 +373,7 @@ struct TribesSocialView: View {
 
                         HStack(spacing: 12) {
                             creatorAvatarView
-                                .frame(width: 52, height: 52)
+                                .frame(width: 60, height: 60)
                                 .clipShape(Circle())
                                 .overlay {
                                     Circle()
@@ -1386,11 +1386,11 @@ struct TribeMembersSheetView: View {
                                 Color.clear
                             }
                         }
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                         .clipShape(Circle())
                     } else {
                         Color.clear
-                            .frame(width: 36, height: 36)
+                            .frame(width: 44, height: 44)
                     }
 
                     Text(member.fullName)

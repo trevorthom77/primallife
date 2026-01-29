@@ -119,12 +119,12 @@ struct MapDestinationView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                         HStack(spacing: -8) {
-                            ForEach(0..<3, id: \.self) { index in
+                            ForEach(0..<min(3, nearbyTravelers.count), id: \.self) { index in
                                 travelerAvatar(at: index)
                             }
 
                             Circle()
-                                .fill(Colors.secondaryText.opacity(0.3))
+                                .fill(Colors.background)
                                 .frame(width: 44, height: 44)
                                 .overlay {
                                     Text("+\(nearbyTravelersCount)")

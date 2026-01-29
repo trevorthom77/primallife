@@ -121,7 +121,7 @@ struct MapDestinationView: View {
                             ForEach(0..<3, id: \.self) { _ in
                                 Circle()
                                     .fill(Colors.secondaryText.opacity(0.2))
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 44, height: 44)
                                     .overlay {
                                         Circle()
                                             .stroke(Colors.card, lineWidth: 3)
@@ -130,7 +130,7 @@ struct MapDestinationView: View {
 
                             Circle()
                                 .fill(Colors.secondaryText.opacity(0.3))
-                                .frame(width: 36, height: 36)
+                                .frame(width: 44, height: 44)
                                 .overlay {
                                     Text("+\(nearbyTravelersCount)")
                                         .font(.badgeDetail)

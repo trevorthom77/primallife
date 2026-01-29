@@ -12,7 +12,11 @@ struct UpcomingTripsView: View {
     @State private var searchTask: Task<Void, Never>?
     
     private var isDepartingDateInvalid: Bool {
-        onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting && onboardingViewModel.departingDate < onboardingViewModel.arrivalDate
+        guard onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting else { return false }
+        let calendar = Calendar.current
+        let startArrival = calendar.startOfDay(for: onboardingViewModel.arrivalDate)
+        let startDeparting = calendar.startOfDay(for: onboardingViewModel.departingDate)
+        return startDeparting <= startArrival
     }
     
     private var arrivalDateText: String {

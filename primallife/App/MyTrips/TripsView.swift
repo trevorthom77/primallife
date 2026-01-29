@@ -20,7 +20,11 @@ struct TripsView: View {
     @Environment(\.dismiss) private var dismiss
     
     private var isReturnDateInvalid: Bool {
-        hasCheckInDate && hasReturnDate && returnDate < checkInDate
+        guard hasCheckInDate && hasReturnDate else { return false }
+        let calendar = Calendar.current
+        let startCheckIn = calendar.startOfDay(for: checkInDate)
+        let startReturn = calendar.startOfDay(for: returnDate)
+        return startReturn <= startCheckIn
     }
     
     private var isAddTripEnabled: Bool {

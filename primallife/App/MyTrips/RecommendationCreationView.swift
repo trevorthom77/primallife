@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import Supabase
 
 struct RecommendationCreationView: View {
@@ -97,12 +96,10 @@ private struct RecommendationDetailsView: View {
     @State private var recommendationName = ""
     @State private var recommendationSubtext = ""
     @State private var recommendationRating = ""
-    @State private var recommendationPhoto: UIImage?
-    @State private var recommendationPhotoData: Data?
     @FocusState private var isNameFocused: Bool
     @FocusState private var isNoteFocused: Bool
     @FocusState private var isRatingFocused: Bool
-    @State private var isShowingPhotoPrompt = false
+    @State private var isShowingReview = false
     private let nameLimit = 60
 
     var body: some View {
@@ -196,7 +193,7 @@ private struct RecommendationDetailsView: View {
         .safeAreaInset(edge: .bottom) {
             VStack {
                 Button(action: {
-                    isShowingPhotoPrompt = true
+                    isShowingReview = true
                 }) {
                     Text("Continue")
                         .font(.travelDetail)
@@ -220,8 +217,8 @@ private struct RecommendationDetailsView: View {
                 .ignoresSafeArea()
         )
         .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $isShowingPhotoPrompt) {
-            RecommendationPhotoPromptView(
+        .navigationDestination(isPresented: $isShowingReview) {
+            RecommendationReviewView(
                 destination: destination,
                 countryCode: countryCode,
                 placeType: placeType,
@@ -230,9 +227,7 @@ private struct RecommendationDetailsView: View {
                 recommendationRating: recommendationRating,
                 supabase: supabase,
                 viewModel: viewModel,
-                onFinish: onFinish,
-                recommendationPhoto: $recommendationPhoto,
-                recommendationPhotoData: $recommendationPhotoData
+                onFinish: onFinish
             )
         }
     }
@@ -281,135 +276,6 @@ private struct RecommendationDetailsView: View {
     }
 }
 
-private struct RecommendationPhotoPromptView: View {
-    let destination: String
-    let countryCode: String?
-    let placeType: String?
-    let recommendationName: String
-    let recommendationSubtext: String
-    let recommendationRating: String
-    let supabase: SupabaseClient?
-    @ObservedObject var viewModel: MyTripsViewModel
-    let onFinish: () -> Void
-    @Binding var recommendationPhoto: UIImage?
-    @Binding var recommendationPhotoData: Data?
-    @Environment(\.dismiss) private var dismiss
-    @State private var isShowingPhotoPicker = false
-    @State private var isShowingReview = false
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack {
-                    BackButton {
-                        dismiss()
-                    }
-
-                    Spacer()
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Add a photo")
-                        .font(.travelTitle)
-                        .foregroundStyle(Colors.primaryText)
-
-                    Text("Add a photo for this recommendation.")
-                        .font(.travelBody)
-                        .foregroundStyle(Colors.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Button {
-                    isShowingPhotoPicker = true
-                } label: {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Colors.card)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .overlay {
-                            if let image = recommendationPhoto {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            } else {
-                                VStack(spacing: 8) {
-                                    Text("Add photo")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-
-                                    Text("Tap to upload a photo for this recommendation.")
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.secondaryText)
-                                }
-                                .padding(.horizontal, 16)
-                            }
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .contentShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $isShowingPhotoPicker) {
-                    CroppingImagePicker(image: $recommendationPhoto, imageData: $recommendationPhotoData)
-                        .ignoresSafeArea()
-                }
-
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 24)
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack {
-                Button(action: {
-                    isShowingReview = true
-                }) {
-                    Text("Continue")
-                        .font(.travelDetail)
-                        .foregroundColor(Colors.tertiaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Colors.accent)
-                        .cornerRadius(16)
-                }
-                .disabled(!hasRequiredPhoto)
-                .opacity(hasRequiredPhoto ? 1 : 0.6)
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 48)
-            }
-            .background(Colors.background)
-        }
-        .background(
-            Colors.background
-                .ignoresSafeArea()
-        )
-        .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $isShowingReview) {
-            RecommendationReviewView(
-                destination: destination,
-                countryCode: countryCode,
-                placeType: placeType,
-                recommendationName: recommendationName,
-                recommendationSubtext: recommendationSubtext,
-                recommendationRating: recommendationRating,
-                recommendationPhoto: recommendationPhoto,
-                recommendationPhotoData: recommendationPhotoData,
-                supabase: supabase,
-                viewModel: viewModel,
-                onFinish: onFinish
-            )
-        }
-    }
-
-    private var hasRequiredPhoto: Bool {
-        if let recommendationPhotoData, !recommendationPhotoData.isEmpty {
-            return true
-        }
-        return recommendationPhoto != nil
-    }
-}
-
 private struct RecommendationReviewView: View {
     let destination: String
     let countryCode: String?
@@ -417,8 +283,6 @@ private struct RecommendationReviewView: View {
     let recommendationName: String
     let recommendationSubtext: String
     let recommendationRating: String
-    let recommendationPhoto: UIImage?
-    let recommendationPhotoData: Data?
     let supabase: SupabaseClient?
     @ObservedObject var viewModel: MyTripsViewModel
     let onFinish: () -> Void
@@ -447,21 +311,6 @@ private struct RecommendationReviewView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 16) {
-                    if let image = recommendationPhoto {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Colors.card)
-                            .frame(height: 200)
-                            .frame(maxWidth: .infinity)
-                            .overlay {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-
                     if !trimmedName.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Recommendation name")
@@ -525,7 +374,6 @@ private struct RecommendationReviewView: View {
                             name: recommendationName,
                             note: recommendationSubtext,
                             rating: ratingValue,
-                            photoData: recommendationPhotoData,
                             supabase: supabase
                         )
                         await MainActor.run {
@@ -588,54 +436,6 @@ private struct RecommendationReviewView: View {
     private var isCreateEnabled: Bool {
         guard !trimmedName.isEmpty, !trimmedNote.isEmpty else { return false }
         guard let ratingValue = Double(trimmedRating) else { return false }
-        guard let recommendationPhotoData, !recommendationPhotoData.isEmpty else { return false }
         return (1...10).contains(ratingValue)
-    }
-}
-
-private struct CroppingImagePicker: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    @Binding var imageData: Data?
-    @Environment(\.dismiss) private var dismiss
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
-    }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .photoLibrary
-        picker.allowsEditing = true
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-
-    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        private let parent: CroppingImagePicker
-
-        init(parent: CroppingImagePicker) {
-            self.parent = parent
-        }
-
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss()
-        }
-
-        func imagePickerController(
-            _ picker: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
-        ) {
-            let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
-            guard let selectedImage else {
-                parent.dismiss()
-                return
-            }
-
-            parent.image = selectedImage
-            parent.imageData = selectedImage.jpegData(compressionQuality: 0.9)
-            parent.dismiss()
-        }
     }
 }

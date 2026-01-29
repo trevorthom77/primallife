@@ -37,11 +37,6 @@ struct RecommendationsView: View {
                             ForEach(recommendations) { recommendation in
                                 let ratingText = String(format: "%.1f", recommendation.rating)
                                 let creatorName = viewModel.creatorName(for: recommendation.creatorID)
-                                let creatorAvatarURL = viewModel.creatorAvatarURL(
-                                    for: recommendation.creatorID,
-                                    supabase: supabase
-                                )
-                                let photoURL = recommendationPhotoURL(for: recommendation)
                                 let currentUserID = supabase?.auth.currentUser?.id
                                 let isCreator = currentUserID == recommendation.creatorID
                                 let ratingColor = recommendationRatingColor(ratingText)
@@ -49,10 +44,8 @@ struct RecommendationsView: View {
                                 RecommendationCard(
                                     recommendation: recommendation,
                                     creatorName: creatorName,
-                                    creatorAvatarURL: creatorAvatarURL,
                                     ratingText: ratingText,
                                     ratingColor: ratingColor,
-                                    photoURL: photoURL,
                                     showsMoreButton: isCreator,
                                     onMoreTapped: {
                                         selectedRecommendation = recommendation
@@ -99,21 +92,6 @@ struct RecommendationsView: View {
         return viewModel.loadingRecommendationDestinations.contains(lookupKey)
     }
 
-    private func recommendationPhotoURL(for recommendation: Recommendation) -> URL? {
-        guard let photoPath = recommendation.photoURL else { return nil }
-        if let url = URL(string: photoPath), url.scheme != nil {
-            return url
-        }
-        guard let supabase else { return nil }
-        do {
-            return try supabase.storage
-                .from("recommendation-photos")
-                .getPublicURL(path: photoPath)
-        } catch {
-            return nil
-        }
-    }
-
     private func recommendationRatingColor(_ ratingText: String) -> Color {
         let trimmed = ratingText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let value = Double(trimmed) else { return Colors.accent }
@@ -127,117 +105,72 @@ struct RecommendationsView: View {
 struct RecommendationCard: View {
     let recommendation: Recommendation
     let creatorName: String?
-    let creatorAvatarURL: URL?
     let ratingText: String
     let ratingColor: Color
-    let photoURL: URL?
     let showsMoreButton: Bool
     let onMoreTapped: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            recommendationImage()
-                .frame(height: 160)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .overlay(alignment: .bottomLeading) {
-                    Text(ratingText)
-                        .font(.travelDetail)
-                        .foregroundStyle(Colors.tertiaryText)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .background(ratingColor)
-                        .clipShape(Capsule())
-                        .padding(12)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if showsMoreButton {
-                        Button(action: onMoreTapped) {
-                            Image(systemName: "ellipsis")
-                                .font(.travelBody)
-                                .foregroundStyle(Colors.primaryText)
-                                .frame(width: 36, height: 36)
-                                .background(Colors.card.opacity(0.9))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .padding(12)
-                    }
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(ratingText)
+                    .font(.travelDetail)
+                    .foregroundStyle(Colors.tertiaryText)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(ratingColor)
+                    .clipShape(Capsule())
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(recommendation.name)
-                    .font(.travelTitle)
-                    .foregroundStyle(Colors.primaryText)
-                    .lineLimit(2)
+                Spacer()
 
-                Text(recommendation.note)
-                    .font(.travelBody)
-                    .foregroundStyle(Colors.secondaryText)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-
-                if creatorName != nil || creatorAvatarURL != nil {
-                    NavigationLink {
-                        OthersProfileView(userID: recommendation.creatorID)
-                    } label: {
-                        HStack(spacing: 10) {
-                            if let creatorAvatarURL {
-                                AsyncImage(url: creatorAvatarURL) { phase in
-                                    if let image = phase.image {
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } else {
-                                        Colors.secondaryText.opacity(0.3)
-                                    }
-                                }
-                                .frame(width: 32, height: 32)
-                                .clipShape(Circle())
-                            }
-
-                            if let creatorName {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Recommended by")
-                                        .font(.badgeDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                    Text(creatorName)
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.primaryText)
-                                }
-                            }
-
-                            Spacer()
-
-                        }
+                if showsMoreButton {
+                    Button(action: onMoreTapped) {
+                        Image(systemName: "ellipsis")
+                            .font(.travelBody)
+                            .foregroundStyle(Colors.primaryText)
+                            .frame(width: 36, height: 36)
+                            .background(Colors.card.opacity(0.9))
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(16)
+
+            Text(recommendation.name)
+                .font(.travelTitle)
+                .foregroundStyle(Colors.primaryText)
+                .lineLimit(2)
+
+            Text(recommendation.note)
+                .font(.travelBody)
+                .foregroundStyle(Colors.secondaryText)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+
+            if let creatorName {
+                NavigationLink {
+                    OthersProfileView(userID: recommendation.creatorID)
+                } label: {
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Recommended by")
+                                .font(.badgeDetail)
+                                .foregroundStyle(Colors.tertiaryText)
+                            Text(creatorName)
+                                .font(.travelDetail)
+                                .foregroundStyle(Colors.primaryText)
+                        }
+
+                        Spacer()
+
+                    }
+                }
+                .buttonStyle(.plain)
+            }
         }
+        .padding(16)
         .background(Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 20))
-    }
-
-    @ViewBuilder
-    private func recommendationImage() -> some View {
-        if let photoURL {
-            AsyncImage(url: photoURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty:
-                    Colors.card
-                default:
-                    Colors.card
-                }
-            }
-        } else {
-            Colors.card
-        }
     }
 }
 

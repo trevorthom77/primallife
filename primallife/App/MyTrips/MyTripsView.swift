@@ -107,7 +107,6 @@ struct Recommendation: Decodable, Identifiable {
     let name: String
     let note: String
     let rating: Double
-    let photoURL: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -119,7 +118,6 @@ struct Recommendation: Decodable, Identifiable {
         case name
         case note
         case rating
-        case photoURL = "photo_url"
         case createdAt = "created_at"
     }
 }
@@ -140,7 +138,6 @@ struct NewRecommendation: Encodable {
     let name: String
     let note: String
     let rating: Double
-    let photoURL: String?
 
     enum CodingKeys: String, CodingKey {
         case creatorID = "creator_id"
@@ -150,7 +147,6 @@ struct NewRecommendation: Encodable {
         case name
         case note
         case rating
-        case photoURL = "photo_url"
     }
 }
 
@@ -559,7 +555,6 @@ final class MyTripsViewModel: ObservableObject {
         name: String,
         note: String,
         rating: Double,
-        photoData: Data?,
         supabase: SupabaseClient?
     ) async {
         guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
@@ -574,19 +569,6 @@ final class MyTripsViewModel: ObservableObject {
         guard (1...10).contains(rating) else { return }
 
         do {
-            var photoPath: String?
-            if let photoData, !photoData.isEmpty {
-                let path = "\(userID)/recommendations/\(UUID().uuidString).jpg"
-                try await supabase.storage
-                    .from("recommendation-photos")
-                    .upload(
-                        path,
-                        data: photoData,
-                        options: FileOptions(contentType: "image/jpeg", upsert: true)
-                    )
-                photoPath = path
-            }
-
             let payload = NewRecommendation(
                 creatorID: userID,
                 destination: trimmedDestination,
@@ -594,8 +576,7 @@ final class MyTripsViewModel: ObservableObject {
                 placeType: normalizedPlaceType,
                 name: trimmedName,
                 note: trimmedNote,
-                rating: rating,
-                photoURL: photoPath
+                rating: rating
             )
 
             try await supabase
@@ -1184,10 +1165,6 @@ struct MyTripsView: View {
                                                     )
                                                 } label: {
                                                     HStack(spacing: 12) {
-                                                        recommendationImage(for: recommendation)
-                                                            .frame(width: 64, height: 64)
-                                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-
                                                         VStack(alignment: .leading, spacing: 6) {
                                                             Text(recommendation.name)
                                                                 .font(.travelDetail)
@@ -1541,43 +1518,6 @@ struct MyTripsView: View {
         .overlay {
             Circle()
                 .stroke(Colors.card, lineWidth: 3)
-        }
-    }
-
-    @ViewBuilder
-    private func recommendationImage(for recommendation: Recommendation) -> some View {
-        let url = recommendationPhotoURL(for: recommendation)
-
-        if let url {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty:
-                    Colors.card
-                default:
-                    Colors.card
-                }
-            }
-        } else {
-            Colors.card
-        }
-    }
-
-    private func recommendationPhotoURL(for recommendation: Recommendation) -> URL? {
-        guard let photoPath = recommendation.photoURL else { return nil }
-        if let url = URL(string: photoPath), url.scheme != nil {
-            return url
-        }
-        guard let supabase else { return nil }
-        do {
-            return try supabase.storage
-                .from("recommendation-photos")
-                .getPublicURL(path: photoPath)
-        } catch {
-            return nil
         }
     }
 

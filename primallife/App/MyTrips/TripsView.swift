@@ -19,12 +19,21 @@ struct TripsView: View {
     @State private var isAddingTrip = false
     @Environment(\.dismiss) private var dismiss
     
-    private var isReturnDateInvalid: Bool {
+    private var isReturnDateSameDay: Bool {
+        guard hasCheckInDate && hasReturnDate else { return false }
+        return Calendar.current.isDate(returnDate, inSameDayAs: checkInDate)
+    }
+
+    private var isReturnDateBeforeCheckIn: Bool {
         guard hasCheckInDate && hasReturnDate else { return false }
         let calendar = Calendar.current
         let startCheckIn = calendar.startOfDay(for: checkInDate)
         let startReturn = calendar.startOfDay(for: returnDate)
-        return startReturn <= startCheckIn
+        return startReturn < startCheckIn
+    }
+
+    private var isReturnDateInvalid: Bool {
+        isReturnDateSameDay || isReturnDateBeforeCheckIn
     }
     
     private var isAddTripEnabled: Bool {
@@ -128,7 +137,7 @@ struct TripsView: View {
                 }
                 
                 if isReturnDateInvalid {
-                    Text("Return date must be after check-in date.")
+                    Text(isReturnDateSameDay ? "Return date can't be the same day as check-in date." : "Return date must be after check-in date.")
                         .font(.travelDetail)
                         .foregroundStyle(Colors.secondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)

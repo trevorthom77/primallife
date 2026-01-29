@@ -11,12 +11,21 @@ struct UpcomingTripsView: View {
     @State private var searchResults: [UpcomingMapboxPlace] = []
     @State private var searchTask: Task<Void, Never>?
     
-    private var isDepartingDateInvalid: Bool {
+    private var isDepartingDateSameDay: Bool {
+        guard onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting else { return false }
+        return Calendar.current.isDate(onboardingViewModel.departingDate, inSameDayAs: onboardingViewModel.arrivalDate)
+    }
+
+    private var isDepartingDateBeforeArrival: Bool {
         guard onboardingViewModel.hasSelectedArrival && onboardingViewModel.hasSelectedDeparting else { return false }
         let calendar = Calendar.current
         let startArrival = calendar.startOfDay(for: onboardingViewModel.arrivalDate)
         let startDeparting = calendar.startOfDay(for: onboardingViewModel.departingDate)
-        return startDeparting <= startArrival
+        return startDeparting < startArrival
+    }
+
+    private var isDepartingDateInvalid: Bool {
+        isDepartingDateSameDay || isDepartingDateBeforeArrival
     }
     
     private var arrivalDateText: String {
@@ -119,7 +128,7 @@ struct UpcomingTripsView: View {
                 }
                 
                 if isDepartingDateInvalid {
-                    Text("Return date must be after check-in date.")
+                    Text(isDepartingDateSameDay ? "Return date can't be the same day as check-in date." : "Return date must be after check-in date.")
                         .font(.travelDetail)
                         .foregroundColor(Colors.secondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)

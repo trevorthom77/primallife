@@ -325,11 +325,6 @@ struct GlobeMapView: View {
                                 .padding(.horizontal)
                         }
                     }
-                    .overlay {
-                        if shouldShowLocationPermissionOverlay {
-                            locationPermissionOverlay
-                        }
-                    }
                     .ignoresSafeArea()
                     .onDisappear {
                         stopLocationsRefresh()
@@ -346,6 +341,11 @@ struct GlobeMapView: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 120)
+        }
+        .overlay {
+            if shouldShowLocationPermissionOverlay {
+                locationPermissionOverlay
+            }
         }
         .ignoresSafeArea()
         .navigationDestination(isPresented: $isShowingTribes) {

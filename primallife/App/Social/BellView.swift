@@ -189,8 +189,6 @@ struct BellView: View {
         switch status {
         case "accepted":
             return "Accepted your friend request"
-        case "declined":
-            return "Declined your friend request"
         default:
             return "Updated your friend request"
         }
@@ -216,7 +214,7 @@ struct BellView: View {
                 .from("friend_requests")
                 .select("requester_id, receiver_id, status")
                 .eq("requester_id", value: currentUserID.uuidString)
-                .in("status", values: ["accepted", "declined"])
+                .in("status", values: ["accepted"])
                 .execute()
                 .value
 
@@ -225,7 +223,7 @@ struct BellView: View {
                     .from("friend_requests")
                     .delete()
                     .eq("requester_id", value: currentUserID.uuidString)
-                    .in("status", values: ["accepted", "declined"])
+                    .in("status", values: ["accepted"])
                     .execute()
             }
 
@@ -326,7 +324,7 @@ struct BellView: View {
         do {
             try await supabase
                 .from("friend_requests")
-                .update(["status": "declined"])
+                .delete()
                 .eq("requester_id", value: request.requesterID.uuidString)
                 .eq("receiver_id", value: currentUserID.uuidString)
                 .execute()

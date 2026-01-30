@@ -624,7 +624,7 @@ struct MessagesView: View {
                 .from("friend_requests")
                 .select("requester_id")
                 .eq("requester_id", value: currentUserID.uuidString)
-                .in("status", values: ["accepted", "declined"])
+                .in("status", values: ["accepted"])
                 .execute()
                 .value
 

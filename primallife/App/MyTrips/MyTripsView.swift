@@ -544,7 +544,9 @@ final class MyTripsViewModel: ObservableObject {
                 await loadCreators(for: creatorIDs, supabase: supabase)
             }
         } catch {
-            recommendationsByDestination[lookupKey] = []
+            if recommendationsByDestination[lookupKey] == nil {
+                recommendationsByDestination[lookupKey] = []
+            }
         }
     }
 

@@ -120,6 +120,15 @@ struct GlobeMapView: View {
         }
     }
 
+    private var shouldShowLocationPermissionOverlay: Bool {
+        switch locationManager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            return false
+        default:
+            return true
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -314,6 +323,11 @@ struct GlobeMapView: View {
                             loadingIndicator
                                 .padding(.top, 120)
                                 .padding(.horizontal)
+                        }
+                    }
+                    .overlay {
+                        if shouldShowLocationPermissionOverlay {
+                            locationPermissionOverlay
                         }
                     }
                     .ignoresSafeArea()
@@ -599,6 +613,47 @@ struct GlobeMapView: View {
         .clipShape(Capsule())
     }
 
+    private var locationPermissionOverlay: some View {
+        VStack(spacing: 16) {
+            Text("Location Needed")
+                .font(.travelTitle)
+                .foregroundStyle(Colors.primaryText)
+
+            Text("Enable location to see nearby tribes.")
+                .font(.travelBody)
+                .foregroundStyle(Colors.secondaryText)
+                .multilineTextAlignment(.center)
+
+            Button(action: {
+                handleEnableLocation()
+            }) {
+                Text("Enable Location")
+                    .font(.travelBodySemibold)
+                    .foregroundStyle(Colors.tertiaryText)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(Colors.accent)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Colors.background)
+        .ignoresSafeArea()
+    }
+
+    private func handleEnableLocation() {
+        switch locationManager.authorizationStatus {
+        case .denied, .restricted:
+            guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(settingsURL)
+        default:
+            locationManager.requestPermission()
+        }
+    }
+
+
     private func mapTribeAnnotation(for tribe: MapTribeLocation) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -680,20 +735,29 @@ struct GlobeMapView: View {
 
 private final class UserLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var coordinate: CLLocationCoordinate2D?
+    @Published var authorizationStatus: CLAuthorizationStatus
     private let manager = CLLocationManager()
 
     override init() {
+        authorizationStatus = manager.authorizationStatus
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
     func requestPermission() {
-        manager.requestWhenInUseAuthorization()
-        manager.requestLocation()
+        switch manager.authorizationStatus {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.requestLocation()
+        default:
+            break
+        }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        authorizationStatus = manager.authorizationStatus
         switch manager.authorizationStatus {
         case .authorizedAlways, .authorizedWhenInUse:
             manager.requestLocation()

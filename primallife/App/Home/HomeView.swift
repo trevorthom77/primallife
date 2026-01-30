@@ -29,6 +29,14 @@ struct HomeView: View {
     @ViewBuilder
     private var tabContent: some View {
         ZStack {
+            MapBoxView(hideChrome: $hideChrome, minZoomOut: 6.0)
+                .opacity(selectedTab == "map" ? 1 : 0)
+                .allowsHitTesting(selectedTab == "map")
+
+            GlobeMapView(minZoomOut: 6.0)
+                .opacity(selectedTab == "globe" ? 1 : 0)
+                .allowsHitTesting(selectedTab == "globe")
+
             MyTripsView()
                 .opacity(selectedTab == "airplane" ? 1 : 0)
                 .allowsHitTesting(selectedTab == "airplane")
@@ -36,19 +44,6 @@ struct HomeView: View {
             MessagesView()
                 .opacity(selectedTab == "message" ? 1 : 0)
                 .allowsHitTesting(selectedTab == "message")
-            
-            switch selectedTab {
-            case "map":
-                MapBoxView(hideChrome: $hideChrome, minZoomOut: 6.0)
-            case "globe":
-                GlobeMapView(minZoomOut: 6.0)
-            case "airplane":
-                 Color.clear
-            case "message":
-                Color.clear
-            default:
-                Color.clear
-            }
         }
     }
 }

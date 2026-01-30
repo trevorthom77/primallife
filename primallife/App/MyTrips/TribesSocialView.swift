@@ -1115,10 +1115,6 @@ private extension TribesSocialView {
                     Colors.secondaryText.opacity(0.2)
                 }
             }
-        } else {
-            Image("profile2")
-                .resizable()
-                .scaledToFill()
         }
     }
 

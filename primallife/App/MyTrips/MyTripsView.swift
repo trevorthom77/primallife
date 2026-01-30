@@ -756,6 +756,7 @@ struct MyTripsView: View {
                                                     dates: tripDateRange(for: trip),
                                                     imageQuery: tripImageQuery(for: trip),
                                                     participantCount: travelerCount(for: trip),
+                                                    participantAvatarURLs: participantAvatarURLs(for: trip),
                                                     showsAttribution: true,
                                                     allowsHitTesting: true,
                                                     prefetchedDetails: tripImageDetails[trip.id]
@@ -1163,6 +1164,12 @@ struct MyTripsView: View {
             return travelers.filter { $0 != currentUserID }.count
         }
         return travelers.count
+    }
+
+    private func participantAvatarURLs(for trip: Trip) -> [URL?] {
+        let travelers = viewModel.travelersByTrip[trip.id] ?? []
+        guard !travelers.isEmpty else { return [] }
+        return travelers.map { viewModel.creatorAvatarURL(for: $0, supabase: supabase) }
     }
 
     private var isLoadingTribesForSelectedTrip: Bool {

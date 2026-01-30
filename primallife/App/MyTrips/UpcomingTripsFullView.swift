@@ -88,6 +88,7 @@ struct UpcomingTripsFullView: View {
                         dates: tripDateRange(for: trip),
                         imageQuery: tripImageQuery(for: trip),
                         participantCount: travelerCount,
+                        participantAvatarURLs: participantAvatarURLs,
                         prefetchedDetails: prefetchedDetails
                     )
 
@@ -569,6 +570,12 @@ struct UpcomingTripsFullView: View {
             return travelers.filter { $0 != currentUserID }.count
         }
         return travelers.count
+    }
+
+    private var participantAvatarURLs: [URL?] {
+        let travelers = travelersForTrip ?? []
+        guard !travelers.isEmpty else { return [] }
+        return travelers.map { viewModel.creatorAvatarURL(for: $0, supabase: supabase) }
     }
 
     private var travelerCountText: String {

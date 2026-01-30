@@ -18,6 +18,7 @@ struct TravelCard: View {
     var imageQuery: String = "Costa Rica"
     var showsParticipants: Bool = true
     var participantCount: Int = 0
+    var participantAvatarURLs: [URL?] = []
     var showsAttribution: Bool = false
     var allowsHitTesting: Bool = false
     var prefetchedDetails: UnsplashImageDetails? = nil
@@ -98,6 +99,10 @@ struct TravelCard: View {
         .overlay(alignment: .bottomLeading) {
             if showsParticipants {
                 HStack(spacing: -8) {
+                    ForEach(0..<min(3, participantAvatarURLs.count), id: \.self) { index in
+                        participantAvatar(at: index)
+                    }
+
                     ZStack {
                         Circle()
                             .fill(Colors.background)
@@ -150,6 +155,35 @@ struct TravelCard: View {
             imageURL = details?.url
             photographerName = details?.photographerName
             photographerProfileURL = details?.photographerProfileURL
+        }
+    }
+
+    @ViewBuilder
+    private func participantAvatar(at index: Int) -> some View {
+        let size: CGFloat = 36
+        let strokeWidth: CGFloat = 3
+
+        Group {
+            if index < participantAvatarURLs.count,
+               let avatarURL = participantAvatarURLs[index] {
+                AsyncImage(url: avatarURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Colors.secondaryText.opacity(0.2)
+                    }
+                }
+            } else {
+                Colors.secondaryText.opacity(0.2)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Colors.card, lineWidth: strokeWidth)
         }
     }
 }

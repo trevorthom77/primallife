@@ -98,46 +98,6 @@ struct TravelCard: View {
         .overlay(alignment: .bottomLeading) {
             if showsParticipants {
                 HStack(spacing: -8) {
-                    Image("profile4")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-                    
-                    Image("profile5")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-                    
-                    Image("profile6")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-                    
-                    Image("profile9")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(Colors.card, lineWidth: 3)
-                        }
-                    
                     ZStack {
                         Circle()
                             .fill(Colors.background)

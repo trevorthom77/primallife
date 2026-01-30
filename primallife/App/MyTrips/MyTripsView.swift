@@ -1089,11 +1089,13 @@ struct MyTripsView: View {
         }
         .task {
             await viewModel.loadTrips(supabase: supabase)
+            await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             clampSelectedTripIndex()
+            await prefetchTripImages()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
         }
@@ -1114,6 +1116,28 @@ struct MyTripsView: View {
                 await loadTravelersForSelectedTrip(force: true)
             }
         }
+    }
+
+    private func prefetchTripImages() async {
+        for trip in viewModel.trips where tripImageDetails[trip.id] == nil {
+            let query = tripImageQuery(for: trip)
+            if let details = await UnsplashService.fetchImageDetails(for: query) {
+                await cacheImageIfNeeded(from: details.url)
+                await MainActor.run {
+                    tripImageDetails[trip.id] = details
+                }
+            }
+        }
+    }
+
+    private func cacheImageIfNeeded(from url: URL) async {
+        let request = URLRequest(url: url)
+        if URLCache.shared.cachedResponse(for: request) != nil { return }
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let cached = CachedURLResponse(response: response, data: data)
+            URLCache.shared.storeCachedResponse(cached, for: request)
+        } catch { }
     }
     
     @MainActor

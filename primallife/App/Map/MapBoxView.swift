@@ -62,7 +62,6 @@ struct MapBoxView: View {
     @State private var loadingFeedbackToggle = false
     @State private var suppressLoadingFeedback = true
     @StateObject private var travelerImageStore = TravelerImageStore()
-    private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let otherUserJitterRadius: CLLocationDistance = 500
     private let fixedLocationQueryRadiusMeters: CLLocationDistance = 60 * 1609.344
 
@@ -323,7 +322,6 @@ struct MapBoxView: View {
                     }
                     .ignoresSafeArea()
                     .onAppear {
-                        applyInitialZoom()
                         locationManager.requestPermission()
                         suppressLoadingFeedback = true
                     }
@@ -486,16 +484,6 @@ struct MapBoxView: View {
         )
         hasCenteredOnUser = true
         loadLocations(for: coordinate)
-    }
-
-    private func applyInitialZoom() {
-        guard userCoordinate == nil else { return }
-        viewport = .camera(
-            center: defaultMapCenterCoordinate,
-            zoom: 8,
-            bearing: 0,
-            pitch: 0
-        )
     }
 
     private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {

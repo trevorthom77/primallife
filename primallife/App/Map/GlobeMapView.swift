@@ -67,7 +67,6 @@ struct GlobeMapView: View {
     @State private var isLoadingLocations = false
     @State private var loadingFeedbackToggle = false
     @State private var suppressLoadingFeedback = true
-    private let defaultMapCenterCoordinate = CLLocationCoordinate2D(latitude: 9.9333, longitude: -84.0833)
     private let refreshMovementThresholdFraction: Double = 0.3
     private let refreshRadiusChangeThresholdFraction: Double = 0.3
     private let refreshMinimumInterval: TimeInterval = 0
@@ -209,7 +208,6 @@ struct GlobeMapView: View {
                     .sensoryFeedback(.impact(weight: .medium), trigger: loadingFeedbackToggle)
                     .onAppear {
                         mapCamera = proxy.camera
-                        applyInitialZoom()
                         locationManager.requestPermission()
                         suppressLoadingFeedback = true
                     }
@@ -500,16 +498,6 @@ struct GlobeMapView: View {
         guard radius > 0 else { return }
         mapCenterCoordinate = center
         locationQueryRadius = radius
-    }
-
-    private func applyInitialZoom() {
-        guard userCoordinate == nil else { return }
-        viewport = .camera(
-            center: defaultMapCenterCoordinate,
-            zoom: 8,
-            bearing: 0,
-            pitch: 0
-        )
     }
 
     private func resolveUserLocationName(for coordinate: CLLocationCoordinate2D) {

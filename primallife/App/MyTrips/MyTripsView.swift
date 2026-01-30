@@ -98,56 +98,12 @@ struct NewTrip: Encodable {
     }
 }
 
-struct Recommendation: Decodable, Identifiable {
-    let id: UUID
-    let creatorID: UUID
-    let destination: String
-    let countryCode: String?
-    let placeType: String?
-    let name: String
-    let note: String
-    let rating: Double
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case creatorID = "creator_id"
-        case destination
-        case countryCode = "country_code"
-        case placeType = "place_type"
-        case name
-        case note
-        case rating
-        case createdAt = "created_at"
-    }
-}
-
 struct TravelerDateRange {
     let checkIn: Date
     let returnDate: Date
     let destination: String
     let countryCode: String?
     let placeType: String?
-}
-
-struct NewRecommendation: Encodable {
-    let creatorID: UUID
-    let destination: String
-    let countryCode: String?
-    let placeType: String?
-    let name: String
-    let note: String
-    let rating: Double
-
-    enum CodingKeys: String, CodingKey {
-        case creatorID = "creator_id"
-        case destination
-        case countryCode = "country_code"
-        case placeType = "place_type"
-        case name
-        case note
-        case rating
-    }
 }
 
 struct Tribe: Decodable, Identifiable {
@@ -274,10 +230,8 @@ final class MyTripsViewModel: ObservableObject {
     @Published var tribesByTrip: [UUID: [Tribe]] = [:]
     @Published var travelersByTrip: [UUID: [UUID]] = [:]
     @Published var travelerDatesByTrip: [UUID: [UUID: TravelerDateRange]] = [:]
-    @Published var recommendationsByDestination: [String: [Recommendation]] = [:]
     @Published private(set) var loadingTribeTripIDs: Set<UUID> = []
     @Published private(set) var loadingTravelerTripIDs: Set<UUID> = []
-    @Published private(set) var loadingRecommendationDestinations: Set<String> = []
     @Published private(set) var tribeMemberCounts: [UUID: Int] = [:]
     @Published private var tribeMembersByTribeID: [UUID: [UUID]] = [:]
     @Published private var tribeCreatorsByID: [String: TribeCreator] = [:]
@@ -493,131 +447,6 @@ final class MyTripsViewModel: ObservableObject {
         loadingTravelerTripIDs.remove(trip.id)
     }
 
-    func recommendationsKey(destination: String, countryCode: String?, placeType: String?) -> String? {
-        if placeType == "country" {
-            let trimmedCode = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return trimmedCode.isEmpty ? nil : trimmedCode
-        }
-
-        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedDestination.isEmpty ? nil : trimmedDestination
-    }
-
-    func recommendationsKey(for trip: Trip) -> String? {
-        recommendationsKey(
-            destination: trip.destination,
-            countryCode: trip.countryCode,
-            placeType: trip.placeType
-        )
-    }
-
-    func loadRecommendations(
-        destination: String,
-        countryCode: String?,
-        placeType: String?,
-        supabase: SupabaseClient?
-    ) async {
-        guard let supabase,
-              let lookupKey = recommendationsKey(
-                destination: destination,
-                countryCode: countryCode,
-                placeType: placeType
-              ),
-              !loadingRecommendationDestinations.contains(lookupKey) else { return }
-
-        loadingRecommendationDestinations.insert(lookupKey)
-        defer { loadingRecommendationDestinations.remove(lookupKey) }
-        let filterColumn = placeType == "country" ? "country_code" : "destination"
-
-        do {
-            let fetchedRecommendations: [Recommendation] = try await supabase
-                .from("recommendations")
-                .select()
-                .eq(filterColumn, value: lookupKey)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-
-            recommendationsByDestination[lookupKey] = fetchedRecommendations
-            let creatorIDs = Array(Set(fetchedRecommendations.map(\.creatorID)))
-            if !creatorIDs.isEmpty {
-                await loadCreators(for: creatorIDs, supabase: supabase)
-            }
-        } catch {
-            if recommendationsByDestination[lookupKey] == nil {
-                recommendationsByDestination[lookupKey] = []
-            }
-        }
-    }
-
-    func addRecommendation(
-        destination: String,
-        countryCode: String?,
-        placeType: String?,
-        name: String,
-        note: String,
-        rating: Double,
-        supabase: SupabaseClient?
-    ) async {
-        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedCountryCode = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedPlaceType = placeType?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedCountryCode = (trimmedCountryCode?.isEmpty == false) ? trimmedCountryCode : nil
-        let normalizedPlaceType = (trimmedPlaceType?.isEmpty == false) ? trimmedPlaceType : nil
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedDestination.isEmpty, !trimmedName.isEmpty, !trimmedNote.isEmpty else { return }
-        guard (1...10).contains(rating) else { return }
-
-        do {
-            let payload = NewRecommendation(
-                creatorID: userID,
-                destination: trimmedDestination,
-                countryCode: normalizedCountryCode,
-                placeType: normalizedPlaceType,
-                name: trimmedName,
-                note: trimmedNote,
-                rating: rating
-            )
-
-            try await supabase
-                .from("recommendations")
-                .insert(payload)
-                .execute()
-
-            await loadRecommendations(
-                destination: trimmedDestination,
-                countryCode: normalizedCountryCode,
-                placeType: normalizedPlaceType,
-                supabase: supabase
-            )
-        } catch {
-            self.error = "Unable to create recommendation."
-        }
-    }
-
-    func deleteRecommendation(recommendation: Recommendation, supabase: SupabaseClient?) async {
-        guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
-
-        do {
-            try await supabase
-                .from("recommendations")
-                .delete()
-                .eq("id", value: "\(recommendation.id)")
-                .eq("creator_id", value: "\(userID)")
-                .execute()
-
-            await loadRecommendations(
-                destination: recommendation.destination,
-                countryCode: recommendation.countryCode,
-                placeType: recommendation.placeType,
-                supabase: supabase
-            )
-        } catch {
-            self.error = "Unable to delete recommendation."
-        }
-    }
 
     func creatorName(for ownerID: UUID) -> String? {
         tribeCreatorsByID[ownerID.uuidString.lowercased()]?.fullName
@@ -857,7 +686,6 @@ struct MyTripsView: View {
     @State private var isShowingTrips = false
     @State private var isShowingUpcomingTripsSheet = false
     @State private var isShowingTribeTrips = false
-    @State private var isShowingRecommendationCreation = false
     @State private var selectedTripIndex = 0
     @State private var tribeImageCache: [UUID: Image] = [:]
     @State private var tribeImageURLCache: [UUID: URL] = [:]
@@ -1132,91 +960,6 @@ struct MyTripsView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack {
-                                        Text("Recommendations")
-                                            .font(.travelTitle)
-                                            .foregroundStyle(Colors.primaryText)
-
-                                        Spacer()
-
-                                        NavigationLink {
-                                            RecommendationsView(
-                                                trip: trip,
-                                                viewModel: viewModel
-                                            )
-                                        } label: {
-                                            SeeAllButton()
-                                        }
-                                    }
-
-                                    if let recommendations = recommendationsForSelectedTrip {
-                                        if recommendations.isEmpty {
-                                            Text("No recommendations yet")
-                                                .font(.travelDetail)
-                                                .foregroundStyle(Colors.secondaryText)
-                                                .padding(.vertical, 4)
-                                        } else {
-                                            ForEach(recommendations.prefix(2)) { recommendation in
-                                                let ratingText = String(format: "%.1f", recommendation.rating)
-
-                                                NavigationLink {
-                                                    RecommendationsView(
-                                                        trip: trip,
-                                                        viewModel: viewModel
-                                                    )
-                                                } label: {
-                                                    HStack(spacing: 12) {
-                                                        VStack(alignment: .leading, spacing: 6) {
-                                                            Text(recommendation.name)
-                                                                .font(.travelDetail)
-                                                                .foregroundStyle(Colors.primaryText)
-                                                                .lineLimit(1)
-                                                                .truncationMode(.tail)
-
-                                                            HStack(spacing: 8) {
-                                                                Text(recommendation.destination)
-                                                                    .font(.travelDetail)
-                                                                    .foregroundStyle(Colors.secondaryText)
-                                                                    .lineLimit(1)
-                                                                    .truncationMode(.tail)
-                                                            }
-                                                        }
-
-                                                        Spacer()
-
-                                                        Text(ratingText)
-                                                            .font(.travelDetail)
-                                                            .foregroundStyle(Colors.tertiaryText)
-                                                            .padding(.vertical, 4)
-                                                            .padding(.horizontal, 8)
-                                                            .background(recommendationRatingColor(ratingText))
-                                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                    }
-                                                    .padding(12)
-                                                    .frame(maxWidth: .infinity, minHeight: 88, maxHeight: 88, alignment: .leading)
-                                                    .background(Colors.card)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                                                }
-                                                .buttonStyle(.plain)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Button(action: {
-                                    isShowingRecommendationCreation = true
-                                }) {
-                                    Text("Add Recommendation")
-                                        .font(.travelDetail)
-                                        .foregroundStyle(Colors.tertiaryText)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Colors.accent)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                                }
-                                .buttonStyle(.plain)
-
                                 HStack {
                                     Text("Travelers going")
                                         .font(.travelTitle)
@@ -1331,21 +1074,6 @@ struct MyTripsView: View {
                     EmptyView()
                 }
             }
-            .navigationDestination(isPresented: $isShowingRecommendationCreation) {
-                if let trip = selectedTrip {
-                    RecommendationCreationView(
-                        trip: trip,
-                        imageDetails: tripImageDetails[trip.id],
-                        supabase: supabase,
-                        viewModel: viewModel,
-                        onFinish: {
-                            isShowingRecommendationCreation = false
-                        }
-                    )
-                } else {
-                    EmptyView()
-                }
-            }
             .sheet(isPresented: $isShowingUpcomingTripsSheet) {
                 UpcomingTripsSheetView(
                     trips: viewModel.trips,
@@ -1362,18 +1090,15 @@ struct MyTripsView: View {
             await viewModel.loadTrips(supabase: supabase)
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
-            await loadRecommendationsForSelectedTrip(force: true)
         }
         .task(id: viewModel.trips.count) {
             clampSelectedTripIndex()
             await loadTribesForSelectedTrip(force: true)
             await loadTravelersForSelectedTrip(force: true)
-            await loadRecommendationsForSelectedTrip(force: true)
         }
         .task(id: selectedTripIndex) {
             await loadTribesForSelectedTrip()
             await loadTravelersForSelectedTrip()
-            await loadRecommendationsForSelectedTrip()
         }
         .onChange(of: isShowingTribeTrips) { _, newValue in
             if !newValue {
@@ -1406,19 +1131,6 @@ struct MyTripsView: View {
         await viewModel.loadTravelers(for: trip, supabase: supabase)
     }
 
-    @MainActor
-    private func loadRecommendationsForSelectedTrip(force: Bool = false) async {
-        guard let trip = selectedTrip else { return }
-        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return }
-        if !force, viewModel.recommendationsByDestination[lookupKey] != nil { return }
-        await viewModel.loadRecommendations(
-            destination: trip.destination,
-            countryCode: trip.countryCode,
-            placeType: trip.placeType,
-            supabase: supabase
-        )
-    }
-
     private func clampSelectedTripIndex() {
         let maxIndex = max(0, min(viewModel.trips.count, 3) - 1)
         if selectedTripIndex > maxIndex {
@@ -1443,12 +1155,6 @@ struct MyTripsView: View {
     private var travelersForSelectedTrip: [UUID]? {
         guard let trip = selectedTrip else { return nil }
         return viewModel.travelersByTrip[trip.id]
-    }
-
-    private var recommendationsForSelectedTrip: [Recommendation]? {
-        guard let trip = selectedTrip else { return nil }
-        guard let lookupKey = viewModel.recommendationsKey(for: trip) else { return nil }
-        return viewModel.recommendationsByDestination[lookupKey]
     }
 
     private func travelerCount(for trip: Trip) -> Int {
@@ -1570,15 +1276,6 @@ struct MyTripsView: View {
         let cleaned = String(String.UnicodeScalarView(filteredScalars))
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return cleaned.isEmpty ? trip.destination : cleaned
-    }
-
-    private func recommendationRatingColor(_ ratingText: String) -> Color {
-        let trimmed = ratingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let value = Double(trimmed) else { return Colors.accent }
-        if value >= 10 { return Colors.accent }
-        if value >= 7 { return Colors.ratingGreen }
-        if value >= 5 { return Colors.ratingyellow }
-        return Color.red
     }
 
     private var selectedTripDestination: String {

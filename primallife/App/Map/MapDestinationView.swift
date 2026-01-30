@@ -277,7 +277,7 @@ struct MapDestinationView: View {
         nearbyTravelersTask = Task {
             guard let supabase, let userID = supabase.auth.currentUser?.id else { return }
 
-            let radiusMeters = 60.0 * 1609.344
+            let radiusMeters = 70.0 * 1609.344
             let bounds = nearbyBounds(around: coordinate, radius: radiusMeters)
             let originLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
 

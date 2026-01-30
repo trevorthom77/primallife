@@ -63,7 +63,7 @@ struct MapBoxView: View {
     @State private var suppressLoadingFeedback = true
     @StateObject private var travelerImageStore = TravelerImageStore()
     private let otherUserJitterRadius: CLLocationDistance = 500
-    private let fixedLocationQueryRadiusMeters: CLLocationDistance = 60 * 1609.344
+    private let fixedLocationQueryRadiusMeters: CLLocationDistance = 70 * 1609.344
 
     private var userAvatarURL: URL? {
         profileStore.profile?.avatarURL(using: supabase)

@@ -233,29 +233,6 @@ struct GlobeMapView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         VStack(spacing: 12) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(Colors.secondaryText)
-
-                                if !userLocationName.isEmpty, !userLocationFlag.isEmpty {
-                                    Text(userLocationFlag)
-                                        .font(.travelBody)
-                                        .foregroundStyle(Colors.primaryText)
-                                        .lineLimit(1)
-                                }
-
-                                Text(userLocationName.isEmpty ? "Search" : userLocationName)
-                                    .font(.travelBody)
-                                    .foregroundStyle(Colors.primaryText)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 16)
-                            .padding(.horizontal, 16)
-                            .background(Colors.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
                             HStack {
                                 Button(action: {
                                     isShowingFilters = true
